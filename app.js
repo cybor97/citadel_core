@@ -2,4 +2,14 @@
  * @author cybor97
  */
 
-//TODO: start point for app
+const express = require('express');
+const path = require('path');
+const clientApi = require('./routes/clientApi');
+
+const app = express();
+
+app
+  .use('/doc', express.static(path.join(__dirname, 'doc')))
+  .use(clientApi);
+
+app.listen(8080);

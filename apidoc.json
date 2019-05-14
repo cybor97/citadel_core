@@ -1,0 +1,11 @@
+{
+    "name": "citadel_core",
+    "version": "0.0.1",
+    "description": "Citadel Core API",
+    "title": "Citadel Core API",
+    "template": {
+        "withCompare": false,
+        "withGenerator": true
+    }
+  }
+  
