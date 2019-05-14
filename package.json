@@ -1,0 +1,23 @@
+{
+  "name": "citadel_core",
+  "version": "0.0.1",
+  "description": "Citadel app core(data collection and process)",
+  "main": "app.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cybor97/citadel_core.git"
+  },
+  "keywords": [
+    "explorer",
+    "blockchain_scanner"
+  ],
+  "author": "cybor97",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cybor97/citadel_core/issues"
+  },
+  "homepage": "https://github.com/cybor97/citadel_core#readme"
+}
