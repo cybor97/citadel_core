@@ -10,6 +10,6 @@ const app = express();
 
 app
   .use('/doc', express.static(path.join(__dirname, 'doc')))
-  .use(clientApi);
+  .use('/net', clientApi);
 
 app.listen(8080);

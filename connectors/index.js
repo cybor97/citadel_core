@@ -2,5 +2,12 @@
  * @author cybor97
  */
 
-//TODO: Init interlayers
-//Should check network status, pre-config, etc.
+class Connectors {
+    static getConnectors() {
+        return {
+            tez: require('./tez')
+        };
+    }
+}
+
+module.exports = Connectors;

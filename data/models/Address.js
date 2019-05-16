@@ -14,6 +14,13 @@ const Address = citadelCoreDB.define('address', {
             notEmpty: true
         }
     },
+    net: {
+        type: sequelize.STRING,
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
+    },
     currency: {
         type: sequelize.STRING,
         allowNull: false,
@@ -26,7 +33,11 @@ const Address = citadelCoreDB.define('address', {
         allowNull: true,
         defaultValue: null
     }
-}, { timestamps: false });
+}, { 
+    timestamps: true,
+    createdAt: 'created',
+    updatedAt: 'udpated'
+ });
 Address.sync();
 
 module.exports = Address;

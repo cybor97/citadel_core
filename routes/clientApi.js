@@ -4,6 +4,9 @@
 
 const { Router } = require('express');
 const router = Router();
+const Connectors = require('../connectors');
+//const Address = require('../data/models/Address');
+//const Transaction = require('../data/models/Transaction');
 
 router
 /**
@@ -17,7 +20,7 @@ router
  * 
  * @apiSuccess {Array} result [{"address": "0x1234", "lastUpdate": 1557868521022}]
  */
-.get('/net', (req, res) => {
+.get('/', (req, res) => {
 
 })
 
@@ -32,8 +35,13 @@ router
  * 
  * @apiSuccess {Array} result [{"address": "0x1234", "lastUpdate": 1557868521022}]
  */
-.get('/net/:net/address', (req, res) => {
-
+.get('/:net/address', (req, res) => {
+    res.status(200).send([
+        'tz1ioKtFngSzMg1eXwWu8d1YcBgAoCZeSycU',
+        'KT1XpUYdw4JpQn3SMwgPguBD2vkf3zYkBY3u',
+        'tz1h8Dacxo1Mjcty1kaXc7VxNHH6AkZjJkhC',
+        'tz1abTjX2tjtMdaq5VCzkDtBnMSCFPW2oRPa'
+    ]);
 }) 
 
 /**
@@ -42,8 +50,8 @@ router
  * @apiGroup address
  * @apiDescription Get specific address data with optional pagination, currency filter and dates.
  * If not exists - updated and created will be null
- * Address data type: 
- * * supplement, conclusion, delegation, delegate_change, delegate_remove, payment
+ * Transaction type: 
+ * supplement, conclusion, delegation, delegate_change, delegate_remove, payment
  * 
  * @apiParam {String} [currency]     currency
  * @apiParam {Number} [date_from]    transactions from(timestamp)
@@ -66,8 +74,15 @@ router
  *    "comment":"some text comment"
  * }]
  */
-.get('/net/:net/address/:address', (req, res) => {
-
+.get('/:net/address/:address', async (req, res) => {
+    try{
+        let transactions = await new (Connectors.getConnectors()[req.params.net])()
+            .getAllTransactions(req.params.address);
+        res.status(200).send(transactions);
+    }
+    catch(err){
+        res.status(500).send({err: err.message, stack: err.stack});
+    }
 })
 
 /**
@@ -80,8 +95,8 @@ router
  * 
  * @apiSuccess {Boolean} success  completed successfully
  */
-.put('/net/:net/address/:address/comment', (req, res) => {
-
+.put('/:net/address/:address/comment', (req, res) => {
+    res.status(200).send({success: true});
 })
 
 /**
@@ -92,8 +107,8 @@ router
  * 
  * @apiSuccess {Boolean} success completed successfully
  */
-.delete('/net/:net/address/:address', (req, res) => {
-
+.delete('/:net/address/:address', (req, res) => {
+    res.status(200).send({success: true});
 })
 ;
 
