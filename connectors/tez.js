@@ -1,7 +1,7 @@
 const axios = require('axios');
 const BaseConnector = require('./baseConnector');
 
-const THRESHOLD = 1000 * 60 * 60 * 6;//6 hours in ms
+const THRESHOLD = 1000 * 60 * 60 * 12;//6 hours in ms
 const REWARDS_INTERVAL = 1000 * 60 * 60 * 24 * 3;//3 days in ms
 const MIN_CONFIDENCE_COUNT = 3;//tx count with date diff <= THRESHOLD
 
@@ -59,18 +59,28 @@ class TEZ extends BaseConnector {
                 let dates = txData[key];
                 if(dates.length >= MIN_CONFIDENCE_COUNT){
                     dates.sort();
-                    let isReward = true;
+                    let countOk = 0;
                     for(let i = 1; i < dates.length; i++){
-                        if(Math.abs((dates[i] - dates[i - 1]) - REWARDS_INTERVAL) > THRESHOLD){
-                            isReward = false;
-                            break;
+                        if(Math.abs((dates[i] - dates[i - 1]) - REWARDS_INTERVAL) <= THRESHOLD){
+                            if(++countOk >= 3){
+                                break;
+                            }
                         }
+                        else {
+                            countOk = 0
+                        };
                     }
-                    return isReward;
+
+                    return countOk >= 3;
                 }
                 return false;
-            });        
-        
+            });
+        transactions.forEach(tx=>{
+            if(rewardAddresses.indexOf(tx.from) != -1){
+                tx.type = 'supplement';
+            }
+        })
+
         return [].concat(transactions, delegations);
     }
 }
