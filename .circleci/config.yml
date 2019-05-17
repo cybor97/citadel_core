@@ -4,7 +4,8 @@ jobs:
     docker:
       - image: circleci/node:9.11.2-stretch
 
-    working_directory: ~/repo
+    working_directory: ~/repo/citadel_core
+    
     steps:
       - checkout
         
@@ -22,13 +23,11 @@ jobs:
       - run:
           name: Installing dependencies
           command: |
-            cd citadel_core
             npm i
             
       - run:
           name: Building apidoc
           command: |
-            cd citadel_core
             npx apidoc -e node_modules
 
       - save_cache:
@@ -40,7 +39,6 @@ jobs:
       - run:
           name: Deploying
           command: |
-            cd citadel_core
             shopt -s globstar
             bestzip "citadel_core.zip" *
             
