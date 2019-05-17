@@ -4,6 +4,10 @@ const BaseConnector = require('./baseConnector');
 const THRESHOLD = 1000 * 60 * 60 * 12;//6 hours in ms
 const REWARDS_INTERVAL = 1000 * 60 * 60 * 24 * 3;//3 days in ms
 const MIN_CONFIDENCE_COUNT = 3;//tx count with date diff <= THRESHOLD
+const OP_TYPES = {
+    supplement: 'Transaction',
+    delegation: 'Delegation',
+}
 
 //TODO: Implement conclusion
 class TEZ extends BaseConnector {
@@ -17,43 +21,59 @@ class TEZ extends BaseConnector {
      * @param {String} address 
      */
     async getAllTransactions(address){
-        let transactions = (await axios.get(`${this.apiUrl}/operations/${address}?type=Transaction`)).data;
-        transactions = transactions
-            .map(tx => {
-                let txData = tx.type.operations[0];
-                return {
-                    hash: tx.hash,
-                    date: Date.parse(txData.timestamp),
-                    value: txData.amount,
-                    from: txData.src.tz,
-                    to: txData.destination.tz,
-                    fee: txData.fee,
-                    type: 'supplement'
-                };
-            });
-        
-        let delegations = (await axios.get(`${this.apiUrl}/operations/${address}?type=Delegation`)).data;
-        delegations = delegations
-            .map(tx => {
-                let txData = tx.type.operations[0];
-                return {
-                    hash: tx.hash,
-                    date: Date.parse(txData.timestamp),
-                    value: 0,
-                    from: txData.src.tz,
-                    to: txData.delegate.tz,
-                    fee: txData.fee,
-                    type: 'delegation'
+        let result = {};
+        for(let key in OP_TYPES){
+            let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
+                params: {
+                    type: OP_TYPES[key]
                 }
-            });
-        
+            })).data[0];
+            let transactions = [];
+            let offset = 0;
+            while(transactions.length < transactionsCount){
+                transactions = transactions.concat((await axios.get(`${this.apiUrl}/operations/${address}`,{
+                    params: {
+                        type: OP_TYPES[key],
+                        number: transactionsCount,
+                        p: offset
+                    }
+                }))
+                    .data
+                    .map(tx => {                        
+                        let txData = tx.type.operations[0];
+                        console.log(txData)
+                        return {
+                            hash: tx.hash,
+                            date: Date.parse(txData.timestamp),
+                            value: txData.amount,
+                            from: txData.src.tz,
+                            to: (txData.destination||txData.delegate).tz,
+                            fee: txData.fee,
+                            type: key
+                        };
+                    })
+                );            
+                offset++;
+            }
+
+            result[key] = transactions;
+        }
+
+        //Unprocessed payments/conclusions are supplements by default
+        this.processPayment(result.supplement);
+
+        return [].concat(...Object.values(result));
+    }
+
+    async processPayment(transactions){
         let txData = transactions.reduce((data, tx) => {
-                if(data[tx.from] === undefined){
-                    data[tx.from] = [];
-                }
-                data[tx.from].push(tx.date);
-                return data;
-            }, {});
+            if(data[tx.from] === undefined){
+                data[tx.from] = [];
+            }
+            data[tx.from].push(tx.date);
+            return data;
+        }, {});
+
         let rewardAddresses = Object.keys(txData)
             .filter(key => {
                 let dates = txData[key];
@@ -80,8 +100,10 @@ class TEZ extends BaseConnector {
                 tx.type = 'payment';
             }
         });
+    }
 
-        return [].concat(transactions, delegations);
+    async processConclusion(delegations){
+
     }
 }
 

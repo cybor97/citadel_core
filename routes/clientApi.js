@@ -81,6 +81,7 @@ router
         res.status(200).send(transactions);
     }
     catch(err){
+        console.error(err);
         res.status(500).send({err: err.message, stack: err.stack});
     }
 })
