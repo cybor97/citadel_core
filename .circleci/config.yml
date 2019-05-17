@@ -1,0 +1,48 @@
+version: 0.0.1
+jobs:
+  build:
+    docker:
+      - image: circleci/node:10.15.3-bionic
+    working_directory: ~/repo
+    steps:
+      - checkout
+        
+      - run:
+          name: Preparing to build
+          command: |
+            sudo npm i -g npm npx
+            sudo npm i -g bestzip
+        
+      - restore_cache:
+          keys:
+          - dependencies-{{ checksum "citadel_core/package.json" }}
+          - dependencies-
+
+      - run:
+          name: Installing dependencies
+          working_directory: citadel_core
+          command: |
+            npm i
+            
+      - run:
+          name: Building apidoc
+          working_directory: citadel_core
+          command: |
+            npx apidoc -e node_modules
+
+      - save_cache:
+          paths:
+            - citadel_core/node_modules
+          key: dependencies-{{ checksum "citadel_core/package.json" }}
+        
+        
+      - run:
+          name: Deploying
+          command: |
+            cd citadel_core
+            shopt -s globstar
+            bestzip "citadel_core.zip" *
+            
+            sftp -oStrictHostKeyChecking=no ${ssh_connection} <<< $'put citadel_core.zip';
+            ssh -oStrictHostKeyChecking=no ${ssh_connection} <<< $'rm -rd /srv/citadel_core';
+            ssh -oStrictHostKeyChecking=no ${ssh_connection} <<< $'unzip citadel_core.zip -d /srv/citadel_core';
