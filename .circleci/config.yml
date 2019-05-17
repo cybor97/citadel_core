@@ -5,7 +5,7 @@ jobs:
       - image: circleci/node:9.11.2-stretch
 
     working_directory: ~/repo/citadel_core
-    
+
     steps:
       - checkout
         
@@ -17,7 +17,7 @@ jobs:
         
       - restore_cache:
           keys:
-          - dependencies-{{ checksum "citadel_core/package.json" }}
+          - dependencies-{{ checksum "package.json" }}
           - dependencies-
 
       - run:
@@ -32,8 +32,8 @@ jobs:
 
       - save_cache:
           paths:
-            - citadel_core/node_modules
-          key: dependencies-{{ checksum "citadel_core/package.json" }}
+            - node_modules
+          key: dependencies-{{ checksum "package.json" }}
         
         
       - run:
@@ -43,5 +43,4 @@ jobs:
             bestzip "citadel_core.zip" *
             
             sftp -oStrictHostKeyChecking=no ${ssh_connection} <<< $'put citadel_core.zip';
-            ssh -oStrictHostKeyChecking=no ${ssh_connection} <<< $'rm -rd /srv/citadel_core';
-            ssh -oStrictHostKeyChecking=no ${ssh_connection} <<< $'unzip citadel_core.zip -d /srv/citadel_core';
+            ssh -oStrictHostKeyChecking=no ${ssh_connection} <<< $'rm -rd /srv/citadel_core && unzip citadel_core.zip -d /srv/citadel_core&&rm citadel_core.zip';
