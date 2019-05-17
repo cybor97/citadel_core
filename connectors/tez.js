@@ -28,7 +28,7 @@ class TEZ extends BaseConnector {
                     from: txData.src.tz,
                     to: txData.destination.tz,
                     fee: txData.fee,
-                    type: 'payment'
+                    type: 'supplement'
                 };
             });
         
@@ -67,7 +67,7 @@ class TEZ extends BaseConnector {
                             }
                         }
                         else {
-                            countOk = 0
+                            countOk = 0;
                         };
                     }
 
@@ -77,9 +77,9 @@ class TEZ extends BaseConnector {
             });
         transactions.forEach(tx=>{
             if(rewardAddresses.indexOf(tx.from) != -1){
-                tx.type = 'supplement';
+                tx.type = 'payment';
             }
-        })
+        });
 
         return [].concat(transactions, delegations);
     }
