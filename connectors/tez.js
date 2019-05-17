@@ -41,12 +41,12 @@ class TEZ extends BaseConnector {
                     .data
                     .map(tx => {                        
                         let txData = tx.type.operations[0];
-                        console.log(txData)
                         return {
                             hash: tx.hash,
                             date: Date.parse(txData.timestamp),
                             value: txData.amount,
                             from: txData.src.tz,
+                            fromAlias: txData.src.tz,
                             to: (txData.destination||txData.delegate).tz,
                             fee: txData.fee,
                             type: key
@@ -67,16 +67,26 @@ class TEZ extends BaseConnector {
 
     async processPayment(transactions){
         let txData = transactions.reduce((data, tx) => {
-            if(data[tx.from] === undefined){
-                data[tx.from] = [];
+            //TODO: Review
+            if(data[tx.fromAlias]){
+                data[tx.from] = -1;
             }
-            data[tx.from].push(tx.date);
+            if(data[tx.fromAlias] !== -1){
+                if(data[tx.from] === undefined){
+                    data[tx.from] = [];
+                }
+                data[tx.from].push(tx.date);    
+            }
             return data;
         }, {});
 
         let rewardAddresses = Object.keys(txData)
             .filter(key => {
                 let dates = txData[key];
+                if(txData[key] === -1){
+                    return true;
+                }
+
                 if(dates.length >= MIN_CONFIDENCE_COUNT){
                     dates.sort();
                     let countOk = 0;
