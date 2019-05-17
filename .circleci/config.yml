@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       - image: circleci/node:9.11.2-stretch
-      
+
     working_directory: ~/repo
     steps:
       - checkout
@@ -21,14 +21,14 @@ jobs:
 
       - run:
           name: Installing dependencies
-          working_directory: citadel_core
           command: |
+            cd citadel_core
             npm i
             
       - run:
           name: Building apidoc
-          working_directory: citadel_core
           command: |
+            cd citadel_core
             npx apidoc -e node_modules
 
       - save_cache:
