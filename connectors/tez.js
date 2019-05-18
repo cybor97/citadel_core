@@ -4,10 +4,12 @@ const BaseConnector = require('./baseConnector');
 const THRESHOLD = 1000 * 60 * 60 * 12;//6 hours in ms
 const REWARDS_INTERVAL = 1000 * 60 * 60 * 24 * 3;//3 days in ms
 const MIN_CONFIDENCE_COUNT = 3;//tx count with date diff <= THRESHOLD
-const OP_TYPES = {
-    supplement: 'Transaction',
-    delegation: 'Delegation',
-}
+const M_TEZ_MULTIPLIER = 1000000;
+const OP_TYPES = [
+    {type: 'origination', sourceType: 'Origination'},
+    {type: 'supplement', sourceType: 'Transaction'},
+    {type: 'payment', sourceType: 'Delegation'},
+]
 
 //TODO: Implement conclusion
 class TEZ extends BaseConnector {
@@ -22,10 +24,10 @@ class TEZ extends BaseConnector {
      */
     async getAllTransactions(address){
         let result = {};
-        for(let key in OP_TYPES){
+        for(let opType of OP_TYPES){
             let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
                 params: {
-                    type: OP_TYPES[key]
+                    type: opType.sourceType
                 }
             })).data[0];
             let transactions = [];
@@ -33,7 +35,7 @@ class TEZ extends BaseConnector {
             while(transactions.length < transactionsCount){
                 transactions = transactions.concat((await axios.get(`${this.apiUrl}/operations/${address}`,{
                     params: {
-                        type: OP_TYPES[key],
+                        type: opType.sourceType,
                         number: transactionsCount,
                         p: offset
                     }
@@ -44,23 +46,23 @@ class TEZ extends BaseConnector {
                         return {
                             hash: tx.hash,
                             date: Date.parse(txData.timestamp),
-                            value: txData.amount,
+                            value: (txData.amount||txData.balance) / M_TEZ_MULTIPLIER,
                             from: txData.src.tz,
                             fromAlias: txData.src.tz,
                             to: (txData.destination||txData.delegate).tz,
-                            fee: txData.fee,
-                            type: key
+                            fee: txData.fee / M_TEZ_MULTIPLIER,
+                            type: opType.type
                         };
                     })
                 );            
                 offset++;
             }
 
-            result[key] = transactions;
+            result[opType.type] = transactions;
         }
 
         //Unprocessed payments/conclusions are supplements by default
-        this.processPayment(result.supplement);
+        this.processPayment([].concat(result.supplement, result.origination||[]));
 
         return [].concat(...Object.values(result));
     }
@@ -68,7 +70,7 @@ class TEZ extends BaseConnector {
     async processPayment(transactions){
         let txData = transactions.reduce((data, tx) => {
             //TODO: Review
-            if(data[tx.fromAlias]){
+            if(data[tx.fromAlias] || tx.type === 'origination'){
                 data[tx.from] = -1;
             }
             if(data[tx.fromAlias] !== -1){
