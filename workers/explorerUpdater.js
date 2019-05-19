@@ -4,9 +4,11 @@
 const Connectors = require('../connectors');
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
+const DBConnection = require('../data/index');
 
 class ExplorerUpdater {
     static init(){
+        let dbConnection = DBConnection.getConnection();
         let connectors = Connectors.getConnectors();
         setInterval(() => {
             let addresses = Address.findAll({
@@ -23,6 +25,6 @@ class ExplorerUpdater {
                     });
                 })
             }
-        }, 1000);
+        }, 15000);
     }
 }

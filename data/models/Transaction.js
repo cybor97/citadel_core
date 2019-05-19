@@ -15,7 +15,9 @@ const Transaction = citadelCoreDB.define('transactions', {
         }
     },
     //Additional data: original op. type and number for APIs with pagination and block number for blockchain RPC
+    originalOpType: sequelize.TEXT,
     path: sequelize.TEXT,
+
     hash: sequelize.STRING,
     date: sequelize.INTEGER,
     value: sequelize.DOUBLE,
