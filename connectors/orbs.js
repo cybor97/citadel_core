@@ -18,6 +18,13 @@ class TEZ extends BaseConnector {
             address = address.replace('0x', `0x${PRECENDING_ZEROES}`);
         }
         //FIXME: Consider re-implement with RPCs eth_getLogs&eth_getTransactionByHash
+        return [].concat(
+            await this.getAllTransactionsWithTopic(address, 'topic1'),
+            await this.getAllTransactionsWithTopic(address, 'topic2')
+        );
+    }
+
+    async getAllTransactionsWithTopic(address, topic){
         return (await axios.get(this.apiUrl, {
             params: {
                 module: 'logs',
@@ -26,7 +33,7 @@ class TEZ extends BaseConnector {
                 toBlock: 'latest',
                 address: CONTRACT_HASH,
                 topic0: TOPIC_DELEGATE,
-                topic1: address
+                [topic]: address
             }
         }))
             .data
