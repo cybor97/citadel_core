@@ -3,7 +3,6 @@
  */
 const Connectors = require('../connectors');
 const DBConnection = require('../data/index');
-
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
 
@@ -28,10 +27,18 @@ class ExplorerUpdater {
                     let transactions = await (new connectors[address.net]()).getAllTransactions(address.address);
                     for(let tx of transactions){
                         console.log(`>tx: ${tx.hash}`);
-                        await Transaction.findOrCreate({
-                            where: {hash: tx.hash},
-                            defaults: Object.assign({addressId: address.id}, tx)
-                        });
+                        if(!tx.forceUpdate){
+                            await Transaction.findOrCreate({
+                                where: {hash: tx.hash, addressId: address.id},
+                                defaults: Object.assign({addressId: address.id}, tx)
+                            });    
+                        }
+                        else{
+                            delete tx.forceUpdate;
+                            await Transaction.upsert(Object.assign({addressId: address.id}, tx), {
+                                where: {hash: tx.hash, addressId: address.id},
+                            });
+                        }
                     }
                     address.updated = Date.now();
                     await address.save();

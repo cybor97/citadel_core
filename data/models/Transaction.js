@@ -1,7 +1,7 @@
 const sequelize = require('sequelize');
 const connection = require('../index').getConnection();
 const Address = require('./Address');
-
+/**@type {sequelize.Model} */
 const Transaction = connection.define('transactions', {
     id: {
         type: sequelize.INTEGER,

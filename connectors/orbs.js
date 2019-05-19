@@ -10,6 +10,7 @@ class TEZ extends BaseConnector {
     constructor(){
         super();
         this.apiUrl = 'https://api.etherscan.io/api';
+        this.apiUrlVotingProxy = 'https://orbs-voting-proxy-server.herokuapp.com/api';
     }
 
     async getAllTransactions(address){
@@ -19,12 +20,58 @@ class TEZ extends BaseConnector {
         }
         //FIXME: Consider re-implement with RPCs eth_getLogs&eth_getTransactionByHash
         return [].concat(
-            await this.getAllTransactionsWithTopic(address, 'topic1'),
-            await this.getAllTransactionsWithTopic(address, 'topic2')
+            await this.getDelegateTransactions(address, 'topic1'),
+            await this.getDelegateTransactions(address, 'topic2'),
+            await this.getReward(address)
         );
     }
 
-    async getAllTransactionsWithTopic(address, topic){
+    async getReward(address){
+        let data = (await axios.get(
+            `${this.apiUrlVotingProxy}/rewards/${address.replace(`0x${PRECENDING_ZEROES}`, '0x')}`
+        )).data;
+
+        return [{
+                from: null,
+                to: address,
+                hash: 1,
+                date: Date.now(),
+                value: data.delegatorReward,
+                fee: 0, value: 0,
+                type: 'payment',
+                path: null,
+                originalOpType: 'delegatorReward',
+
+                forceUpdate: true
+            }, {
+                from: null,
+                to: address,
+                hash: 2,
+                date: Date.now(),
+                value: data.guardianReward,
+                fee: 0, value: 0,
+                type: 'payment',
+                path: null,
+                originalOpType: 'guardianReward',
+
+                forceUpdate: true
+            }, {
+                from: null,
+                to: address,
+                hash: 3,
+                date: Date.now(),
+                value: data.validatorReward,
+                fee: 0, value: 0,
+                type: 'payment',
+                path: null,
+                originalOpType: 'validatorReward',
+
+                forceUpdate: true
+            }
+        ];
+    }
+
+    async getDelegateTransactions(address, topic){
         return (await axios.get(this.apiUrl, {
             params: {
                 module: 'logs',
@@ -48,7 +95,7 @@ class TEZ extends BaseConnector {
                     //always 0 for delegation
                     value: 0,
                     fromAlias: null,
-                    fee: parseInt(tx.gasUsed) * parseInt(tx.gasPrice)/VALUE_FEE_MULTIPLIER,
+                    fee: parseInt(tx.gasUsed) * parseInt(tx.gasPrice) / VALUE_FEE_MULTIPLIER,
                     type: 'delegation',
                     path: JSON.stringify({
                         blockNumber: parseInt(tx.blockNumber), 
