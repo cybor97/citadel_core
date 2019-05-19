@@ -19,10 +19,34 @@ class TEZ extends BaseConnector {
     }
 
     /**
+     * Get start with
+     * @param {String} address 
+     * @param {Array} lastPaths Last paths as {OriginalType:offset}
+     */
+    async getStartWith(address, lastPaths = null){
+        let startWith = {origination: 0, supplement: 0, payment: 0};
+        if(lastPath === null || lastPaths.length === 0){
+            return startWith;
+        }
+
+        for(let opType of OP_TYPES){
+            let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
+                params: {
+                    type: opType.sourceType
+                }
+            })).data[0];
+            let lastPathOffset = lastPaths[opType.sourceType];
+            if(lastPathOffset < transactionsCount - 1){
+                startWith[opType.type] = transactionsCount - lastPathOffset - 1;
+            }
+        }
+    }
+
+    /**
      * Get all transactions for address
      * @param {String} address 
      */
-    async getAllTransactions(address){
+    async getAllTransactions(address, startWith = {origination: 0, supplement: 0, payment: 0}){
         let result = {};
         for(let opType of OP_TYPES){
             let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
@@ -31,7 +55,7 @@ class TEZ extends BaseConnector {
                 }
             })).data[0];
             let transactions = [];
-            let offset = 0;
+            let offset = startWith[opType.type];
             while(transactions.length < transactionsCount){
                 transactions = transactions.concat((await axios.get(`${this.apiUrl}/operations/${address}`,{
                     params: {
@@ -43,15 +67,19 @@ class TEZ extends BaseConnector {
                     .data
                     .map(tx => {                        
                         let txData = tx.type.operations[0];
+                        let toField = txData.destination || txData.delegate || txData.tz1;
+                        let to = toField ? toField.tz : null;
+
                         return {
                             hash: tx.hash,
                             date: Date.parse(txData.timestamp),
                             value: (txData.amount||txData.balance) / M_TEZ_MULTIPLIER,
                             from: txData.src.tz,
                             fromAlias: txData.src.tz,
-                            to: (txData.destination||txData.delegate).tz,
+                            to: to,
                             fee: txData.fee / M_TEZ_MULTIPLIER,
-                            type: opType.type
+                            type: opType.type,
+                            path: JSON.stringify({originalOpType: opType.sourceType, offset: offset})
                         };
                     })
                 );            
@@ -112,10 +140,6 @@ class TEZ extends BaseConnector {
                 tx.type = 'payment';
             }
         });
-    }
-
-    async processConclusion(delegations){
-
     }
 }
 

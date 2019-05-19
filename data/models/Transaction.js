@@ -7,7 +7,6 @@ const Transaction = citadelCoreDB.define('transactions', {
         primaryKey: true,
         autoIncrement: true
     },
-    hash: sequelize.STRING,
     addressId: {
         type: sequelize.INTEGER,
         references: {
@@ -15,9 +14,13 @@ const Transaction = citadelCoreDB.define('transactions', {
             key: 'id'
         }
     },
+    //Additional data: original op. type and number for APIs with pagination and block number for blockchain RPC
+    path: sequelize.TEXT,
+    hash: sequelize.STRING,
     date: sequelize.INTEGER,
     value: sequelize.DOUBLE,
     from: sequelize.STRING,
+    fromAlias: sequelize.STRING,
     to: sequelize.STRING,
     fee: sequelize.DOUBLE,
     type: sequelize.STRING,
