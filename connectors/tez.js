@@ -8,7 +8,7 @@ const M_TEZ_MULTIPLIER = 1000000;
 const OP_TYPES = [
     {type: 'origination', sourceType: 'Origination'},
     {type: 'supplement', sourceType: 'Transaction'},
-    {type: 'payment', sourceType: 'Delegation'},
+    {type: 'delegation', sourceType: 'Delegation'},
 ]
 
 //TODO: Implement conclusion
@@ -24,7 +24,7 @@ class TEZ extends BaseConnector {
      * @param {Array} lastPaths Last paths as {OriginalType:offset}
      */
     async getStartWith(address, lastPaths = null){
-        let startWith = {origination: 0, supplement: 0, payment: 0};
+        let startWith = {origination: 0, supplement: 0, delegation: 0};
         if(lastPath === null || lastPaths.length === 0){
             return startWith;
         }
@@ -46,7 +46,7 @@ class TEZ extends BaseConnector {
      * Get all transactions for address
      * @param {String} address 
      */
-    async getAllTransactions(address, startWith = {origination: 0, supplement: 0, payment: 0}){
+    async getAllTransactions(address, startWith = {origination: 0, supplement: 0, delegation: 0}){
         let result = {};
         for(let opType of OP_TYPES){
             let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
