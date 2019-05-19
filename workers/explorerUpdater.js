@@ -27,15 +27,16 @@ class ExplorerUpdater {
                     let transactions = await (new connectors[address.net]()).getAllTransactions(address.address);
                     for(let tx of transactions){
                         console.log(`>tx: ${tx.hash}`);
-                        if(!tx.forceUpdate){
-                            await Transaction.findOrCreate({
-                                where: {hash: tx.hash, addressId: address.id},
-                                defaults: Object.assign({addressId: address.id}, tx)
-                            });    
-                        }
-                        else{
-                            delete tx.forceUpdate;
-                            await Transaction.upsert(Object.assign({addressId: address.id}, tx), {
+                        let forceUpdate = tx.forceUpdate;
+                        delete tx.forceUpdate;
+
+                        let created = (await Transaction.findOrCreate({
+                            where: {hash: tx.hash, addressId: address.id},
+                            defaults: Object.assign({addressId: address.id}, tx)
+                        }))[1];
+
+                        if(tx.forceUpdate && !created){
+                            await Transaction.update(Object.assign({addressId: address.id}, tx), {
                                 where: {hash: tx.hash, addressId: address.id},
                             });
                         }
