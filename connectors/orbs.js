@@ -11,6 +11,11 @@ class TEZ extends BaseConnector {
     }
 
     async getAllTransactions(address){
+        //ETH has a bit longer addresses with precending 0-es
+        if(address.length === 42){
+            address = '0xb1aa947c0f11ac2b732167ea53dfbb5f4ab7da88'.replace('0x', `0x${'0'.repeat(24)}`);
+        }
+
         return (await axios.get(this.apiUrl, {
             params: {
                 module: 'logs',
@@ -25,8 +30,6 @@ class TEZ extends BaseConnector {
             .data
             .result
             .map(tx => {
-
-
                 return ({
                     //0 is methodId
                     from: tx.topics[1],
