@@ -73,11 +73,12 @@ class TEZ extends BaseConnector {
                         return {
                             hash: tx.hash,
                             date: Date.parse(txData.timestamp),
-                            value: (txData.amount||txData.balance) / M_TEZ_MULTIPLIER,
+                            value: ((txData.amount||txData.balance) / M_TEZ_MULTIPLIER) || null,
                             from: txData.src.tz,
-                            fromAlias: txData.src.tz,
+                            fromAlias: txData.src.alias,
                             to: to,
                             fee: txData.fee / M_TEZ_MULTIPLIER,
+                            originalOpType: opType.sourceType,
                             type: opType.type,
                             path: JSON.stringify({originalOpType: opType.sourceType, offset: offset})
                         };
@@ -105,7 +106,9 @@ class TEZ extends BaseConnector {
                 if(data[tx.from] === undefined){
                     data[tx.from] = [];
                 }
-                data[tx.from].push(tx.date);    
+                if(data[tx.from] !== -1){
+                    data[tx.from].push(tx.date);
+                }
             }
             return data;
         }, {});

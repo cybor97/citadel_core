@@ -1,6 +1,7 @@
 const sequelize = require('sequelize');
+const connection = require('../index').getConnection();
 
-const Address = citadelCoreDB.define('address', {
+const Address = connection.define('address', {
     id: {
         type: sequelize.INTEGER,
         allowNull: false,
@@ -28,15 +29,16 @@ const Address = citadelCoreDB.define('address', {
             notEmpty: true
         }
     },
-    lastUpdate: {
-        type: sequelize.INTEGER,
-        allowNull: true,
+    created: {
+        type: sequelize.BIGINT,
+        allowNull: false
+    },
+    updated: {
+        type: sequelize.BIGINT,
         defaultValue: null
     }
 }, { 
-    timestamps: true,
-    createdAt: 'created',
-    updatedAt: 'udpated'
+    timestamps: false,
  });
 Address.sync();
 

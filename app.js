@@ -5,6 +5,9 @@
 const express = require('express');
 const path = require('path');
 const clientApi = require('./routes/clientApi');
+const explorerUpdater = require('./workers/explorerUpdater');
+
+explorerUpdater.init();
 
 const app = express();
 

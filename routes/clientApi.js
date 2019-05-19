@@ -1,12 +1,12 @@
 /**
  * @author cybor97
  */
-
+const sequelize = require('sequelize');
 const { Router } = require('express');
 const router = Router();
 const Connectors = require('../connectors');
-//const Address = require('../data/models/Address');
-//const Transaction = require('../data/models/Transaction');
+const Address = require('../data/models/Address');
+const Transaction = require('../data/models/Transaction');
 
 router
 /**
@@ -18,7 +18,7 @@ router
  * @apiParam {Number} [limit]  limit to specific count
  * @apiParam {Number} [offset] start from position
  * 
- * @apiSuccess {Array} result [{"address": "0x1234", "lastUpdate": 1557868521022}]
+ * @apiSuccess {Array} result [{"address": "0x1234", "updated": 1557868521022}]
  */
 .get('/', (req, res) => {
 
@@ -33,15 +33,15 @@ router
  * @apiParam {Number} [limit]  limit to specific count
  * @apiParam {Number} [offset] start from position
  * 
- * @apiSuccess {Array} result [{"address": "0x1234", "lastUpdate": 1557868521022}]
+ * @apiSuccess {Array} result [{"address": "0x1234", "updated": 1557868521022}]
  */
-.get('/:net/address', (req, res) => {
-    res.status(200).send([
-        'tz1ioKtFngSzMg1eXwWu8d1YcBgAoCZeSycU',
-        'KT1XpUYdw4JpQn3SMwgPguBD2vkf3zYkBY3u',
-        'tz1h8Dacxo1Mjcty1kaXc7VxNHH6AkZjJkhC',
-        'tz1abTjX2tjtMdaq5VCzkDtBnMSCFPW2oRPa'
-    ]);
+.get('/:net/address', async (req, res) => {
+    let addresses = await Address.findAll({
+        where: {net: req.params.net},
+        limit: req.query.limit || null,
+        offset: req.query.offset || null
+    });
+    res.status(200).send(addresses.map(c=>({address: c.address, updated: c.updated})));
 }) 
 
 /**
@@ -53,7 +53,7 @@ router
  * Transaction type: 
  * supplement, conclusion, delegation, delegate_change, delegate_remove, payment
  * 
- * @apiParam {String} [currency]     currency
+ * @apiParam {String} [currency]     currency, same as net by default
  * @apiParam {Number} [date_from]    transactions from(timestamp)
  * @apiParam {Number} [date_to]      transactions to(timestamp)
  * @apiParam {Number} [limit]        limit to specific count
@@ -76,9 +76,35 @@ router
  */
 .get('/:net/address/:address', async (req, res) => {
     try{
-        let transactions = await new (Connectors.getConnectors()[req.params.net])()
-            .getAllTransactions(req.params.address);
-        res.status(200).send(transactions);
+        let address = (await Address.findOrCreate({
+            where: {address: req.params.address},
+            defaults: {
+                address: req.params.address,
+                net: req.params.net,
+                currency: req.query.currency || req.params.net,
+                updated: null,
+                created: Date.now()
+            },
+            raw: true
+        }))[0];
+
+        let whereParams = {from: req.params.address};
+        if(req.query.currency){
+            whereParams.currency = req.query.currency;
+        }
+        if(req.query.date_from){
+            whereParams.updated = {[sequelize.Op.gte]: req.query.date_from};
+        }
+        if(req.query.date_to){
+            whereParams.updated = {[sequelize.Op.lte]: req.query.date_to};
+        }
+        let transactions = await Transaction.findAll({
+            where: whereParams,
+            offset: req.query.offset || null,
+            limit: req.query.limit || null
+        });
+        address.transactions = transactions.map(tx => tx.dataValues);
+        res.status(200).send(address);
     }
     catch(err){
         console.error(err);

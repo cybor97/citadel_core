@@ -1,6 +1,8 @@
 const sequelize = require('sequelize');
+const connection = require('../index').getConnection();
+const Address = require('./Address');
 
-const Transaction = citadelCoreDB.define('transactions', {
+const Transaction = connection.define('transactions', {
     id: {
         type: sequelize.INTEGER,
         allowNull: false,
@@ -19,7 +21,7 @@ const Transaction = citadelCoreDB.define('transactions', {
     path: sequelize.TEXT,
 
     hash: sequelize.STRING,
-    date: sequelize.INTEGER,
+    date: sequelize.BIGINT,
     value: sequelize.DOUBLE,
     from: sequelize.STRING,
     fromAlias: sequelize.STRING,
@@ -28,6 +30,10 @@ const Transaction = citadelCoreDB.define('transactions', {
     type: sequelize.STRING,
     comment: sequelize.STRING
 }, { timestamps: false });
+
+Address.hasMany(Transaction);
+Transaction.belongsTo(Address);
+
 Transaction.sync();
 
 module.exports = Transaction;
