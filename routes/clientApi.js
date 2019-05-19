@@ -88,7 +88,7 @@ router
             raw: true
         }))[0];
 
-        let whereParams = {from: req.params.address};
+        let whereParams = {[sequelize.Op.or]: [{from: req.params.address}, {to: req.params.address}]};
         if(req.query.currency){
             whereParams.currency = req.query.currency;
         }
