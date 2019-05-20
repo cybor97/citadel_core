@@ -1,3 +1,4 @@
 node_modules
 doc
 config/creds.json
+config/config.json

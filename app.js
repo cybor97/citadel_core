@@ -4,6 +4,7 @@
 
 const express = require('express');
 const path = require('path');
+const bodyparser = require('body-parser');
 const clientApi = require('./routes/clientApi');
 const explorerUpdater = require('./workers/explorerUpdater');
 
@@ -12,6 +13,8 @@ explorerUpdater.init();
 const app = express();
 
 app
+  .use(bodyparser.json())
+  .use(bodyparser.urlencoded())
   .use('/doc', express.static(path.join(__dirname, 'doc')))
   .use('/net', clientApi);
 

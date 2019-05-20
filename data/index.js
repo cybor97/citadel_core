@@ -9,10 +9,10 @@ class DBConnection {
         if(!this.connection){
             this.connection = new Sequelize({
                 dialect: 'mysql',
-                host: config.dbHost,
-                database: config.dbName,
-                username: config.dbUsername,
-                password: config.dbPassword,
+                host: config.host,
+                database: config.database,
+                username: config.username,
+                password: config.password,
                 logging: (process.argv.indexOf('-v') != -1) ? console.log : null
             });
         }

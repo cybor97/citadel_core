@@ -75,7 +75,7 @@ router
 .get('/:net/address/:address', async (req, res) => {
     try{
         let address = (await Address.findOrCreate({
-            where: {address: req.params.address},
+            where: {net: req.params.net, address: req.params.address},
             defaults: {
                 address: req.params.address,
                 net: req.params.net,
@@ -121,8 +121,20 @@ router
  * 
  * @apiSuccess {Boolean} success  completed successfully
  */
-.put('/:net/address/:address/comment', (req, res) => {
-    res.status(200).send({success: true});
+.put('/:net/address/:address/comment', async (req, res) => {
+    let address = (await Address.findOne({
+        where: {net: req.params.net, address: req.params.address}
+    }));
+    if(address !== null){
+        address.comment = req.body && req.body.comment;
+        if(address.comment){
+            address.save();
+        }
+        res.status(200).send({success: true});
+    }
+    else{
+        res.status(404).send({error: 'Address not found'});
+    }
 })
 
 /**
@@ -133,9 +145,17 @@ router
  * 
  * @apiSuccess {Boolean} success completed successfully
  */
-.delete('/:net/address/:address', (req, res) => {
-    res.status(200).send({success: true});
-})
-;
+.delete('/:net/address/:address', async (req, res) => {
+    let address = (await Address.findOne({
+        where: {net: req.params.net, address: req.params.address},
+    }));
+    if(address !== null){
+        address.destroy();
+        res.status(200).send({success: true});
+    }
+    else{
+        res.status(404).send({error: 'Address not found'});
+    }
+});
 
 module.exports = router;
