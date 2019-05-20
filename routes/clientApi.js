@@ -14,14 +14,11 @@ router
  * @apiName getAddresses
  * @apiGroup net
  * @apiDescription Get all tracked networks
- * 
- * @apiParam {Number} [limit]  limit to specific count
- * @apiParam {Number} [offset] start from position
- * 
+ *  
  * @apiSuccess {Array} result [{"address": "0x1234", "updated": 1557868521022}]
  */
 .get('/', (req, res) => {
-
+    res.status(200).send(Object.keys(Connectors.getConnectors()));
 })
 
 /**

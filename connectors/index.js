@@ -6,7 +6,8 @@ class Connectors {
     static getConnectors() {
         return {
             tez: require('./tez'),
-            orbs: require('./orbs')
+            orbs: require('./orbs'),
+            iost: require('./iost')
         };
     }
 }
