@@ -73,6 +73,7 @@ router
  *    "type": "supplement", 
  *    "comment":"some text comment"
  * }]
+ * @apiSuccess {Number} transactionsCount count of all matching transactions
  */
 .get('/:net/address/:address', async (req, res) => {
     try{
@@ -98,12 +99,13 @@ router
         if(req.query.date_to){
             whereParams.updated = {[sequelize.Op.lte]: req.query.date_to};
         }
-        let transactions = await Transaction.findAll({
+        let transactions = await Transaction.findAndCountAll({
             where: whereParams,
             offset: req.query.offset || null,
             limit: req.query.limit || null
         });
-        address.transactions = transactions.map(tx => tx.dataValues);
+        address.transactions = transactions.rows.map(tx => tx.dataValues);
+        address.transactionsCount = transactions.count;
         res.status(200).send(address);
     }
     catch(err){
