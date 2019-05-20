@@ -39,7 +39,7 @@ jobs:
       - run:
           name: Deploying
           command: |
-            bestzip "citadel_core.zip" *
-            
+            zip -r citadel_core.zip ./
+
             sftp -oStrictHostKeyChecking=no ${ssh_connection} <<< $'put citadel_core.zip';
             ssh -oStrictHostKeyChecking=no ${ssh_connection} <<< $'unzip -o citadel_core.zip -d /srv/citadel_core&&rm -f citadel_core.zip&&/srv/citadel_core/build.sh&&pm2 restart app';
