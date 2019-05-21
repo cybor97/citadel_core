@@ -7,7 +7,8 @@ class Connectors {
         return {
             tez: require('./tez'),
             orbs: require('./orbs'),
-            iost: require('./iost')
+            iost: require('./iost'),
+            nuls: require('./nuls')
         };
     }
 }

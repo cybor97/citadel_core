@@ -1,11 +1,11 @@
 const ETHToken = require('./ethToken');
 
-const TRANSFER_CONTRACT_HASH = '0xFA1a856Cfa3409CFa145Fa4e20Eb270dF3EB21ab';
+const TRANSFER_CONTRACT_HASH = '0xB91318F35Bdb262E9423Bc7c7c2A3A93DD93C92C';
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
 const PRECENDING_ZEROES = '0'.repeat(24);
 
-class IOST extends ETHToken {
+class NULS extends ETHToken {
     constructor(){
         super();
         this.apiUrl = 'https://api.etherscan.io/api';
@@ -28,4 +28,4 @@ class IOST extends ETHToken {
     }
 }
 
-module.exports = IOST;
+module.exports = NULS;
