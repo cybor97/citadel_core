@@ -15,6 +15,7 @@ class ExplorerUpdater {
         //TODO: Re-implement: should run as different instance with cron
         Promise.resolve().then(async () => {
             while(true){
+                try{
                 let addresses = await Address.findAll({
                     limit: 1,
                     order: [['updated', 'asc'], ['created', 'desc']]
@@ -45,6 +46,10 @@ class ExplorerUpdater {
                     await address.save();
                     await new Promise(resolve => setTimeout(resolve, config.updateInterval))
                 }
+            }
+            catch(err){
+                console.log(err);
+            }
             }
         });
     }
