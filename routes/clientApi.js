@@ -91,10 +91,10 @@ router
             whereParams.currency = req.query.currency;
         }
         if(req.query.date_from){
-            whereParams.updated = {[sequelize.Op.gte]: req.query.date_from};
+            whereParams.date = {[sequelize.Op.gte]: req.query.date_from};
         }
         if(req.query.date_to){
-            whereParams.updated = {[sequelize.Op.lte]: req.query.date_to};
+            whereParams.date = {[sequelize.Op.lte]: req.query.date_to};
         }
         let transactions = await Transaction.findAndCountAll({
             where: whereParams,
