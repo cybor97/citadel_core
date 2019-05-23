@@ -67,8 +67,7 @@ router
  *    "from":"0x1234", 
  *    "to": "0x4321", 
  *    "fee": 0.1, 
- *    "type": "supplement", 
- *    "comment":"some text comment"
+ *    "type": "supplement"
  * }]
  * @apiSuccess {Number} transactionsCount count of all matching transactions
  */
@@ -77,6 +76,7 @@ router
         let address = (await Address.findOrCreate({
             where: {net: req.params.net, address: req.params.address},
             defaults: {
+                select: ['address', 'net', 'currency', 'updated', 'created'],
                 address: req.params.address,
                 net: req.params.net,
                 currency: req.query.currency || req.params.net,
@@ -97,6 +97,7 @@ router
             whereParams.date = {[sequelize.Op.lte]: req.query.date_to};
         }
         let transactions = await Transaction.findAndCountAll({
+            attributes: ['date', 'value', 'from', 'to', 'fee', 'type'],
             where: whereParams,
             offset: req.query.offset || null,
             limit: req.query.limit || null
@@ -108,32 +109,6 @@ router
     catch(err){
         console.error(err);
         res.status(500).send({err: err.message, stack: err.stack});
-    }
-})
-
-/**
- * @api {put} /net/:net/address/:address Set comment
- * @apiName setAddressComment
- * @apiGroup address
- * @apiDescription Set comment for address
- * 
- * @apiParam {String} comment     address comment
- * 
- * @apiSuccess {Boolean} success  completed successfully
- */
-.put('/:net/address/:address/comment', async (req, res) => {
-    let address = (await Address.findOne({
-        where: {net: req.params.net, address: req.params.address}
-    }));
-    if(address !== null){
-        address.comment = req.body && req.body.comment;
-        if(address.comment){
-            address.save();
-        }
-        res.status(200).send({success: true});
-    }
-    else{
-        res.status(404).send({error: 'Address not found'});
     }
 })
 

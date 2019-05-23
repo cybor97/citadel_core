@@ -36,8 +36,7 @@ const Address = connection.define('address', {
     updated: {
         type: sequelize.BIGINT,
         defaultValue: null
-    },
-    comment: sequelize.STRING
+    }
 }, { 
     timestamps: false,
  });
