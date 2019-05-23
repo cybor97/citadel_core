@@ -11,7 +11,6 @@ const OP_TYPES = [
     {type: 'delegation', sourceType: 'Delegation'},
 ]
 
-//TODO: Implement conclusion
 class TEZ extends BaseConnector {
     constructor(){
         super();

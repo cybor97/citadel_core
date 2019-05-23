@@ -76,7 +76,6 @@ router
         let address = (await Address.findOrCreate({
             where: {net: req.params.net, address: req.params.address},
             defaults: {
-                select: ['address', 'net', 'currency', 'updated', 'created'],
                 address: req.params.address,
                 net: req.params.net,
                 currency: req.query.currency || req.params.net,
