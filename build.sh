@@ -1,5 +1,5 @@
 cd /srv/citadel_core;
-ln -f ./git-hooks/pre-push.sh ./.git/hooks/pre-push.sh;
+ln -f ./git-hooks/pre-push.sh ./.git/hooks/pre-push;
 
 npm i;
 npx sequelize-cli db:migrate;
