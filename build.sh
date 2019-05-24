@@ -1,3 +1,4 @@
+#!/bin/bash
 cd /srv/citadel_core;
 ln -f ./git-hooks/pre-push.sh ./.git/hooks/pre-push;
 
