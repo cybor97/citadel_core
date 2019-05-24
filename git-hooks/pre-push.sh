@@ -1,3 +1,4 @@
+#!/bin/bash
 ./build.sh;
 BUILD_RESULT=$?;
 if [[ $BUILD_RESULT == 0 ]]; then
