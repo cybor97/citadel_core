@@ -70,9 +70,7 @@ class NULS extends BaseConnector {
                     let txValue = tx.type === 1
                         ? tx.tos.reduce((prev,  next) => next.address === address ? prev + next.value : prev, 0)
                         //If 2, other unsupported
-                        : tx.froms && tx.froms.length && tx.froms[0].address === address 
-                            ? tx.froms[0].value
-                            : tx.tos.reduce((prev,  next) => next.address === txFrom ? prev - next.value : prev + next.value, 0);
+                        : tx.tos[0].value;
 
                     transactions.push({
                         hash: tx.hash,
