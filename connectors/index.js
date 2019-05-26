@@ -8,7 +8,8 @@ class Connectors {
             tez: require('./tez'),
             orbs: require('./orbs'),
             iost: require('./iost'),
-            nuls: require('./nuls')
+            nuls: require('./nuls'),
+            atom: require('./atom')
         };
     }
 }
