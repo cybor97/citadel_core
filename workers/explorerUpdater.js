@@ -36,9 +36,16 @@ class ExplorerUpdater {
                             }))[1];
 
                             if(forceUpdate && !created){
-                                await Transaction.update(Object.assign({addressId: address.id}, tx), {
-                                    where: {hash: tx.hash, addressId: address.id},
+                                let transaction = await Transaction.findOne({
+                                    where: {hash: tx.hash, addressId: address.id}
                                 });
+                                
+                                let newTxData = Object.assign({addressId: address.id}, tx);
+                                for(let key in Object.keys(newTxData)){
+                                    transaction.key = newTxData[key];
+                                }
+
+                                await transaction.save();
                             }
                         }
                         address.updated = Date.now();
