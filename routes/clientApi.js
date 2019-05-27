@@ -62,6 +62,7 @@ router
  * @apiSuccess {Number} updated      updated at date
  * @apiSuccess {Number} created      created at date
  * @apiSuccess {Array} transactions [{
+ *    "hash": "0x123456", 
  *    "date": 1557868521022, 
  *    "value": 123, 
  *    "from":"0x1234", 
@@ -96,7 +97,7 @@ router
             whereParams.date = {[sequelize.Op.lte]: req.query.date_to};
         }
         let transactions = await Transaction.findAndCountAll({
-            attributes: ['date', 'value', 'from', 'to', 'fee', 'type'],
+            attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type'],
             where: whereParams,
             offset: req.query.offset || null,
             limit: req.query.limit || null
