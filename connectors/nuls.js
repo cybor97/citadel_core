@@ -20,26 +20,24 @@ class NULS extends BaseConnector {
     }
 
     /**
-     * Get start with
-     * @param {String} address 
-     * @param {Array} lastPaths Last paths as {OriginalType:offset}
-     */
-    async getStartWith(address, lastPaths = null){
-        //TODO: Implement
-        //For this token should start with 1!
-    }
-
-    /**
      * Get all transactions for address
      * @param {String} address 
      */
-    async getAllTransactions(address){
+    async getAllTransactions(address, lastPaths){
         let result = {};
         for(let opType of OP_TYPES){
             let transactionsCount = null;
             let transactions = [];
             let offset = 0;
+            for(let tx of lastPaths){
+                if(parseInt(tx.originalOpType) === opType.sourceType && tx.path){
+                    offset = JSON.parse(tx.path).offset;
+                    break;
+                }
+            }
+
             while(transactionsCount === null || transactions.length < transactionsCount){
+                console.log(`^${offset} - ${transactions.length}/${transactionsCount}`);
                 let transactionsListResponse = (await axios.post(this.apiUrl, {
                     'id': RPC_ID,
                     'jsonrpc': RPC_VERSION,

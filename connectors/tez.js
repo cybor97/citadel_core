@@ -34,7 +34,6 @@ class TEZ extends BaseConnector {
             let transactions = [];
             let offset = 0;
             for(let tx of lastPaths){
-                console.log(tx.path)
                 if(tx.originalOpType === opType.sourceType && tx.path &&
                     (opType.type === 'delegation' || opType === 'origination')){
                         offset = JSON.parse(tx.path).offset;
