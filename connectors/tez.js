@@ -5,6 +5,7 @@ const THRESHOLD = 1000 * 60 * 60 * 12;//6 hours in ms
 const REWARDS_INTERVAL = 1000 * 60 * 60 * 24 * 3;//3 days in ms
 const MIN_CONFIDENCE_COUNT = 3;//tx count with date diff <= THRESHOLD
 const M_TEZ_MULTIPLIER = 1000000;
+const QUERY_COUNT = 50;
 const OP_TYPES = [
     {type: 'origination', sourceType: 'Origination'},
     {type: 'supplement', sourceType: 'Transaction'},
@@ -56,33 +57,32 @@ class TEZ extends BaseConnector {
             let transactions = [];
             let offset = startWith[opType.type];
             while(transactions.length < transactionsCount){
-                transactions = transactions.concat((await axios.get(`${this.apiUrl}/operations/${address}`,{
+                let newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`,{
                     params: {
                         type: opType.sourceType,
-                        number: transactionsCount,
+                        number: QUERY_COUNT,
                         p: offset
                     }
-                }))
-                    .data
-                    .map(tx => {                        
-                        let txData = tx.type.operations[0];
-                        let toField = txData.destination || txData.delegate || txData.tz1;
-                        let to = toField ? toField.tz : null;
+                })).data;
 
-                        return {
-                            hash: tx.hash,
-                            date: Date.parse(txData.timestamp),
-                            value: ((txData.amount||txData.balance) / M_TEZ_MULTIPLIER) || null,
-                            from: txData.src.tz,
-                            fromAlias: txData.src.alias,
-                            to: to,
-                            fee: txData.fee / M_TEZ_MULTIPLIER,
-                            originalOpType: opType.sourceType,
-                            type: opType.type,
-                            path: JSON.stringify({originalOpType: opType.sourceType, offset: offset})
-                        };
-                    })
-                );            
+                let newTransactions = newTransactions.map((tx, i, arr) => {
+                    let txData = tx.type.operations[0];
+                    let toField = txData.destination || txData.delegate || txData.tz1;
+                    let to = toField ? toField.tz : null;
+                    return {
+                        hash: tx.hash,
+                        date: Date.parse(txData.timestamp),
+                        value: ((txData.amount||txData.balance) / M_TEZ_MULTIPLIER) || null,
+                        from: txData.src.tz,
+                        fromAlias: txData.src.alias,
+                        to: to,
+                        fee: txData.fee / M_TEZ_MULTIPLIER,
+                        originalOpType: opType.sourceType,
+                        type: opType.type,
+                        path: JSON.stringify({queryCount: QUERY_COUNT, offset: offset})
+                    };
+                })
+                transactions = transactions.concat(newTransactions);
                 offset++;
             }
 

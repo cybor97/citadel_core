@@ -81,7 +81,7 @@ class NULS extends BaseConnector {
                         fee: tx.fee / M_NULS_MULTIPLIER,
                         originalOpType: opType.sourceType,
                         type: opType.type,
-                        path: JSON.stringify({originalOpType: opType.sourceType, offset: offset})
+                        path: JSON.stringify({queryCount: QUERY_COUNT, offset: offset})
                     });  
                 }
 

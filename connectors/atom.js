@@ -55,7 +55,7 @@ class ATOM extends BaseConnector {
                     to: msg.value.to_address,
                     originalOpType: 'send',
                     type: 'supplement',
-                    path: JSON.stringify({queryCount: QUERY_COUNT, offset: (i / QUERY_COUNT) + 1})
+                    path: JSON.stringify({queryCount: QUERY_COUNT, offset: ~~(i / QUERY_COUNT) + 1})
                 });
         });
     }
@@ -79,7 +79,7 @@ class ATOM extends BaseConnector {
                     to: msg.value.validator_address,
                     originalOpType: 'delegate',
                     type: 'delegation',
-                    path: JSON.stringify({queryCount: QUERY_COUNT, offset: (i / QUERY_COUNT) + 1})
+                    path: JSON.stringify({queryCount: QUERY_COUNT, offset: ~~(i / QUERY_COUNT) + 1})
                 });
             });
     }
@@ -103,7 +103,7 @@ class ATOM extends BaseConnector {
                     to: msg.value.delegator_address,
                     originalOpType: 'withdraw_delegator_reward',
                     type: 'payment',
-                    path: JSON.stringify({queryCount: QUERY_COUNT, offset: (i / QUERY_COUNT) + 1})
+                    path: JSON.stringify({queryCount: QUERY_COUNT, offset: ~~(i / QUERY_COUNT) + 1})
                 });
             });
 
