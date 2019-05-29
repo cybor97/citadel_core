@@ -11,36 +11,36 @@ class ATOM extends BaseConnector {
     }
 
     /**
-     * Get start with
-     * @param {String} address 
-     * @param {Array} lastPaths Last paths as {OriginalType:offset}
-     */
-    async getStartWith(address, lastPaths = null){
-        //TODO: Implement
-        //For this token should start with 1!
-    }
-
-    /**
      * Get all transactions for address
      * @param {String} address 
      */
-    async getAllTransactions(address){
+    async getAllTransactions(address, lastPaths){
+        let offsets = {};
+        for(let tx of lastPaths){
+            if(tx.type != 'supplement'){
+                offsets[tx.originalOpType] = tx.path ? JSON.parse(tx.path).offset : 0;
+            }
+            else{
+                offsets[tx.type] = tx.path ? JSON.parse(tx.path).offset : 0;
+            }
+        }
+
         return [].concat(
-            await this.getSupplement(address),
-            await this.getDelegations(address),
-            await this.getRewards(address)
+            await this.getSupplement(address, offsets.send_sender, offsets.offset_recipient),
+            await this.getDelegations(address, offsets.delegation || 0),
+            await this.getRewards(address, offsets.supplement || 0)
         );
     }
 
-    async getSupplement(address){
+    async getSupplement(address, offsetSender, offsetRecipient){
         //action=send&(sender=address|recipient=address)
         return [].concat(
-            await this.processSupplement(await this.getRawForAction(address, 'send', 'sender')),
-            await this.processSupplement(await this.getRawForAction(address, 'send', 'recipient'))
+            await this.processSupplement(await this.getRawForAction(address, 'send', 'sender', offsetSender), 'sender'),
+            await this.processSupplement(await this.getRawForAction(address, 'send', 'recipient', offsetRecipient), 'recipient')
         );
     }
 
-    async processSupplement(rawData){
+    async processSupplement(rawData, role){
         let self = this;
         return rawData
             .filter(tx => tx.tx.value.msg && tx.tx.value.msg.length)
@@ -53,17 +53,17 @@ class ATOM extends BaseConnector {
                     fee: self.calculateAmount(tx.tx.value.fee.amount),
                     from: msg.value.from_address,
                     to: msg.value.to_address,
-                    originalOpType: 'send',
+                    originalOpType: `send_${role}`,
                     type: 'supplement',
                     path: JSON.stringify({queryCount: QUERY_COUNT, offset: ~~(i / QUERY_COUNT) + 1})
                 });
         });
     }
 
-    async getDelegations(address){
+    async getDelegations(address, offset){
         //action=delegate&delegator=address
         let self = this;
-        let rawData = await this.getRawForAction(address, 'delegate', 'delegator');
+        let rawData = await this.getRawForAction(address, 'delegate', 'delegator', offset);
         return rawData
             .filter(tx => tx.tx.value.msg && tx.tx.value.msg.length)
             .map((tx, i) => {
@@ -84,10 +84,10 @@ class ATOM extends BaseConnector {
             });
     }
 
-    async getRewards(address){
+    async getRewards(address, offset){
         //action=withdraw_delegator_reward&delegator=address
         let self = this;
-        let rawData = await this.getRawForAction(address, 'withdraw_delegator_reward', 'delegator');
+        let rawData = await this.getRawForAction(address, 'withdraw_delegator_reward', 'delegator', offset);
         return rawData
             .filter(tx => tx.tx.value.msg && tx.tx.value.msg.length)
             .map((tx, i) => {
@@ -115,10 +115,10 @@ class ATOM extends BaseConnector {
         , 0) / ATOM_MULTIPLIER;
     }
 
-    async getRawForAction(address, action, actionRole){
+    async getRawForAction(address, action, actionRole, offset){
         let result = [];
         let lastHash = null;
-        let page = 1;
+        let page = offset || 1;
         while(result.length % QUERY_COUNT == 0){
             let current = (await axios.get(this.apiUrl, {
                 params: {
