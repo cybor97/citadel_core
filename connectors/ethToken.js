@@ -7,7 +7,6 @@ const PRECENDING_ZEROES = '0'.repeat(24);
 class ETHToken extends BaseConnector {
     //FIXME: Consider re-implement with RPCs eth_getLogs&eth_getTransactionByHash
     async getTransactionsForContractMethod(contractHash, methodTopic, type, address, topic, fromBlock = null){
-        console.log(type, fromBlock)
         return (await axios.get(this.apiUrl, {
             params: {
                 module: 'logs',

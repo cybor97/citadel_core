@@ -43,7 +43,7 @@ class ExplorerUpdater {
                         //TODO: Should 'update' just new data
                         let transactions = await connectors[address.net].getAllTransactions(address.address, lastPaths);
                         for(let tx of transactions){
-                            console.log(`>tx: ${tx.hash}`);
+                            console.log(`>tx: ${tx.hash} (${tx.type})`);
                             let forceUpdate = tx.forceUpdate;
                             delete tx.forceUpdate;
 

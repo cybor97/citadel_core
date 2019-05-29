@@ -19,35 +19,12 @@ class TEZ extends BaseConnector {
     }
 
     /**
-     * Get start with
-     * @param {String} address 
-     * @param {Array} lastPaths Last paths as {OriginalType:offset}
-     */
-    async getStartWith(address, lastPaths = null){
-        let startWith = {origination: 0, supplement: 0, delegation: 0};
-        if(lastPath === null || lastPaths.length === 0){
-            return startWith;
-        }
-
-        for(let opType of OP_TYPES){
-            let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
-                params: {
-                    type: opType.sourceType
-                }
-            })).data[0];
-            let lastPathOffset = lastPaths[opType.sourceType];
-            if(lastPathOffset < transactionsCount - 1){
-                startWith[opType.type] = transactionsCount - lastPathOffset - 1;
-            }
-        }
-    }
-
-    /**
      * Get all transactions for address
      * @param {String} address 
      */
-    async getAllTransactions(address, startWith = {origination: 0, supplement: 0, delegation: 0}){
+    async getAllTransactions(address, lastPaths){
         let result = {};
+
         for(let opType of OP_TYPES){
             let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
                 params: {
@@ -55,7 +32,15 @@ class TEZ extends BaseConnector {
                 }
             })).data[0];
             let transactions = [];
-            let offset = startWith[opType.type];
+            let offset = 0;
+            for(let tx of lastPaths){
+                console.log(tx.path)
+                if(tx.originalOpType === opType.sourceType && tx.path &&
+                    (opType.type === 'delegation' || opType === 'origination')){
+                        offset = JSON.parse(tx.path).offset;
+                }
+            }
+
             while(transactions.length < transactionsCount){
                 let newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`,{
                     params: {
@@ -65,7 +50,7 @@ class TEZ extends BaseConnector {
                     }
                 })).data;
 
-                let newTransactions = newTransactions.map((tx, i, arr) => {
+                newTransactions = newTransactions.map((tx, i, arr) => {
                     let txData = tx.type.operations[0];
                     let toField = txData.destination || txData.delegate || txData.tz1;
                     let to = toField ? toField.tz : null;
