@@ -2,10 +2,22 @@
  * @author cybor97
  */
 const Connectors = require('../connectors');
+
+const sequelize = require('../data').getConnection();
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
 
 const config = require('../config');
+const LAST_PATHS_QUERY = `
+    SELECT id, originalOpType, path, type
+    FROM citadel_core.transactions 
+    WHERE id IN (
+        SELECT max(id)
+        FROM transactions
+        WHERE addressId = :addressId
+        GROUP BY originalOpType
+    );
+ `
 
 class ExplorerUpdater {
     static init(){
@@ -22,8 +34,14 @@ class ExplorerUpdater {
 
                     if(addresses.length > 0){
                         let address = addresses[0];
+                        let lastPaths = await sequelize.query(LAST_PATHS_QUERY, {
+                            replacements: {addressId: address.id},
+                            type: sequelize.QueryTypes.SELECT
+                        });
+                        console.log(`Updating ${address.address} (${address.net})`);
+
                         //TODO: Should 'update' just new data
-                        let transactions = await connectors[address.net].getAllTransactions(address.address);
+                        let transactions = await connectors[address.net].getAllTransactions(address.address, lastPaths);
                         for(let tx of transactions){
                             console.log(`>tx: ${tx.hash}`);
                             let forceUpdate = tx.forceUpdate;
@@ -49,7 +67,7 @@ class ExplorerUpdater {
                         }
                         address.updated = Date.now();
                         await address.save();
-                        // await new Promise(resolve => setTimeout(resolve, config.updateInterval))
+                        await new Promise(resolve => setTimeout(resolve, config.updateInterval))
                     }
                 }
                 catch(err){

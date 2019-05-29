@@ -33,12 +33,12 @@ class NULS extends BaseConnector {
      * Get all transactions for address
      * @param {String} address 
      */
-    async getAllTransactions(address, startWith = {supplement: 1, payment: 1}){
+    async getAllTransactions(address){
         let result = {};
         for(let opType of OP_TYPES){
             let transactionsCount = null;
             let transactions = [];
-            let offset = startWith[opType.type];
+            let offset = 0;
             while(transactionsCount === null || transactions.length < transactionsCount){
                 let transactionsListResponse = (await axios.post(this.apiUrl, {
                     'id': RPC_ID,

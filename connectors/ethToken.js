@@ -5,12 +5,14 @@ const VALUE_FEE_MULTIPLIER = Math.pow(10, 18);
 const PRECENDING_ZEROES = '0'.repeat(24);
 
 class ETHToken extends BaseConnector {
-    async getTransactionsForContractMethod(contractHash, methodTopic, type, address, topic){
+    //FIXME: Consider re-implement with RPCs eth_getLogs&eth_getTransactionByHash
+    async getTransactionsForContractMethod(contractHash, methodTopic, type, address, topic, fromBlock = null){
+        console.log(type, fromBlock)
         return (await axios.get(this.apiUrl, {
             params: {
                 module: 'logs',
                 action: 'getLogs',
-                fromBlock: '0',
+                fromBlock: fromBlock || 0,
                 toBlock: 'latest',
                 address: contractHash,
                 topic0: methodTopic,

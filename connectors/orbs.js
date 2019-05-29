@@ -16,18 +16,28 @@ class ORBS extends ETHToken {
         this.apiUrlVotingProxy = 'https://orbs-voting-proxy-server.herokuapp.com/api';
     }
 
-    async getAllTransactions(address){
+    async getAllTransactions(address, lastPaths = []){
         //ETH has a bit longer addresses with precending 0-es
         if(address.length === 42){
             address = address.replace('0x', `0x${PRECENDING_ZEROES}`);
         }
-        //FIXME: Consider re-implement with RPCs eth_getLogs&eth_getTransactionByHash
-        return [].concat(
-            await this.getDelegateTransactions(address, 'topic1'),
-            await this.getDelegateTransactions(address, 'topic2'),
 
-            await this.getTransferTransactions(address, 'topic1'),
-            await this.getTransferTransactions(address, 'topic2'),
+        let supplementFromBlock = null, delegateFromBlock = null;
+        for(let tx of lastPaths){
+            if(tx.type === 'supplement' && tx.path){
+                supplementFromBlock = JSON.parse(tx.path).blockNumber;
+            }
+            if(tx.type === 'delegation' && tx.path){
+                delegateFromBlock = JSON.parse(tx.path).blockNumber;
+            }
+        }
+
+        return [].concat(
+            await this.getDelegateTransactions(address, 'topic1', delegateFromBlock),
+            await this.getDelegateTransactions(address, 'topic2', delegateFromBlock),
+
+            await this.getTransferTransactions(address, 'topic1', supplementFromBlock),
+            await this.getTransferTransactions(address, 'topic2', supplementFromBlock),
 
             await this.getRewardTransactions(address)
         );
@@ -79,12 +89,14 @@ class ORBS extends ETHToken {
         ];
     }
 
-    async getDelegateTransactions(address, topic){
-        return await this.getTransactionsForContractMethod(DELEGATE_CONTRACT_HASH, DELEGATE_TOPIC, 'delegation', address, topic);
+    async getDelegateTransactions(address, topic, fromBlock = 0){
+        return await this.getTransactionsForContractMethod(DELEGATE_CONTRACT_HASH, DELEGATE_TOPIC, 
+            'delegation', address, topic, fromBlock);
     }
 
-    async getTransferTransactions(address, topic){
-        return await this.getTransactionsForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, topic);
+    async getTransferTransactions(address, topic, fromBlock = 0){
+        return await this.getTransactionsForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 
+            'supplement', address, topic, fromBlock);
     }
 }
 
