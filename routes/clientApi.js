@@ -97,6 +97,12 @@ router
         if(req.query.date_to){
             whereParams.date = {[sequelize.Op.lte]: req.query.date_to};
         }
+        
+        //FIXME: Add excludeZeroes param
+        if(req.params.net === 'orbs'){
+            whereParams.value = {[sequelize.Op.ne]: 0};
+        }
+
         let transactions = await Transaction.findAndCountAll({
             attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment'],
             where: whereParams,
