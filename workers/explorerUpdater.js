@@ -40,7 +40,6 @@ class ExplorerUpdater {
                         });
                         console.log(`Updating ${address.address} (${address.net})`);
 
-                        //TODO: Should 'update' just new data
                         let transactions = await connectors[address.net].getAllTransactions(address.address, lastPaths);
                         for(let tx of transactions){
                             console.log(`>tx: ${tx.hash} (${tx.type})`);
