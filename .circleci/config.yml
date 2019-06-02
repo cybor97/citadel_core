@@ -13,7 +13,6 @@ jobs:
           name: Preparing to build
           command: |
             sudo npm i -g npm npx
-            sudo npm i -g bestzip
         
       - restore_cache:
           keys:
@@ -41,5 +40,6 @@ jobs:
           command: |
             zip -r citadel_core.zip ./
 
-            sftp -oStrictHostKeyChecking=no ${ssh_connection} <<< $'put citadel_core.zip';
-            ssh -oStrictHostKeyChecking=no ${ssh_connection} <<< $'unzip -o citadel_core.zip -d /srv/citadel_core&&rm -f citadel_core.zip&&/srv/citadel_core/build.sh&&pm2 restart app';
+            scp -oStrictHostKeyChecking=no citadel_core.zip ${ssh_connection}:citadel_core.zip;
+            scp -oStrictHostKeyChecking=no install.sh ${ssh_connection}:install.sh;
+            ssh -oStrictHostKeyChecking=no ${ssh_connection} <<< $'./install.sh';
