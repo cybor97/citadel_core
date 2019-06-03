@@ -48,7 +48,11 @@ class ORBS extends ETHToken {
         let data = (await axios.get(
             `${this.apiUrlVotingProxy}/rewards/${addressClean}`
         )).data;
-
+        
+        //FIXME: Remove
+        //TODO: Implement the way to disable specific connector/set update interval
+        return [];
+        
         return [{
                 from: null,
                 to: addressClean,
