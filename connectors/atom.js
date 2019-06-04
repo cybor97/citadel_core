@@ -110,9 +110,11 @@ class ATOM extends BaseConnector {
     }
 
     calculateAmount(amount){
-        return amount.reduce((prev, next) => 
-            prev + (next.denom === 'uatom') ? next.amount : 0
-        , 0) / ATOM_MULTIPLIER;
+        return amount 
+            ? amount.reduce((prev, next) => 
+                prev + (next.denom === 'uatom') ? next.amount : 0
+            , 0) / ATOM_MULTIPLIER
+            : 0;
     }
 
     async getRawForAction(address, action, actionRole, offset){
