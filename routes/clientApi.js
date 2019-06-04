@@ -8,6 +8,9 @@ const Connectors = require('../connectors');
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
 
+const NET_REGEX = /^\w*$/;
+const ADDRESS_REGEX = /^[0-9a-zA-Z]*$/;
+
 router
 /**
  * @api {get} /net Get all tracked networks
@@ -74,6 +77,14 @@ router
  * @apiSuccess {Number} transactionsCount count of all matching transactions
  */
 .get('/:net/address/:address', async (req, res) => {
+    if(!NET_REGEX.test(req.params.net)){
+        return res.status(400).send('Invalid net format!');
+    }
+console.log(ADDRESS_REGEX.test(req.params.address))
+    if(!ADDRESS_REGEX.test(req.params.address)){
+        return res.status(400).send('Invalid address format!');
+    }
+
     try{
         let address = (await Address.findOrCreate({
             where: {net: req.params.net, address: req.params.address},
