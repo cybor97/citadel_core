@@ -80,7 +80,7 @@ router
     if(!NET_REGEX.test(req.params.net)){
         return res.status(400).send('Invalid net format!');
     }
-console.log(ADDRESS_REGEX.test(req.params.address))
+
     if(!ADDRESS_REGEX.test(req.params.address)){
         return res.status(400).send('Invalid address format!');
     }

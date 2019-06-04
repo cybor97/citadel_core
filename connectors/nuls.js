@@ -37,7 +37,6 @@ class NULS extends BaseConnector {
             }
 
             while(transactionsCount === null || transactions.length < transactionsCount){
-                console.log(`^${offset} - ${transactions.length}/${transactionsCount}`);
                 let transactionsListResponse = (await axios.post(this.apiUrl, {
                     'id': RPC_ID,
                     'jsonrpc': RPC_VERSION,
