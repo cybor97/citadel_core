@@ -43,7 +43,7 @@ class ATOM extends BaseConnector {
     async processSupplement(rawData, role){
         let self = this;
         return rawData
-            .filter(tx => tx.tx.value.msg && tx.tx.value.msg.length)
+            .filter(tx => tx.tx && tx.tx.value.msg && tx.tx.value.msg.length)
             .map((tx, i) => {
                 let msg = tx.tx.value.msg[0];
                 return ({

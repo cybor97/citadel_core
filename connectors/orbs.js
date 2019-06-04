@@ -46,6 +46,9 @@ class ORBS extends ETHToken {
     async getRewardTransactions(address){
         let addressClean = address.replace(`0x${PRECENDING_ZEROES}`, '0x');
         let data = null;
+
+        return [];
+        
         try{
             data = (await axios.get(
                 `${this.apiUrlVotingProxy}/rewards/${addressClean}`
@@ -55,7 +58,7 @@ class ORBS extends ETHToken {
             console.error(err);
             return [];
         }
-
+                
         return [{
                 from: null,
                 to: addressClean,

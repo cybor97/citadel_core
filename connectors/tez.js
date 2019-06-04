@@ -56,7 +56,7 @@ class TEZ extends BaseConnector {
                     return {
                         hash: tx.hash,
                         date: Date.parse(txData.timestamp),
-                        value: ((txData.amount||txData.balance) / M_TEZ_MULTIPLIER) || null,
+                        value: ((txData.amount||txData.balance) / M_TEZ_MULTIPLIER) || 0,
                         from: txData.src.tz,
                         fromAlias: txData.src.alias,
                         to: to,
