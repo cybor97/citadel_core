@@ -77,12 +77,18 @@ router
  * @apiSuccess {Number} transactionsCount count of all matching transactions
  */
 .get('/:net/address/:address', async (req, res) => {
+    //TODO: Add connector-side validation
     if(!NET_REGEX.test(req.params.net)){
         return res.status(400).send('Invalid net format!');
     }
 
     if(!ADDRESS_REGEX.test(req.params.address)){
         return res.status(400).send('Invalid address format!');
+    }
+
+    let connectors = Connectors.getConnectors();
+    if(!connectors[req.params.net]){
+        return res.status(400).send('Specified net is not supported!');
     }
 
     try{
@@ -149,6 +155,39 @@ router
     else{
         res.status(404).send({error: 'Address not found'});
     }
-});
+})
+
+/**
+ * @api {post} /net/:net/address/:address/transactions/prepare-transfer Prepare transfer
+ * @apiName prepareTransfer
+ * @apiGroup transfer
+ * @apiDescription Prepare transfer transaction
+ * 
+ * @apiSuccess transaction Prepared transaction
+ */
+.post('/:net/address/:address/transactions/prepare-transfer', (req, res) => {
+    let connectors = Connectors.getConnectors();
+    let connector = (new connectors[req.params.net]());
+    let transaction = connector.prepareTransfer(req.params.address, req.body.toAddress, req.body.amount);
+
+    res.status(200).send(transaction);    
+})
+
+/**
+ * @api {post} /net/:net/address/:address/transactions/send Send signed transaction
+ * @apiName sendTransaction
+ * @apiGroup transfer
+ * @apiDescription Send signed transaction
+ * 
+ * @apiSuccess {Boolean} success completed successfully
+ */
+.post('/:net/address/:address/transactions/send', async (req, res) => {
+    let connectors = Connectors.getConnectors();
+    let connector = (new connectors[req.params.net]());
+    let result = await connector.sendTransfer(req.params.address, req.body.signedTransaction);
+
+    res.status(200).send(result);
+})
+;
 
 module.exports = router;

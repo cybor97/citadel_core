@@ -1,9 +1,12 @@
 const axios = require('axios');
+const Web3 = require('web3');
+
 const BaseConnector = require('./baseConnector');
+const config =  require('../config')
 
 const VALUE_FEE_MULTIPLIER = Math.pow(10, 18);
 const PRECENDING_ZEROES = '0'.repeat(24);
-
+  
 class ETHToken extends BaseConnector {
     //FIXME: Consider re-implement with RPCs eth_getLogs&eth_getTransactionByHash
     async getTransactionsForContractMethod(contractHash, methodTopic, type, address, topic, fromBlock = null){
@@ -39,7 +42,25 @@ class ETHToken extends BaseConnector {
                     originalOpType: 'transaction'
                 })
             });
-    }    
+    }
+
+    prepareTransfer(fromAddress, toAddress, amount){
+        let web3 = new Web3(`http://${config.parity.ip}:8545`);
+        let contractAddress = this.getTransferContractAddress();
+        let contract = new web3.eth.Contract(this.getTransferABI(), contractAddress);
+        let transferData = contract.methods.transferFrom(fromAddress, toAddress, amount).encodeABI();
+        let transfer = {to: contractAddress, data: transferData};
+        return transfer;
+    }
+
+
+    async sendTransfer(address, signedTransaction){
+        let web3 = new Web3(`http://${config.parity.ip}:8545`);
+
+        //TODO: Add address validation
+        await new Promise(resolve => web3.eth.sendSignedTransaction(signedTransaction).on('receipt', resolve));
+    }
+    
 }
 
 module.exports = ETHToken;
