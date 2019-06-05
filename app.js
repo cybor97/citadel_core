@@ -14,7 +14,9 @@ const app = express();
 
 app
   .use(bodyparser.json())
-  .use(bodyparser.urlencoded())
+  .use(bodyparser.urlencoded({
+    extended: true
+  }))
   .use('/doc', express.static(path.join(__dirname, 'doc')))
   .use('/net', clientApi);
 

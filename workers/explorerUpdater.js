@@ -23,7 +23,7 @@ class ExplorerUpdater {
     static init(){
         this.initConnectors();
         let connectors = this.connectors;
-        //TODO: Re-implement: should run as different instance with cron
+        //TODO: Re-implement: should run as different instances(best: 1-app, 1-updater, N-workers)
         Promise.resolve().then(async () => {
             while(true){
                 try{
@@ -70,7 +70,7 @@ class ExplorerUpdater {
                     }
                 }
                 catch(err){
-                    console.log(err);
+                    console.error(err);
                 }
             }
         });
