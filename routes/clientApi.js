@@ -163,9 +163,12 @@ router
  * @apiGroup transfer
  * @apiDescription Prepare transfer transaction
  * 
+ * @apiParam {String} toAddress Target address 
+ * @apiParam {Number} amount    Transfer amount 
+ * 
  * @apiSuccess transaction Prepared transaction
  */
-.post('/:net/address/:address/transactions/prepare-transfer', (req, res) => {
+.post('/:net/address/:address/transactions/prepare-transfer', async (req, res) => {
     let connectors = Connectors.getConnectors();
     let connector = (new connectors[req.params.net]());
     let transaction = connector.prepareTransfer(req.params.address, req.body.toAddress, req.body.amount);
@@ -179,13 +182,15 @@ router
  * @apiGroup transfer
  * @apiDescription Send signed transaction
  * 
+ * @apiParam {String} signedTransaction Signed transaction 
+ * 
  * @apiSuccess {Boolean} success completed successfully
  */
 .post('/:net/address/:address/transactions/send', async (req, res) => {
     let connectors = Connectors.getConnectors();
     let connector = (new connectors[req.params.net]());
     let result = await connector.sendTransfer(req.params.address, req.body.signedTransaction);
-
+    
     res.status(200).send(result);
 })
 ;
