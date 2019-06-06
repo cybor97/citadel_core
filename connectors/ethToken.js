@@ -58,9 +58,12 @@ class ETHToken extends BaseConnector {
         let web3 = new Web3(`http://${config.parity.ip}:8545`);
 
         //TODO: Add address validation
-        await new Promise(resolve => web3.eth.sendSignedTransaction(signedTransaction).on('receipt', resolve));
+        await new Promise((resolve, reject) => 
+            web3.eth.sendSignedTransaction(signedTransaction)
+                .on('receipt', resolve)
+                .on('error', reject)
+        );
     }
-    
 }
 
 module.exports = ETHToken;
