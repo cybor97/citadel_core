@@ -22,13 +22,16 @@ class ORBS extends ETHToken {
             address = address.replace('0x', `0x${PRECENDING_ZEROES}`);
         }
 
-        let supplementFromBlock = null, delegateFromBlock = null;
+        let supplementFromBlock = null, delegateFromBlock = null, rewardLastUpdate = null;
         for(let tx of lastPaths){
             if(tx.type === 'supplement' && tx.path){
                 supplementFromBlock = JSON.parse(tx.path).blockNumber;
             }
             if(tx.type === 'delegation' && tx.path){
                 delegateFromBlock = JSON.parse(tx.path).blockNumber;
+            }
+            if(tx.type === 'payment' && tx.path){
+                rewardLastUpdate = JSON.parse(tx.path).updatedAt;
             }
         }
 
@@ -39,16 +42,19 @@ class ORBS extends ETHToken {
             await this.getTransferTransactions(address, 'topic1', supplementFromBlock),
             await this.getTransferTransactions(address, 'topic2', supplementFromBlock),
 
-            await this.getRewardTransactions(address)
+            await this.getRewardTransactions(address, rewardLastUpdate)
         );
     }
 
-    async getRewardTransactions(address){
+    async getRewardTransactions(address, rewardLastUpdate = null){
         let addressClean = address.replace(`0x${PRECENDING_ZEROES}`, '0x');
         let data = null;
 
-        return [];
-        
+        //TODO: Review, should be taken from config.
+        if(rewardLastUpdate !== null && (Date.now() - rewardLastUpdate) < 259200000/*3d*/){
+            return [];
+        }
+      
         try{
             data = (await axios.get(
                 `${this.apiUrlVotingProxy}/rewards/${addressClean}`
@@ -67,7 +73,7 @@ class ORBS extends ETHToken {
                 value: data.delegatorReward,
                 fee: 0,
                 type: 'payment',
-                path: null,
+                path: JSON.stringify({updatedAt: Date.now()}),
                 originalOpType: 'delegatorReward',
 
                 forceUpdate: true
@@ -79,7 +85,7 @@ class ORBS extends ETHToken {
                 value: data.guardianReward,
                 fee: 0, 
                 type: 'payment',
-                path: null,
+                path: JSON.stringify({updatedAt: Date.now()}),
                 originalOpType: 'guardianReward',
 
                 forceUpdate: true
@@ -91,7 +97,7 @@ class ORBS extends ETHToken {
                 value: data.validatorReward,
                 fee: 0,
                 type: 'payment',
-                path: null,
+                path: JSON.stringify({updatedAt: Date.now()}),
                 originalOpType: 'validatorReward',
 
                 forceUpdate: true
