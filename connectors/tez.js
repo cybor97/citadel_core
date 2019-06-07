@@ -24,6 +24,7 @@ class TEZ extends BaseConnector {
      */
     async getAllTransactions(address, lastPaths){
         let result = {};
+        let delegatorsAddresses = [];
 
         for(let opType of OP_TYPES){
             let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
@@ -53,6 +54,10 @@ class TEZ extends BaseConnector {
                     let txData = tx.type.operations[0];
                     let toField = txData.destination || txData.delegate || txData.tz1;
                     let to = toField ? toField.tz : null;
+                    if(opType.type == 'delegation' && delegatorsAddresses.indexOf(to) === -1){
+                        delegatorsAddresses.push(to);
+                    }
+
                     return {
                         hash: tx.hash,
                         date: Date.parse(txData.timestamp),
@@ -74,12 +79,12 @@ class TEZ extends BaseConnector {
         }
 
         //Unprocessed payments/conclusions are supplements by default
-        this.processPayment([].concat(result.supplement, result.origination||[]));
+        this.processPayment([].concat(result.supplement, result.origination||[]), delegatorsAddresses);
 
         return [].concat(...Object.values(result));
     }
 
-    async processPayment(transactions){
+    async processPayment(transactions, delegatorsAddresses){
         let txData = transactions.reduce((data, tx) => {
             //TODO: Review
             if(data[tx.fromAlias] || tx.type === 'origination'){
@@ -108,7 +113,7 @@ class TEZ extends BaseConnector {
                     let countOk = 0;
                     for(let i = 1; i < dates.length; i++){
                         if(Math.abs((dates[i] - dates[i - 1]) - REWARDS_INTERVAL) <= THRESHOLD){
-                            if(++countOk >= 3){
+                            if(++countOk >= 3 && delegatorsAddresses.indexOf(key) != -1){
                                 break;
                             }
                         }
