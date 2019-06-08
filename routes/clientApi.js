@@ -160,7 +160,7 @@ router
 /**
  * @api {post} /net/:net/address/:address/transactions/prepare-transfer Prepare transfer
  * @apiName prepareTransfer
- * @apiGroup transfer
+ * @apiGroup sendTransaction
  * @apiDescription Prepare transfer transaction
  * 
  * @apiParam {String} toAddress Target address 
@@ -177,9 +177,27 @@ router
 })
 
 /**
+ * @api {post} /net/:net/address/:address/transactions/prepare-delegation Prepare delegation
+ * @apiName prepareDelegation
+ * @apiGroup sendTransaction
+ * @apiDescription Prepare delegation transaction
+ * 
+ * @apiParam {String} toAddress Target address 
+ * 
+ * @apiSuccess transaction Prepared transaction
+ */
+.post('/:net/address/:address/transactions/prepare-delegation', async (req, res) => {
+    let connectors = Connectors.getConnectors();
+    let connector = (new connectors[req.params.net]());
+    let transaction = connector.prepareDelegation(req.params.address, req.body.toAddress);
+
+    res.status(200).send(transaction);    
+})
+
+/**
  * @api {post} /net/:net/address/:address/transactions/send Send signed transaction
  * @apiName sendTransaction
- * @apiGroup transfer
+ * @apiGroup sendTransaction
  * @apiDescription Send signed transaction
  * 
  * @apiParam {String} signedTransaction Signed transaction 
@@ -189,7 +207,7 @@ router
 .post('/:net/address/:address/transactions/send', async (req, res) => {
     let connectors = Connectors.getConnectors();
     let connector = (new connectors[req.params.net]());
-    let result = await connector.sendTransfer(req.params.address, req.body.signedTransaction);
+    let result = await connector.sendTransaction(req.params.address, req.body.signedTransaction);
     
     res.status(200).send(result);
 })
