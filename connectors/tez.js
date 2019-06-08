@@ -16,13 +16,26 @@ class TEZ extends BaseConnector {
     constructor(){
         super();
         this.apiUrl = 'https://api6.tzscan.io/v3';
+        this.bakingBadUrl = 'https://baking-bad.org/js/app.9069205c.js';
+    }
+
+    async getServiceAddresses(){
+        let data = (await axios.get(this.bakingBadUrl)).data;
+        let tzAddressMatches = data.match(/tz([a-zA-Z0-9]{34})/g);
+        let uniqueMatches = [];
+        for(let address of tzAddressMatches){
+            if(uniqueMatches.indexOf(address) === -1){
+                uniqueMatches.push(address);
+            }
+        }
+        return uniqueMatches;
     }
 
     /**
      * Get all transactions for address
      * @param {String} address 
      */
-    async getAllTransactions(address, lastPaths){
+    async getAllTransactions(address, lastPaths, serviceAddresses){
         let result = {};
 
         for(let opType of OP_TYPES){
@@ -74,15 +87,15 @@ class TEZ extends BaseConnector {
         }
 
         //Unprocessed payments/conclusions are supplements by default
-        this.processPayment([].concat(result.supplement, result.origination||[]));
+        this.processPayment([].concat(result.supplement, result.origination||[]), serviceAddresses);
 
         return [].concat(...Object.values(result));
     }
 
-    async processPayment(transactions){
+    async processPayment(transactions, serviceAddresses){
         let txData = transactions.reduce((data, tx) => {
             //TODO: Review
-            if(data[tx.fromAlias] || tx.type === 'origination'){
+            if(data[tx.fromAlias] || tx.type === 'origination' || serviceAddresses.indexOf(tx.from) !== -1){
                 data[tx.from] = -1;
             }
             if(data[tx.fromAlias] !== -1){
@@ -98,27 +111,27 @@ class TEZ extends BaseConnector {
 
         let rewardAddresses = Object.keys(txData)
             .filter(key => {
-                let dates = txData[key];
+                // let dates = txData[key];
                 if(txData[key] === -1){
                     return true;
                 }
 
-                if(dates.length >= MIN_CONFIDENCE_COUNT){
-                    dates.sort();
-                    let countOk = 0;
-                    for(let i = 1; i < dates.length; i++){
-                        if(Math.abs((dates[i] - dates[i - 1]) - REWARDS_INTERVAL) <= THRESHOLD){
-                            if(++countOk >= 3){
-                                break;
-                            }
-                        }
-                        else {
-                            countOk = 0;
-                        };
-                    }
+                // if(dates.length >= MIN_CONFIDENCE_COUNT){
+                //     dates.sort();
+                //     let countOk = 0;
+                //     for(let i = 1; i < dates.length; i++){
+                //         if(Math.abs((dates[i] - dates[i - 1]) - REWARDS_INTERVAL) <= THRESHOLD){
+                //             if(++countOk >= 3){
+                //                 break;
+                //             }
+                //         }
+                //         else {
+                //             countOk = 0;
+                //         };
+                //     }
 
-                    return countOk >= 3;
-                }
+                //     return countOk >= 3;
+                // }
                 return false;
             });
         transactions.forEach(tx=>{

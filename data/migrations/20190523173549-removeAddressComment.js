@@ -2,7 +2,6 @@
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    console.log(queryInterface)
     return queryInterface.removeColumn('addresses', 'comment');
   },
 

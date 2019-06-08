@@ -29,6 +29,11 @@ const Address = connection.define('address', {
             notEmpty: true
         }
     },
+    isService: {
+        type: sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: 0
+    },
     created: {
         type: sequelize.BIGINT,
         allowNull: false

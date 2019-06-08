@@ -3,7 +3,7 @@
  */
 const Connectors = require('../connectors');
 
-const sequelize = require('../data').getConnection();
+const sequelizeConnection = require('../data').getConnection();
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
 
@@ -29,18 +29,58 @@ class ExplorerUpdater {
                 try{
                     let addresses = await Address.findAll({
                         limit: 1,
-                        order: [['updated', 'asc'], ['created', 'desc']]
+                        order: [['updated', 'asc'], ['created', 'desc']],
+                        where: {
+                            isService: false
+                        }
+                    });
+                    let serviceAddresses = await Address.findAll({
+                        order: [['created', 'desc']],
+                        where: {
+                            isService: true
+                        }
                     });
 
                     if(addresses.length > 0){
                         let address = addresses[0];
-                        let lastPaths = await sequelize.query(LAST_PATHS_QUERY, {
+                        let lastPaths = await sequelizeConnection.query(LAST_PATHS_QUERY, {
                             replacements: {addressId: address.id},
-                            type: sequelize.QueryTypes.SELECT
+                            type: sequelizeConnection.QueryTypes.SELECT
                         });
-                        console.log(`Updating ${address.address} (${address.net})`);
+                        let connector = await connectors[address.net];
+                        if(serviceAddresses.length === 0 
+                            || Date.now() - serviceAddresses[0].updated > config.bakingBadUpdateInterval){
+                            if(connector.getServiceAddresses){
+                                let newServiceAddresses = await connector.getServiceAddresses();
+                                for(let newServiceAddress of newServiceAddresses){
+                                    let created = await Address.findOrCreate({
+                                        where: {address: newServiceAddress, net: address.net},
+                                        defaults: {
+                                            net: address.net,
+                                            currency: address.currency,
+                                            address: newServiceAddress,
+                                            isService: true,
+                                            created: Date.now(),
+                                            updated: Date.now()
+                                        }
+                                    });
+                                    if(!created){
+                                        Address.update({
+                                            updated: Date.now()
+                                        }, {
+                                            where: {address: newServiceAddress, net: address.net},
+                                        });
+                                    }
+                                }
+                                if(serviceAddresses.length === 0 && newServiceAddresses.length !== 0){
+                                    serviceAddresses = newServiceAddresses.map(c => ({address: c}));
+                                }
+                            }
+                        }
 
-                        let transactions = await connectors[address.net].getAllTransactions(address.address, lastPaths);
+                        console.log(`Updating ${address.address} (${address.net})`);
+                        let transactions = await connector.getAllTransactions(address.address, lastPaths, serviceAddresses.map(c => c.address));
+
                         for(let tx of transactions){
                             console.log(`>tx: ${tx.hash} (${tx.type})`);
                             let forceUpdate = tx.forceUpdate;

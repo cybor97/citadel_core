@@ -18,7 +18,10 @@ if(!fs.existsSync(configFilename)){
 }
 
 module.exports = Object.assign({
-        updateInterval: 60000
+        //1m
+        updateInterval: 60000,
+        //1d
+        bakingBadUpdateInterval: 86400000
     }, 
     JSON.parse(fs.readFileSync(configFilename))
 );

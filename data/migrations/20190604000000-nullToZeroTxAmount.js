@@ -2,7 +2,7 @@
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    queryInterface.bulkUpdate('transactions', {value: 0}, {value: null});
+    return queryInterface.bulkUpdate('transactions', {value: 0}, {value: null});
   },
 
   down: (queryInterface, Sequelize) => {
