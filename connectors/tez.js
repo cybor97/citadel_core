@@ -21,7 +21,8 @@ class TEZ extends BaseConnector {
 
     async getServiceAddresses(){
         let data = (await axios.get(this.bakingBadUrl)).data;
-        let tzAddressMatches = data.match(/tz([a-zA-Z0-9]{34})/g);
+        let tzAddressMatches = data.match(/(tz|KT)([a-zA-Z0-9]{34}): *{ *name/g)
+                                   .map(c => c.match(/(tz|KT)([a-zA-Z0-9]{34})/)[0]);
         let uniqueMatches = [];
         for(let address of tzAddressMatches){
             if(uniqueMatches.indexOf(address) === -1){
