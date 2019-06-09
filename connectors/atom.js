@@ -10,6 +10,10 @@ class ATOM extends BaseConnector {
         this.apiUrl = 'https://stargate.cosmos.network/txs';
     }
 
+    validateAddress(address){
+        return !!address.match(/^cosmos[a-z0-9]*$/);
+    }
+
     /**
      * Get all transactions for address
      * @param {String} address 

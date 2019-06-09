@@ -1,9 +1,9 @@
 const axios = require('axios');
 const BaseConnector = require('./baseConnector');
 
-const THRESHOLD = 1000 * 60 * 60 * 12;//6 hours in ms
-const REWARDS_INTERVAL = 1000 * 60 * 60 * 24 * 3;//3 days in ms
-const MIN_CONFIDENCE_COUNT = 3;//tx count with date diff <= THRESHOLD
+// const THRESHOLD = 1000 * 60 * 60 * 12;//6 hours in ms
+// const REWARDS_INTERVAL = 1000 * 60 * 60 * 24 * 3;//3 days in ms
+// const MIN_CONFIDENCE_COUNT = 3;//tx count with date diff <= THRESHOLD
 const M_TEZ_MULTIPLIER = 1000000;
 const QUERY_COUNT = 50;
 const OP_TYPES = [
@@ -17,6 +17,10 @@ class TEZ extends BaseConnector {
         super();
         this.apiUrl = 'https://api6.tzscan.io/v3';
         this.bakingBadUrl = 'https://baking-bad.org/js/app.9069205c.js';
+    }
+
+    validateAddress(address){
+        return !!address.match(/^(tz|KT)[a-zA-Z0-9]*$/);
     }
 
     async getServiceAddresses(){

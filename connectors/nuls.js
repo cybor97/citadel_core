@@ -19,6 +19,10 @@ class NULS extends BaseConnector {
         this.apiUrl = 'https://api.nuls.io';
     }
 
+    validateAddress(address){
+        return !!address.match(/^N[a-zA-Z0-9]*$/);
+    }
+
     /**
      * Get all transactions for address
      * @param {String} address 

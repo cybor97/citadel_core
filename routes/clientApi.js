@@ -77,18 +77,18 @@ router
  * @apiSuccess {Number} transactionsCount count of all matching transactions
  */
 .get('/:net/address/:address', async (req, res) => {
-    //TODO: Add connector-side validation
     if(!NET_REGEX.test(req.params.net)){
         return res.status(400).send('Invalid net format!');
-    }
-
-    if(!ADDRESS_REGEX.test(req.params.address)){
-        return res.status(400).send('Invalid address format!');
     }
 
     let connectors = Connectors.getConnectors();
     if(!connectors[req.params.net]){
         return res.status(400).send('Specified net is not supported!');
+    }
+
+    let connector = new connectors[req.params.net]();
+    if(!ADDRESS_REGEX.test(req.params.address) || !connector.validateAddress(req.params.address)){
+        return res.status(400).send('Invalid address format!');
     }
 
     try{
@@ -115,7 +115,6 @@ router
             whereParams.date = {[sequelize.Op.lte]: req.query.date_to};
         }
         
-        //FIXME: Add excludeZeroes param
         if(req.params.net === 'orbs'){
             whereParams.value = {[sequelize.Op.ne]: 0};
         }

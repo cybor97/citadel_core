@@ -8,6 +8,10 @@ const VALUE_FEE_MULTIPLIER = Math.pow(10, 18);
 const PRECENDING_ZEROES = '0'.repeat(24);
   
 class ETHToken extends BaseConnector {
+    validateAddress(address){
+        return !!address.match(/^0x[a-zA-Z0-9]*$/);
+    }
+
     //FIXME: Consider re-implement with RPCs eth_getLogs&eth_getTransactionByHash
     async getTransactionsForContractMethod(contractHash, methodTopic, type, address, topic, fromBlock = null){
         return (await axios.get(this.apiUrl, {
