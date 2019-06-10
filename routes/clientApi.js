@@ -104,7 +104,8 @@ router
             raw: true
         }))[0];
 
-        let whereParams = {[sequelize.Op.or]: [{from: req.params.address}, {to: req.params.address}]};
+        // let whereParams = {[sequelize.Op.or]: [{from: req.params.address}, {to: req.params.address}]};
+        let whereParams = {};
         if(req.query.currency){
             whereParams.currency = req.query.currency;
         }
@@ -123,7 +124,8 @@ router
             attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment'],
             where: whereParams,
             offset: req.query.offset || null,
-            limit: req.query.limit || null
+            limit: req.query.limit || null,
+            include: [{model: Address, where: {address: req.params.address}}]
         });
         address.transactions = transactions.rows.map(tx => tx.dataValues);
         address.transactionsCount = transactions.count;
