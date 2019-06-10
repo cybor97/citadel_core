@@ -15,7 +15,7 @@ const OP_TYPES = [
 class TEZ extends BaseConnector {
     constructor(){
         super();
-        this.apiUrl = 'https://api6.tzscan.io/v3';
+        this.apiUrl = 'https://api1.tzscan.io/v3';
         this.bakingBadUrl = 'https://baking-bad.org/js/app.9069205c.js';
     }
 
@@ -98,49 +98,8 @@ class TEZ extends BaseConnector {
     }
 
     async processPayment(transactions, serviceAddresses){
-        let txData = transactions.reduce((data, tx) => {
-            //TODO: Review
-            if(data[tx.fromAlias] || tx.type === 'origination' || serviceAddresses.indexOf(tx.from) !== -1){
-                data[tx.from] = -1;
-            }
-            if(data[tx.fromAlias] !== -1){
-                if(data[tx.from] === undefined){
-                    data[tx.from] = [];
-                }
-                if(data[tx.from] !== -1){
-                    data[tx.from].push(tx.date);
-                }
-            }
-            return data;
-        }, {});
-
-        let rewardAddresses = Object.keys(txData)
-            .filter(key => {
-                // let dates = txData[key];
-                if(txData[key] === -1){
-                    return true;
-                }
-
-                // if(dates.length >= MIN_CONFIDENCE_COUNT){
-                //     dates.sort();
-                //     let countOk = 0;
-                //     for(let i = 1; i < dates.length; i++){
-                //         if(Math.abs((dates[i] - dates[i - 1]) - REWARDS_INTERVAL) <= THRESHOLD){
-                //             if(++countOk >= 3){
-                //                 break;
-                //             }
-                //         }
-                //         else {
-                //             countOk = 0;
-                //         };
-                //     }
-
-                //     return countOk >= 3;
-                // }
-                return false;
-            });
-        transactions.forEach(tx=>{
-            if(rewardAddresses.indexOf(tx.from) != -1){
+        transactions.forEach(tx => {
+            if(tx.fromAlias || tx.type === 'origination' || serviceAddresses.indexOf(tx.from) !== -1){
                 tx.type = 'payment';
             }
         });
