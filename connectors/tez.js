@@ -102,6 +102,9 @@ class TEZ extends BaseConnector {
             if(tx.fromAlias || serviceAddresses.indexOf(tx.from) !== -1){
                 tx.type = 'payment';
             }
+            else if(tx.type == 'origination'){
+                tx.type = 'supplement';
+            }
         });
     }
 }
