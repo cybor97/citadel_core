@@ -99,7 +99,7 @@ class TEZ extends BaseConnector {
 
     async processPayment(transactions, serviceAddresses){
         transactions.forEach(tx => {
-            if(tx.fromAlias || tx.type === 'origination' || serviceAddresses.indexOf(tx.from) !== -1){
+            if(tx.fromAlias || serviceAddresses.indexOf(tx.from) !== -1){
                 tx.type = 'payment';
             }
         });
