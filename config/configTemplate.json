@@ -1,0 +1,9 @@
+{
+    "host": "<mysqlHost>",
+    "database": "<mysqlDB>",
+    "username": "<mysqlUsername>",
+    "password": "<mysqlPassword>",
+    "dialect": "mysql",
+    "parity":{ "ip": "<parityIp>", "port": "<parityPort>" },
+    "tezos":{ "ip": "<tezosIp>", "port": "<tezosPort>" }
+}
