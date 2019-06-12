@@ -172,7 +172,7 @@ router
 .post('/:net/address/:address/transactions/prepare-transfer', async (req, res) => {
     let connectors = Connectors.getConnectors();
     let connector = (new connectors[req.params.net]());
-    let transaction = connector.prepareTransfer(req.params.address, req.body.toAddress, req.body.amount);
+    let transaction = await connector.prepareTransfer(req.params.address, req.body.toAddress, req.body.amount);
 
     res.status(200).send(transaction);    
 })
@@ -190,7 +190,7 @@ router
 .post('/:net/address/:address/transactions/prepare-delegation', async (req, res) => {
     let connectors = Connectors.getConnectors();
     let connector = (new connectors[req.params.net]());
-    let transaction = connector.prepareDelegation(req.params.address, req.body.toAddress);
+    let transaction = await connector.prepareDelegation(req.params.address, req.body.toAddress);
 
     res.status(200).send(transaction);    
 })

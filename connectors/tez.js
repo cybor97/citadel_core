@@ -1,9 +1,8 @@
 const axios = require('axios');
+const eztz = require('eztz.js');
 const BaseConnector = require('./baseConnector');
+const config = require('../config');
 
-// const THRESHOLD = 1000 * 60 * 60 * 12;//6 hours in ms
-// const REWARDS_INTERVAL = 1000 * 60 * 60 * 24 * 3;//3 days in ms
-// const MIN_CONFIDENCE_COUNT = 3;//tx count with date diff <= THRESHOLD
 const M_TEZ_MULTIPLIER = 1000000;
 const QUERY_COUNT = 50;
 const OP_TYPES = [
@@ -17,6 +16,10 @@ class TEZ extends BaseConnector {
         super();
         this.apiUrl = 'https://api1.tzscan.io/v3';
         this.bakingBadUrl = 'https://baking-bad.org/js/app.9069205c.js';
+
+        let rpcUrl = `http://${config.tezos.ip}:${config.tezos.port}`;
+        eztz.eztz.node.setProvider(rpcUrl);
+        this.eztzInstance = eztz.eztz;
     }
 
     validateAddress(address){
@@ -106,6 +109,31 @@ class TEZ extends BaseConnector {
                 tx.type = 'supplement';
             }
         });
+    }
+
+    async prepareTransfer(fromAddress, toAddress, amount){
+        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+            kind: 'transaction',
+            fee: '1420',
+            gas_limit: '10100',
+            storage_limit: '0',
+            amount: (Number(amount) * M_TEZ_MULTIPLIER).toString(),
+            destination: toAddress
+        }, false);
+    }
+
+    async prepareDelegation(fromAddress, toAddress){
+        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+            kind: 'delegation',
+            fee: '1420',
+            gas_limit: '10100',
+            storage_limit: '0',
+            delegate: toAddress
+        }, false).catch(err => err);
+    }
+
+    async sendTransaction(address, signedTransaction){
+        return await this.eztzInstance.rpc.inject(signedTransaction.opOb, signedTransaction.sopbytes);
     }
 }
 
