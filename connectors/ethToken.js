@@ -49,16 +49,16 @@ class ETHToken extends BaseConnector {
     }
 
     prepareTransfer(fromAddress, toAddress, amount){
-        let web3 = new Web3(`http://${config.parity.ip}:8545`);
+        let web3 = new Web3(`http://${config.parity.ip}:${config.parity.port}`);
         let contractAddress = this.getTransferContractAddress();
         let contract = new web3.eth.Contract(this.getTransferABI(), contractAddress);
-        let transferData = contract.methods.transferFrom(fromAddress, toAddress, amount).encodeABI();
+        let transferData = contract.methods.transferFrom(fromAddress, toAddress, Number(amount) * VALUE_FEE_MULTIPLIER).encodeABI();
         let transfer = {to: contractAddress, data: transferData};
         return transfer;
     }
 
     prepareDelegation(fromAddress, toAddress){
-        let web3 = new Web3(`http://${config.parity.ip}:8545`);
+        let web3 = new Web3(`http://${config.parity.ip}:${config.parity.port}`);
         let contractAddress = this.getDelegationContractAddress();
         let contract = new web3.eth.Contract(this.getDelegateABI(), contractAddress);
         let delegateData = contract.methods.delegate(toAddress).encodeABI();
