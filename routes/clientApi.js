@@ -14,7 +14,7 @@ const ADDRESS_REGEX = /^[0-9a-zA-Z]*$/;
 router
 /**
  * @api {get} /net Get all tracked networks
- * @apiName getAddresses
+ * @apiName getNets
  * @apiGroup net
  * @apiDescription Get all tracked networks
  *  
@@ -23,6 +23,29 @@ router
 .get('/', (req, res) => {
     res.status(200).send(Object.keys(Connectors.getConnectors()));
 })
+
+/**
+ * @api {get} /net/:net/info Get net info
+ * @apiName getNetInfo
+ * @apiGroup net
+ * @apiDescription Get specific network info
+ *
+ * @apiSuccess {Array} result [{"address": "0x1234", "updated": 1557868521022}]
+ */
+.get('/:net/info', async (req, res) => {
+    res.status(200).send({
+        priceUsd: 0,
+        priceBtc: 0,
+        priceUsdDelta24: 0,
+        priceBtcDelta24: 0,
+        yield: 0,
+        marketCap: 0,
+        circulatingSupply: 0,
+        stakingRate: 0,
+        unbondingPeriod: 0
+    });
+}) 
+
 
 /**
  * @api {get} /net/:net/address Get all tracked addresses
