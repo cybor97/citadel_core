@@ -15,7 +15,7 @@ class TEZ extends BaseConnector {
     constructor(){
         super();
         this.apiUrl = 'https://api1.tzscan.io/v3';
-        this.bakingBadUrl = 'https://baking-bad.org/js/app.9069205c.js';
+        this.bakingBadUrl = 'https://baking-bad.org/js/app.4215520e.js';
 
         let rpcUrl = `http://${config.tezos.ip}:${config.tezos.port}`;
         eztz.eztz.node.setProvider(rpcUrl);
