@@ -100,7 +100,7 @@ router
  * @apiParam {String} delegate Delegate address
  * @apiParam {String} proposal Proposal value
  * 
- * @apiSuccess {Object} {"rawTransaction": "0xfedcba987654321"}
+ * @apiSuccess {Object} result {"rawTransaction": "0xfedcba987654321"}
  */
 //Mockup for client api
 .post('/:net/voting/submit-proposal', async (req, res) => {
@@ -118,7 +118,7 @@ router
  * @apiParam {String} proposal Chosen proposal value
  * @apiParam {String} ballot Chosen ballot
  * 
- * @apiSuccess {Object} {"rawTransaction": "0xfedcba987654321"}
+ * @apiSuccess {Object} result {"rawTransaction": "0xfedcba987654321"}
  */
 //Mockup for client api
 .post('/:net/voting/submit-ballot', async (req, res) => {
