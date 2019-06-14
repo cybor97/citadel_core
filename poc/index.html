@@ -22,14 +22,17 @@
                 req.onloadend = () => {
                     console.log('response:', req.responseText);
                     let tx = JSON.parse(req.responseText);
-                    let privateKey = '0x'+privateKeyInput.value;
+                    let privateKey = privateKeyInput.value;
+                    if(!privateKey.startsWith('0x')){
+                        privateKey = '0x' + privateKey;
+                    }
                     web3js.eth.accounts.signTransaction(tx, privateKey).then(signedTx => {
                         console.log('signedTx:', signedTx);
                         
                         req.open('POST', `/net/orbs/address/${addressFromInput.value}/transactions/send`);
                         req.setRequestHeader('Content-Type', 'application/json');
                         req.send(JSON.stringify({signedTransaction: signedTx.rawTransaction}));
-                        req.onloadend = () => console.log(JSON.parse(req.responseText));
+                        req.onloadend = () => alert('Sent! Response: ' + req.responseText);
                     });
                 };
             }

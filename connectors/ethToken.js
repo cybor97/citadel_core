@@ -54,9 +54,8 @@ class ETHToken extends BaseConnector {
         let contract = new web3.eth.Contract(this.getTransferABI(), contractAddress);
         let transferData = contract.methods.transfer(toAddress, web3.utils.toHex(amount * VALUE_FEE_MULTIPLIER));
         const abi = transferData.encodeABI();
-        var block = await web3.eth.getBlock("latest");
 
-        let transfer = {to: contractAddress, data: abi, gas: block.gasLimit};
+        let transfer = {to: contractAddress, data: abi, gas: 200000/**Recommended for tokens */};
         return transfer;
     }
 
