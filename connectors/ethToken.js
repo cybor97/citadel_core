@@ -48,12 +48,13 @@ class ETHToken extends BaseConnector {
             });
     }
 
-    prepareTransfer(fromAddress, toAddress, amount){
+    async prepareTransfer(fromAddress, toAddress, amount){
         let web3 = new Web3(`http://${config.parity.ip}:${config.parity.port}`);
         let contractAddress = this.getTransferContractAddress();
         let contract = new web3.eth.Contract(this.getTransferABI(), contractAddress);
-        let transferData = contract.methods.transferFrom(fromAddress, toAddress, Number(amount) * VALUE_FEE_MULTIPLIER).encodeABI();
-        let transfer = {to: contractAddress, data: transferData};
+        let transferData = contract.methods.transfer(toAddress, web3.utils.toHex(amount * VALUE_FEE_MULTIPLIER));
+        const abi = transferData.encodeABI();
+        let transfer = {to: contractAddress, data: abi, gas: 23128};
         return transfer;
     }
 
@@ -68,9 +69,8 @@ class ETHToken extends BaseConnector {
 
     async sendTransaction(address, signedTransaction){
         let web3 = new Web3(`http://${config.parity.ip}:8545`);
-
         //TODO: Add address validation
-        await new Promise((resolve, reject) => 
+        return await new Promise((resolve, reject) => 
             web3.eth.sendSignedTransaction(signedTransaction)
                 .on('receipt', resolve)
                 .on('error', reject)
