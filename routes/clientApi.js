@@ -30,8 +30,17 @@ router
  * @apiGroup net
  * @apiDescription Get specific network info
  *
- * @apiSuccess {Array} result [{"address": "0x1234", "updated": 1557868521022}]
+ * @apiSuccess {Number} priceUsd
+ * @apiSuccess {Number} priceBtc
+ * @apiSuccess {Number} priceUsdDelta24
+ * @apiSuccess {Number} priceBtcDelta24
+ * @apiSuccess {Number} yield
+ * @apiSuccess {Number} marketCap
+ * @apiSuccess {Number} circulatingSupply
+ * @apiSuccess {Number} stakingRate
+ * @apiSuccess {Number} unbondingPeriod
  */
+//Mockup for client api
 .get('/:net/info', async (req, res) => {
     res.status(200).send({
         priceUsd: 0,
@@ -46,6 +55,75 @@ router
     });
 }) 
 
+/**
+ * @api {get} /net/:net/voting Get current voting
+ * @apiName getVoting
+ * @apiGroup vote
+ * @apiDescription Get current lasting voting
+ *
+ * @apiSuccess {String} votingId          voting ID(block number for tezos)
+ * @apiSuccess {String} votingPeriod      current voting period
+ * @apiSuccess {Object} ballots           {ballotName: sum}
+ * @apiSuccess {String} currentProposal   current voting proposal(for testing_vote in tezos)
+ * @apiSuccess {Array}  allProposals      all proposals(for proposal in tezos)
+ * @apiSuccess {Number} periodBlocksLeft  blocks to end of period
+ * @apiSuccess {Number} totalBlocksLeft   blocks to end of voting
+ * @apiSuccess {Number} periodETA         time to end of period
+ * @apiSuccess {Number} totalETA          time to end of voting
+ */
+//Mockup for client api
+.get('/:net/voting', async (req, res) => {
+    res.status(200).send({
+        votingId: '12345',
+        votingPeriod: 'testing_vote',
+        ballots: {yay: ~~(Math.random()*1000), nay: ~~(Math.random()*1000), pass: ~~(Math.random()*1000)},
+        currentProposal: 'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
+        allProposals: [
+            'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
+            'PsNa6jTtsRfbGaNhpFUjQFC17iZVpSoYXNTNM5A7c3Lji22Yf2Z',
+            'PsNa6pFUjQFC17iZVpSoYXNTNM5A7c3jTtsRfbGaNhLji22Yf2Z'
+        ],
+        periodBlocksLeft: 32768,
+        totalBlocksLeft: 131072,
+        periodETA: 1814400000,
+        totalETA: 7257600000
+    });
+}) 
+
+/**
+ * @api {post} /net/:net/voting/submit-proposal Submit proposal
+ * @apiName submitProposal
+ * @apiGroup vote
+ * @apiDescription Submit voting proposal
+ *
+ * @apiParam {String} votingId Voting ID
+ * @apiParam {String} delegate Delegate address
+ * @apiParam {String} proposal Proposal value
+ * 
+ * @apiSuccess {Boolean} success
+ */
+//Mockup for client api
+.post('/:net/voting/submit-proposal', async (req, res) => {
+    res.status(200).send({rawTransaction: '0x0123456789abcdef'});
+}) 
+
+/**
+ * @api {post} /net/:net/voting/submit-ballot Submit ballot
+ * @apiName submitBallot
+ * @apiGroup vote
+ * @apiDescription Submit voting ballot
+ *
+ * @apiParam {String} votingId Voting ID
+ * @apiParam {String} delegate Delegate address
+ * @apiParam {String} proposal Chosen proposal value
+ * @apiParam {String} ballot Chosen ballot
+ * 
+ * @apiSuccess {Boolean} success
+ */
+//Mockup for client api
+.post('/:net/voting/submit-ballot', async (req, res) => {
+    res.status(200).send({rawTransaction: '0xfedcba987654321'});
+}) 
 
 /**
  * @api {get} /net/:net/address Get all tracked addresses
