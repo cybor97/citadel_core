@@ -1,6 +1,9 @@
 version: 0.0.1
 jobs:
   build:
+    branches:
+      only:
+        - master
     docker:
       - image: circleci/node:9.11.2-stretch
 
