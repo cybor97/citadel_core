@@ -1,19 +1,18 @@
 <html>
     <head>
         <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.34/dist/web3.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/gh/ethereumjs/browser-builds/dist/ethereumjs-tx/ethereumjs-tx-1.3.3.min.js"></script>
     </head>
     <body>
         <script>
-            function signTx(){
-                let web3js = new Web3('http://99.79.51.219:8545');
+            function signTx(opType){
+                let web3js = new Web3();
                 let addressFromInput = document.getElementById('addressFromInput');
                 let addressToInput = document.getElementById('addressToInput');
                 let amountInput = document.getElementById('amountInput');
                 let privateKeyInput = document.getElementById('privateKeyInput');
 
                 let req = new XMLHttpRequest();
-                req.open('POST', `/net/orbs/address/${addressFromInput.value}/transactions/prepare-transfer`);
+                req.open('POST', `/net/orbs/address/${addressFromInput.value}/transactions/prepare-${opType}`);
                 req.setRequestHeader('Content-Type', 'application/json');
                 req.send(JSON.stringify({
                     toAddress: addressToInput.value,
@@ -28,11 +27,10 @@
                     }
                     web3js.eth.accounts.signTransaction(tx, privateKey).then(signedTx => {
                         console.log('signedTx:', signedTx);
-                        
                         req.open('POST', `/net/orbs/address/${addressFromInput.value}/transactions/send`);
                         req.setRequestHeader('Content-Type', 'application/json');
                         req.send(JSON.stringify({signedTransaction: signedTx.rawTransaction}));
-                        req.onloadend = () => alert('Sent! Response: ' + req.responseText);
+                        req.onloadend = () => alert('Sent! Hash: ' + req.responseText);
                     });
                 };
             }
@@ -43,7 +41,8 @@
             <input id="privateKeyInput" placeholder="private key"/>
             <input id="addressToInput" placeholder="address to"/>
             <input id="amountInput" placeholder="amount"/>
-            <button onclick="signTx()">Sign&Transfer</button>        
+            <button onclick="signTx('transfer')">Sign&Transfer</button>        
+            <button onclick="signTx('delegation')">Sign&Delegate</button>        
         </div>
     </body>
 </html>
