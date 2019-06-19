@@ -1,5 +1,6 @@
 const axios = require('axios');
 const ETHToken = require('./ethToken');
+const Bittrex = require('../bittrex');
 
 const DELEGATE_CONTRACT_HASH = '0x30f855afb78758Aa4C2dc706fb0fA3A98c865d2d';
 const DELEGATE_TOPIC = '0x510b11bb3f3c799b11307c01ab7db0d335683ef5b2da98f7697de744f465eacc';
@@ -130,6 +131,11 @@ class ORBS extends ETHToken {
     getDelegationContractAddress(){
         return DELEGATE_CONTRACT_HASH;
     }
+
+    async getInfo(){
+        return await Bittrex.getInfo('ORBS', 'btc-orbs');
+    }
+
 }
 
 module.exports = ORBS;

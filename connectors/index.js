@@ -5,11 +5,11 @@
 class Connectors {
     static getConnectors() {
         return {
-            tez: require('./tez'),
-            orbs: require('./orbs'),
-            iost: require('./iost'),
-            nuls: require('./nuls'),
-            atom: require('./atom')
+            tez: require('./connectors/tez'),
+            orbs: require('./connectors/orbs'),
+            iost: require('./connectors/iost'),
+            nuls: require('./connectors/nuls'),
+            atom: require('./connectors/atom')
         };
     }
 }

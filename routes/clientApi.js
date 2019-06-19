@@ -4,9 +4,11 @@
 const sequelize = require('sequelize');
 const { Router } = require('express');
 const router = Router();
+const config = require('../config');
 const Connectors = require('../connectors');
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
+const NetInfo = require('../data/models/NetInfo');
 
 const NET_REGEX = /^\w*$/;
 const ADDRESS_REGEX = /^[0-9a-zA-Z]*$/;
@@ -40,19 +42,30 @@ router
  * @apiSuccess {Number} stakingRate
  * @apiSuccess {Number} unbondingPeriod
  */
-//Mockup for client api
 .get('/:net/info', async (req, res) => {
-    res.status(200).send({
-        priceUsd: 0,
-        priceBtc: 0,
-        priceUsdDelta24: 0,
-        priceBtcDelta24: 0,
-        yield: 0,
-        marketCap: 0,
-        circulatingSupply: 0,
-        stakingRate: 0,
-        unbondingPeriod: 0
+    let connectors = Connectors.getConnectors();
+
+    if(!connectors[req.params.net]){
+        return res.status(400).send('Specified net is not supported!');
+    }
+    let connector = new connectors[req.params.net];
+
+    if(!connector.getInfo){
+        return res.status(400).send('Info for specified net is not yet supported.');
+    }
+
+    let [netInfo, created] = await NetInfo.findOrCreate({
+        where: {net: req.params.net},
+        defaults: {net: req.params.net}
     });
+
+    if(created || (Date.now() - netInfo.updatedAt > config.netInfoUpdateInterval)){
+        let newNetInfo = await connector.getInfo();
+        newNetInfo.updatedAt = Date.now();
+        netInfo = await netInfo.update(newNetInfo);
+    }
+
+    res.status(200).send(netInfo.dataValues);
 }) 
 
 /**

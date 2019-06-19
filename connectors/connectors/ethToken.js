@@ -2,7 +2,7 @@ const axios = require('axios');
 const Web3 = require('web3');
 
 const BaseConnector = require('./baseConnector');
-const config =  require('../config')
+const config =  require('../../config')
 
 const VALUE_FEE_MULTIPLIER = Math.pow(10, 18);
 const PRECENDING_ZEROES = '0'.repeat(24);

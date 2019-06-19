@@ -1,7 +1,7 @@
 const axios = require('axios');
 const eztz = require('eztz.js');
 const BaseConnector = require('./baseConnector');
-const config = require('../config');
+const config = require('../../config');
 
 const M_TEZ_MULTIPLIER = 1000000;
 const QUERY_COUNT = 50;
@@ -139,10 +139,10 @@ class TEZ extends BaseConnector {
         return await this.eztzInstance.rpc.inject(signedTransaction.opOb, signedTransaction.sopbytes);
     }
 
-    async getInfo(){
-        //https://api6.tzscan.io/v1/marketcap
-        //marketCap: total_supply*price_usd
-    }
+    // async getInfo(){
+    //     //https://api6.tzscan.io/v1/marketcap
+    //     //marketCap: total_supply*price_usd
+    // }
 }
 
 module.exports = TEZ;

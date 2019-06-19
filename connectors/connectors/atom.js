@@ -1,4 +1,5 @@
 const axios = require('axios');
+const Bittrex = require('../bittrex');
 const BaseConnector = require('./baseConnector');
 
 const ATOM_MULTIPLIER = Math.pow(10, 6);
@@ -142,6 +143,10 @@ class ATOM extends BaseConnector {
             page++;
         }
         return result;
+    }
+
+    async getInfo(){
+        return await Bittrex.getInfo('ATOM', 'btc-atom');
     }
 }
 
