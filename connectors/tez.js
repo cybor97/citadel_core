@@ -15,7 +15,7 @@ class TEZ extends BaseConnector {
     constructor(){
         super();
         this.apiUrl = 'https://api1.tzscan.io/v3';
-        this.bakingBadUrl = 'https://baking-bad.org/js/app.4215520e.js';
+        this.bakingBadUrl = 'https://baking-bad.org/';
 
         let rpcUrl = `http://${config.tezos.ip}:${config.tezos.port}`;
         eztz.eztz.node.setProvider(rpcUrl);
@@ -27,7 +27,10 @@ class TEZ extends BaseConnector {
     }
 
     async getServiceAddresses(){
-        let data = (await axios.get(this.bakingBadUrl)).data;
+        let bakingBadAppHtml = (await axios.get(this.bakingBadUrl, {responseType: 'text'})).data;
+        let bakingBadAppJsPath = bakingBadAppHtml.match(/\/js\/app\.[a-z0-9]*\.js/)[0];
+        
+        let data = (await axios.get(`${this.bakingBadUrl}/${bakingBadAppJsPath}`)).data;
         let tzAddressMatches = data.match(/(tz|KT)([a-zA-Z0-9]{34}): *{ *name/g)
                                    .map(c => c.match(/(tz|KT)([a-zA-Z0-9]{34})/)[0]);
         let uniqueMatches = [];
@@ -134,6 +137,11 @@ class TEZ extends BaseConnector {
 
     async sendTransaction(address, signedTransaction){
         return await this.eztzInstance.rpc.inject(signedTransaction.opOb, signedTransaction.sopbytes);
+    }
+
+    async getInfo(){
+        //https://api6.tzscan.io/v1/marketcap
+        //marketCap: total_supply*price_usd
     }
 }
 
