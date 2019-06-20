@@ -86,20 +86,21 @@ router
  */
 //Mockup for client api
 .get('/:net/voting', async (req, res) => {
+    let endPeriodETA = Math.random() * 3600000;
     res.status(200).send({
         votingId: '12345',
         votingPeriod: 'testing_vote',
         ballots: {yay: ~~(Math.random()*1000), nay: ~~(Math.random()*1000), pass: ~~(Math.random()*1000)},
         currentProposal: 'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
-        allProposals: [
-            'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
-            'PsNa6jTtsRfbGaNhpFUjQFC17iZVpSoYXNTNM5A7c3Lji22Yf2Z',
-            'PsNa6pFUjQFC17iZVpSoYXNTNM5A7c3jTtsRfbGaNhLji22Yf2Z'
-        ],
+        // allProposals: [
+        //     'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
+        //     'PsNa6jTtsRfbGaNhpFUjQFC17iZVpSoYXNTNM5A7c3Lji22Yf2Z',
+        //     'PsNa6pFUjQFC17iZVpSoYXNTNM5A7c3jTtsRfbGaNhLji22Yf2Z'
+        // ],
         periodBlocksLeft: 32768,
         totalBlocksLeft: 131072,
-        periodETA: 1814400000,
-        totalETA: 7257600000
+        endPeriodTime: Date.now() + endPeriodETA,
+        endVotingTime: Date.now() + endPeriodETA * 4,
     });
 }) 
 
@@ -111,7 +112,6 @@ router
  *
  * @apiParam {String} votingId Voting ID
  * @apiParam {String} delegate Delegate address
- * @apiParam {String} proposal Proposal value
  * 
  * @apiSuccess {Object} result {"rawTransaction": "0xfedcba987654321"}
  */
@@ -128,7 +128,6 @@ router
  *
  * @apiParam {String} votingId Voting ID
  * @apiParam {String} delegate Delegate address
- * @apiParam {String} proposal Chosen proposal value
  * @apiParam {String} ballot Chosen ballot
  * 
  * @apiSuccess {Object} result {"rawTransaction": "0xfedcba987654321"}
