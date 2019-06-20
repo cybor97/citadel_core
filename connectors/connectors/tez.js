@@ -140,19 +140,21 @@ class TEZ extends BaseConnector {
     }
 
     async getInfo(){
-        //https://api6.tzscan.io/v1/marketcap
-        //marketCap: total_supply*price_usd
+        let marketCapData = (await axios.get(`${this.apiUrl}/marketcap`)).data[0];
+
+        let priceUsd = marketCapData.price_usd;
+        let priceBtc = marketCapData.price_btc;
         return {
-            priceUsd: Math.random()*10000,	
-            priceBtc: Math.random(),	    
-            priceUsdDelta24: Math.random()*10,	
-            priceBtcDelta24: Math.random()/10,	
+            priceUsd: priceUsd,
+            priceBtc: priceBtc,
+            priceUsdDelta24: priceUsd * marketCapData.percent_change_24h,
+            priceBtcDelta24: priceBtc * marketCapData.percent_change_24h,
             yield: 0,
-            marketCap: Math.random()*1000000000,	
-            circulatingSupply: Math.random()*10000000,
+            marketCap: marketCapData.total_supply * priceUsd,
+            circulatingSupply: marketCapData.total_supply,
             stakingRate: 0,
-            unbondingPeriod: 0	     
-        };
+            unbondingPeriod: 0
+        }
     }
 }
 
