@@ -100,6 +100,21 @@ class NULS extends BaseConnector {
         return [].concat(...Object.values(result));
     }
 
+    async getInfo(){
+        //https://api6.tzscan.io/v1/marketcap
+        //marketCap: total_supply*price_usd
+        return {
+            priceUsd: Math.random()*10000,	
+            priceBtc: Math.random(),	    
+            priceUsdDelta24: Math.random()*10,	
+            priceBtcDelta24: Math.random()/10,	
+            yield: 0,
+            marketCap: Math.random()*1000000000,	
+            circulatingSupply: Math.random()*10000000,
+            stakingRate: 0,
+            unbondingPeriod: 0	     
+        };
+    }
 }
 
 module.exports = NULS;
