@@ -75,14 +75,13 @@ router
  * @apiDescription Get current lasting voting
  *
  * @apiSuccess {String} votingId          voting ID(block number for tezos)
- * @apiSuccess {String} votingPeriod      current voting period
+ * @apiSuccess {String} votingPeriod      current voting period(period type for tezos)
  * @apiSuccess {Object} ballots           {ballotName: sum}
  * @apiSuccess {String} currentProposal   current voting proposal(for testing_vote in tezos)
- * @apiSuccess {Array}  allProposals      all proposals(for proposal in tezos)
  * @apiSuccess {Number} periodBlocksLeft  blocks to end of period
  * @apiSuccess {Number} totalBlocksLeft   blocks to end of voting
- * @apiSuccess {Number} periodETA         time to end of period
- * @apiSuccess {Number} totalETA          time to end of voting
+ * @apiSuccess {Number} endPeriodTime     time to end of period
+ * @apiSuccess {Number} endVotingTIme     time to end of voting
  */
 //Mockup for client api
 .get('/:net/voting', async (req, res) => {
@@ -92,11 +91,6 @@ router
         votingPeriod: 'testing_vote',
         ballots: {yay: ~~(Math.random()*1000), nay: ~~(Math.random()*1000), pass: ~~(Math.random()*1000)},
         currentProposal: 'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
-        // allProposals: [
-        //     'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
-        //     'PsNa6jTtsRfbGaNhpFUjQFC17iZVpSoYXNTNM5A7c3Lji22Yf2Z',
-        //     'PsNa6pFUjQFC17iZVpSoYXNTNM5A7c3jTtsRfbGaNhLji22Yf2Z'
-        // ],
         periodBlocksLeft: 32768,
         totalBlocksLeft: 131072,
         endPeriodTime: Date.now() + endPeriodETA,
