@@ -69,6 +69,50 @@ router
 }) 
 
 /**
+ * @api {get} /net/voting Get current voting for specified networks
+ * @apiName getVoting
+ * @apiGroup vote
+ * @apiDescription Get current lasting voting for specified array of networks
+ * 
+ * @apiParam   {Array}  nets              nets, to fetch votings for
+ *
+ * @apiSuccess {String} votingId          voting ID(block number for tezos)
+ * @apiSuccess {String} votingPeriod      current voting period(period type for tezos)
+ * @apiSuccess {Object} ballots           {ballotName: sum}
+ * @apiSuccess {String} currentProposal   current voting proposal(for testing_vote in tezos)
+ * @apiSuccess {Number} periodBlocksLeft  blocks to end of period
+ * @apiSuccess {Number} totalBlocksLeft   blocks to end of voting
+ * @apiSuccess {Number} endPeriodTime     time to end of period
+ * @apiSuccess {Number} endVotingTIme     time to end of voting
+ */
+//Mockup for client api
+.get('/voting', async (req, res) => {
+    let endPeriodETA = Math.random() * 3600000;
+    let nets = req.query.nets;
+
+    if(!nets){
+        return res.status(400).send('Parameter nets should be specified!');
+    }
+
+    if(!(nets instanceof Array)){
+        return res.status(400).send('Parameter nets should be array!');
+    }
+
+    let netInfos = nets.map(c=>([{
+        votingId: '12345',
+        votingPeriod: 'testing_vote',
+        ballots: {yay: ~~(Math.random()*1000), nay: ~~(Math.random()*1000), pass: ~~(Math.random()*1000)},
+        currentProposal: 'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
+        periodBlocksLeft: 32768,
+        totalBlocksLeft: 131072,
+        endPeriodTime: Date.now() + endPeriodETA,
+        endVotingTime: Date.now() + endPeriodETA * 4,
+    }]));
+    let result = nets.reduce((prev, net, i) => (prev[net] = netInfos[i])&&prev, {});
+    res.status(200).send(result);
+})
+
+/**
  * @api {get} /net/:net/voting Get current voting
  * @apiName getVoting
  * @apiGroup vote
