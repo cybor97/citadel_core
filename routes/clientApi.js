@@ -27,6 +27,50 @@ router
 })
 
 /**
+ * @api {get} /net/:net/info Get all nets info
+ * @apiName getAllNetsInfo
+ * @apiGroup net
+ * @apiDescription Get all networks info
+ *
+ * @apiSuccess {Number} priceUsd
+ * @apiSuccess {Number} priceBtc
+ * @apiSuccess {Number} priceUsdDelta24
+ * @apiSuccess {Number} priceBtcDelta24
+ * @apiSuccess {Number} yield
+ * @apiSuccess {Number} marketCap
+ * @apiSuccess {Number} circulatingSupply
+ * @apiSuccess {Number} stakingRate
+ * @apiSuccess {Number} unbondingPeriod
+ */
+.get('/info', async (req, res) => {
+    let connectors = Connectors.getConnectors();
+
+    let nets = Object.keys(connectors);
+    let result = [];
+    for(let net of nets){
+        let connector = new connectors[net];
+
+        if(!connector.getInfo){
+            return res.status(400).send('Info for specified net is not yet supported.');
+        }
+    
+        let [netInfo, created] = await NetInfo.findOrCreate({
+            where: {net: net},
+            defaults: {net: net}
+        });
+    
+        if(created || (Date.now() - netInfo.updatedAt > config.netInfoUpdateInterval)){
+            let newNetInfo = await connector.getInfo();
+            newNetInfo.updatedAt = Date.now();
+            netInfo = await netInfo.update(newNetInfo);
+        }
+        result.push(netInfo.dataValues);
+    }
+
+    res.status(200).send(result);
+}) 
+
+/**
  * @api {get} /net/:net/info Get net info
  * @apiName getNetInfo
  * @apiGroup net
@@ -66,113 +110,6 @@ router
     }
 
     res.status(200).send(netInfo.dataValues);
-}) 
-
-/**
- * @api {get} /net/voting Get current voting for specified networks
- * @apiName getVoting
- * @apiGroup vote
- * @apiDescription Get current lasting voting for specified array of networks
- * 
- * @apiParam   {Array}  nets              nets, to fetch votings for
- *
- * @apiSuccess {String} votingId          voting ID(block number for tezos)
- * @apiSuccess {String} votingPeriod      current voting period(period type for tezos)
- * @apiSuccess {Object} ballots           {ballotName: sum}
- * @apiSuccess {String} currentProposal   current voting proposal(for testing_vote in tezos)
- * @apiSuccess {Number} periodBlocksLeft  blocks to end of period
- * @apiSuccess {Number} totalBlocksLeft   blocks to end of voting
- * @apiSuccess {Number} endPeriodTime     time to end of period
- * @apiSuccess {Number} endVotingTIme     time to end of voting
- */
-//Mockup for client api
-.get('/voting', async (req, res) => {
-    let endPeriodETA = Math.random() * 3600000;
-    let nets = req.query.nets;
-
-    if(!nets){
-        return res.status(400).send('Parameter nets should be specified!');
-    }
-
-    if(!(nets instanceof Array)){
-        return res.status(400).send('Parameter nets should be array!');
-    }
-
-    let netInfos = nets.map(c=>([{
-        votingId: '12345',
-        votingPeriod: 'testing_vote',
-        ballots: {yay: ~~(Math.random()*1000), nay: ~~(Math.random()*1000), pass: ~~(Math.random()*1000)},
-        currentProposal: 'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
-        periodBlocksLeft: 32768,
-        totalBlocksLeft: 131072,
-        endPeriodTime: Date.now() + endPeriodETA,
-        endVotingTime: Date.now() + endPeriodETA * 4,
-    }]));
-    let result = nets.reduce((prev, net, i) => (prev[net] = netInfos[i])&&prev, {});
-    res.status(200).send(result);
-})
-
-/**
- * @api {get} /net/:net/voting Get current voting
- * @apiName getVoting
- * @apiGroup vote
- * @apiDescription Get current lasting voting
- *
- * @apiSuccess {String} votingId          voting ID(block number for tezos)
- * @apiSuccess {String} votingPeriod      current voting period(period type for tezos)
- * @apiSuccess {Object} ballots           {ballotName: sum}
- * @apiSuccess {String} currentProposal   current voting proposal(for testing_vote in tezos)
- * @apiSuccess {Number} periodBlocksLeft  blocks to end of period
- * @apiSuccess {Number} totalBlocksLeft   blocks to end of voting
- * @apiSuccess {Number} endPeriodTime     time to end of period
- * @apiSuccess {Number} endVotingTIme     time to end of voting
- */
-//Mockup for client api
-.get('/:net/voting', async (req, res) => {
-    let endPeriodETA = Math.random() * 3600000;
-    res.status(200).send({
-        votingId: '12345',
-        votingPeriod: 'testing_vote',
-        ballots: {yay: ~~(Math.random()*1000), nay: ~~(Math.random()*1000), pass: ~~(Math.random()*1000)},
-        currentProposal: 'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
-        periodBlocksLeft: 32768,
-        totalBlocksLeft: 131072,
-        endPeriodTime: Date.now() + endPeriodETA,
-        endVotingTime: Date.now() + endPeriodETA * 4,
-    });
-}) 
-
-/**
- * @api {post} /net/:net/voting/submit-proposal Submit proposal
- * @apiName submitProposal
- * @apiGroup vote
- * @apiDescription Submit voting proposal
- *
- * @apiParam {String} votingId Voting ID
- * @apiParam {String} delegate Delegate address
- * 
- * @apiSuccess {Object} result {"rawTransaction": "0xfedcba987654321"}
- */
-//Mockup for client api
-.post('/:net/voting/submit-proposal', async (req, res) => {
-    res.status(200).send({rawTransaction: '0x0123456789abcdef'});
-}) 
-
-/**
- * @api {post} /net/:net/voting/submit-ballot Submit ballot
- * @apiName submitBallot
- * @apiGroup vote
- * @apiDescription Submit voting ballot
- *
- * @apiParam {String} votingId Voting ID
- * @apiParam {String} delegate Delegate address
- * @apiParam {String} ballot Chosen ballot
- * 
- * @apiSuccess {Object} result {"rawTransaction": "0xfedcba987654321"}
- */
-//Mockup for client api
-.post('/:net/voting/submit-ballot', async (req, res) => {
-    res.status(200).send({rawTransaction: '0xfedcba987654321'});
 }) 
 
 /**
@@ -363,6 +300,112 @@ router
     
     res.status(200).send(result);
 })
-;
+
+/**
+ * @api {get} /net/voting Get all votings
+ * @apiName getVoting
+ * @apiGroup vote
+ * @apiDescription Get current lasting voting for specified array of networks
+ * 
+ * @apiParam   {Array}  nets              nets, to fetch votings for
+ *
+ * @apiSuccess {String} votingId          voting ID(block number for tezos)
+ * @apiSuccess {String} votingPeriod      current voting period(period type for tezos)
+ * @apiSuccess {Object} ballots           {ballotName: sum}
+ * @apiSuccess {String} currentProposal   current voting proposal(for testing_vote in tezos)
+ * @apiSuccess {Number} periodBlocksLeft  blocks to end of period
+ * @apiSuccess {Number} totalBlocksLeft   blocks to end of voting
+ * @apiSuccess {Number} endPeriodTime     time to end of period
+ * @apiSuccess {Number} endVotingTIme     time to end of voting
+ */
+//Mockup for client api
+.get('/voting', async (req, res) => {
+    let endPeriodETA = Math.random() * 3600000;
+    let nets = req.query.nets;
+
+    if(!nets){
+        return res.status(400).send('Parameter nets should be specified!');
+    }
+
+    if(!(nets instanceof Array)){
+        return res.status(400).send('Parameter nets should be array!');
+    }
+
+    let netInfos = nets.map(c=>([{
+        votingId: '12345',
+        votingPeriod: 'testing_vote',
+        ballots: {yay: ~~(Math.random()*1000), nay: ~~(Math.random()*1000), pass: ~~(Math.random()*1000)},
+        currentProposal: 'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
+        periodBlocksLeft: 32768,
+        totalBlocksLeft: 131072,
+        endPeriodTime: Date.now() + endPeriodETA,
+        endVotingTime: Date.now() + endPeriodETA * 4,
+    }]));
+    let result = nets.reduce((prev, net, i) => (prev[net] = netInfos[i])&&prev, {});
+    res.status(200).send(result);
+})
+
+/**
+ * @api {get} /net/:net/voting Get current voting
+ * @apiName getVoting
+ * @apiGroup vote
+ * @apiDescription Get current lasting voting
+ *
+ * @apiSuccess {String} votingId          voting ID(block number for tezos)
+ * @apiSuccess {String} votingPeriod      current voting period(period type for tezos)
+ * @apiSuccess {Object} ballots           {ballotName: sum}
+ * @apiSuccess {String} currentProposal   current voting proposal(for testing_vote in tezos)
+ * @apiSuccess {Number} periodBlocksLeft  blocks to end of period
+ * @apiSuccess {Number} totalBlocksLeft   blocks to end of voting
+ * @apiSuccess {Number} endPeriodTime     time to end of period
+ * @apiSuccess {Number} endVotingTIme     time to end of voting
+ */
+//Mockup for client api
+.get('/:net/voting', async (req, res) => {
+    let endPeriodETA = Math.random() * 3600000;
+    res.status(200).send({
+        votingId: '12345',
+        votingPeriod: 'testing_vote',
+        ballots: {yay: ~~(Math.random()*1000), nay: ~~(Math.random()*1000), pass: ~~(Math.random()*1000)},
+        currentProposal: 'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
+        periodBlocksLeft: 32768,
+        totalBlocksLeft: 131072,
+        endPeriodTime: Date.now() + endPeriodETA,
+        endVotingTime: Date.now() + endPeriodETA * 4,
+    });
+}) 
+
+/**
+ * @api {post} /net/:net/voting/submit-proposal Submit proposal
+ * @apiName submitProposal
+ * @apiGroup vote
+ * @apiDescription Submit voting proposal
+ *
+ * @apiParam {String} votingId Voting ID
+ * @apiParam {String} delegate Delegate address
+ * 
+ * @apiSuccess {Object} result {"rawTransaction": "0xfedcba987654321"}
+ */
+//Mockup for client api
+.post('/:net/voting/submit-proposal', async (req, res) => {
+    res.status(200).send({rawTransaction: '0x0123456789abcdef'});
+}) 
+
+/**
+ * @api {post} /net/:net/voting/submit-ballot Submit ballot
+ * @apiName submitBallot
+ * @apiGroup vote
+ * @apiDescription Submit voting ballot
+ *
+ * @apiParam {String} votingId Voting ID
+ * @apiParam {String} delegate Delegate address
+ * @apiParam {String} ballot Chosen ballot
+ * 
+ * @apiSuccess {Object} result {"rawTransaction": "0xfedcba987654321"}
+ */
+//Mockup for client api
+.post('/:net/voting/submit-ballot', async (req, res) => {
+    res.status(200).send({rawTransaction: '0xfedcba987654321'});
+});
 
 module.exports = router;
