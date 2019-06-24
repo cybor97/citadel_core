@@ -320,8 +320,9 @@ router
  */
 //Mockup for client api
 .get('/voting', async (req, res) => {
+    let startPeriodETA = Math.random() * 3600000;
     let endPeriodETA = Math.random() * 3600000;
-    let nets = req.query.nets;
+    let nets = Object.keys(Connectors.getConnectors());
 
     if(!nets){
         return res.status(400).send('Parameter nets should be specified!');
@@ -331,18 +332,35 @@ router
         return res.status(400).send('Parameter nets should be array!');
     }
 
-    let netInfos = nets.map(c=>([{
-        votingId: '12345',
-        votingPeriod: 'testing_vote',
-        ballots: {yay: ~~(Math.random()*1000), nay: ~~(Math.random()*1000), pass: ~~(Math.random()*1000)},
-        currentProposal: 'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
-        periodBlocksLeft: 32768,
-        totalBlocksLeft: 131072,
-        endPeriodTime: Date.now() + endPeriodETA,
-        endVotingTime: Date.now() + endPeriodETA * 4,
-    }]));
-    let result = nets.reduce((prev, net, i) => (prev[net] = netInfos[i])&&prev, {});
-    res.status(200).send(result);
+    let netInfos = nets.map((net, i) => ({
+        id: i + 1,
+        title: `Accept protocol amendment 0x${Math.abs(~~(Math.random()*Math.pow(10, 10))).toString(16)}`,
+        net: net,
+        start_datetime: Date.now() - startPeriodETA,
+        end_datetime: Date.now() + endPeriodETA,
+        answers: [
+            {
+                id: 1,
+                title: "Yes",
+                vote_count: 0
+            }, 
+            {
+                id: 2,
+                title: "No",
+                vote_count: 1
+            },
+            {
+                id: 3,
+                title: "Pass",
+                vote_count: 2
+            }
+        ]
+    }));
+
+    res.status(200).send({
+        count: netInfos.length,
+        results: netInfos
+    });
 })
 
 /**
