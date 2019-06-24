@@ -303,9 +303,9 @@ router
 
 /**
  * @api {get} /net/voting Get all votings
- * @apiName getVoting
+ * @apiName getAllVoting
  * @apiGroup vote
- * @apiDescription Get current lasting voting for specified array of networks
+ * @apiDescription Get all votings for supported network
  * 
  * @apiParam   {Array}  nets              nets, to fetch votings for
  *
