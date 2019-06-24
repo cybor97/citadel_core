@@ -309,19 +309,13 @@ router
  * 
  * @apiParam   {Array}  nets              nets, to fetch votings for
  *
- * @apiSuccess {String} votingId          voting ID(block number for tezos)
- * @apiSuccess {String} votingPeriod      current voting period(period type for tezos)
- * @apiSuccess {Object} ballots           {ballotName: sum}
- * @apiSuccess {String} currentProposal   current voting proposal(for testing_vote in tezos)
- * @apiSuccess {Number} periodBlocksLeft  blocks to end of period
- * @apiSuccess {Number} totalBlocksLeft   blocks to end of voting
- * @apiSuccess {Number} endPeriodTime     time to end of period
- * @apiSuccess {Number} endVotingTIme     time to end of voting
+ * @apiSuccess {String} count          voting ID(block number for tezos)
+ * @apiSuccess {Array}  results        [{id, title, net, start_datetime, end_datetime, answers}]
  */
 //Mockup for client api
 .get('/voting', async (req, res) => {
-    let startPeriodETA = Math.random() * 3600000;
-    let endPeriodETA = Math.random() * 3600000;
+    let startPeriodETA = ~~(Math.random() * 3600000);
+    let endPeriodETA = ~~(Math.random() * 3600000);
     let nets = Object.keys(Connectors.getConnectors());
 
     if(!nets){
