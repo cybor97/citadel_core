@@ -16,9 +16,9 @@ class TEZ extends BaseConnector {
         super();
         this.apiUrl = 'https://api1.tzscan.io/v3';
         this.bakingBadUrl = 'https://baking-bad.org/';
+        this.rpcUrl = `http://${config.tezos.ip}:${config.tezos.port}`;
 
-        let rpcUrl = `http://${config.tezos.ip}:${config.tezos.port}`;
-        eztz.eztz.node.setProvider(rpcUrl);
+        eztz.eztz.node.setProvider(this.rpcUrl);
         this.eztzInstance = eztz.eztz;
     }
 
@@ -154,6 +154,28 @@ class TEZ extends BaseConnector {
             circulatingSupply: marketCapData.total_supply,
             stakingRate: 0,
             unbondingPeriod: 0
+        }
+    }
+
+    async getVoting(){
+        let blockMetadata = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/metadata`)).data;
+        let blockHeader = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/header`)).data;
+        let startBlockHeader = (await axios.get(
+            `${this.rpcUrl}/chains/main/blocks/head-${blockMetadata.level.voting_period_position}/header`
+        )).data;
+        let currentVotingBallots = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/votes/ballots`)).data;
+        let currentQuorum = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/votes/current_quorum`)).data;
+        let blockTimestamp = Date.parse(blockHeader.timestamp);
+        let startTimestamp = Date.parse(startBlockHeader.timestamp);
+        let endTimestamp = Math.floor(startTimestamp + ((blockTimestamp - startTimestamp) / blockMetadata.level.voting_period_position) * currentQuorum);
+
+        return {
+            id: blockMetadata.next_protocol,
+            title: `Accept protocol amendment ${blockMetadata.next_protocol}`,
+            net: 'tez',
+            start_datetime: startTimestamp,
+            end_datetime: endTimestamp,
+            answers: Object.keys(currentVotingBallots).map((key, i) => ({id: i, title:key, vote_count: currentVotingBallots[key]}))
         }
     }
 }

@@ -316,44 +316,44 @@ router
 .get('/voting', async (req, res) => {
     let startPeriodETA = ~~(Math.random() * 3600000);
     let endPeriodETA = ~~(Math.random() * 3600000);
-    let nets = Object.keys(Connectors.getConnectors());
+    let connectors = Connectors.getConnectors();
+    let nets = Object.keys(connectors);
 
-    if(!nets){
-        return res.status(400).send('Parameter nets should be specified!');
-    }
+    let votings = await Promise.all(nets.map(async (net, i) => {
+        let connector = new connectors[net](); 
+        if(connector.getVoting){
+            return await connector.getVoting();
+        }
 
-    if(!(nets instanceof Array)){
-        return res.status(400).send('Parameter nets should be array!');
-    }
-
-    let netInfos = nets.map((net, i) => ({
-        id: i + 1,
-        title: `Accept protocol amendment 0x${Math.abs(~~(Math.random()*Math.pow(10, 10))).toString(16)}`,
-        net: net,
-        start_datetime: Date.now() - startPeriodETA,
-        end_datetime: Date.now() + endPeriodETA,
-        answers: [
-            {
-                id: 1,
-                title: "Yes",
-                vote_count: 0
-            }, 
-            {
-                id: 2,
-                title: "No",
-                vote_count: 1
-            },
-            {
-                id: 3,
-                title: "Pass",
-                vote_count: 2
-            }
-        ]
+        return {
+            id: i + 1,
+            title: `Test(mock) voting 0x${Math.abs(~~(Math.random()*Math.pow(10, 10))).toString(16)}`,
+            net: net,
+            start_datetime: Date.now() - startPeriodETA,
+            end_datetime: Date.now() + endPeriodETA,
+            answers: [
+                {
+                    id: 1,
+                    title: "Yes",
+                    vote_count: 0
+                }, 
+                {
+                    id: 2,
+                    title: "No",
+                    vote_count: 1
+                },
+                {
+                    id: 3,
+                    title: "Pass",
+                    vote_count: 2
+                }
+            ]
+        }
     }));
 
     res.status(200).send({
-        count: netInfos.length,
-        results: netInfos
+        count: votings.length,
+        results: votings
     });
 })
 
@@ -363,28 +363,25 @@ router
  * @apiGroup vote
  * @apiDescription Get current lasting voting
  *
- * @apiSuccess {String} votingId          voting ID(block number for tezos)
- * @apiSuccess {String} votingPeriod      current voting period(period type for tezos)
- * @apiSuccess {Object} ballots           {ballotName: sum}
- * @apiSuccess {String} currentProposal   current voting proposal(for testing_vote in tezos)
- * @apiSuccess {Number} periodBlocksLeft  blocks to end of period
- * @apiSuccess {Number} totalBlocksLeft   blocks to end of voting
- * @apiSuccess {Number} endPeriodTime     time to end of period
- * @apiSuccess {Number} endVotingTIme     time to end of voting
+ * @apiSuccess {Number} id                voting ID(protocol hash for tezos)
+ * @apiSuccess {String} title             voting title
+ * @apiSuccess {String} net               net
+ * @apiSuccess {Number} start_datetime    start voting timestamp
+ * @apiSuccess {Number} end_datetime      estimated end voting timestamp
+ * @apiSuccess {Array}  answers           {"id":1, "title": "answer title", "vote_count": 123}
  */
-//Mockup for client api
 .get('/:net/voting', async (req, res) => {
-    let endPeriodETA = Math.random() * 3600000;
-    res.status(200).send({
-        votingId: '12345',
-        votingPeriod: 'testing_vote',
-        ballots: {yay: ~~(Math.random()*1000), nay: ~~(Math.random()*1000), pass: ~~(Math.random()*1000)},
-        currentProposal: 'PsNa6jTtsRfbGaNSoYXNTNM5A7c3Lji22Yf2ZhpFUjQFC17iZVp',
-        periodBlocksLeft: 32768,
-        totalBlocksLeft: 131072,
-        endPeriodTime: Date.now() + endPeriodETA,
-        endVotingTime: Date.now() + endPeriodETA * 4,
-    });
+    let connectors = Connectors.getConnectors();
+    if(!connectors[req.params.net]){
+        return res.status(400).send('Specified net is not supported!');
+    }
+
+    let connector = new connectors[req.params.net];
+    if(!connector.getVoting){
+        return res.status(400).send('Info for specified net is not yet supported.');
+    }
+
+    res.status(200).send(await connector.getVoting());
 }) 
 
 /**
