@@ -33,6 +33,8 @@ router
  * @apiName getAllNetsInfo
  * @apiGroup net
  * @apiDescription Get all networks info
+ * 
+ * @apiParam {Array} nets ?nets[0]=a&nets[1]=b,...
  *
  * @apiSuccess {Number} priceUsd
  * @apiSuccess {Number} priceBtc
@@ -47,9 +49,15 @@ router
 .get('/info', async (req, res) => {
     let connectors = Connectors.getConnectors();
 
-    let nets = Object.keys(connectors);
+
+    let nets = req.query.nets || Object.keys(connectors);
+
     let result = [];
     for(let net of nets){
+        if(!connectors[net]){
+            return res.status(400).send(`Net ${net} is not supported.`);
+        }
+
         let connector = new connectors[net];
 
         if(!connector.getInfo){
