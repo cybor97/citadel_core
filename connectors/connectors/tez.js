@@ -170,7 +170,7 @@ class TEZ extends BaseConnector {
         let endTimestamp = Math.floor(startTimestamp + ((blockTimestamp - startTimestamp) / blockMetadata.level.voting_period_position) * currentQuorum);
 
         return {
-            id: blockMetadata.next_protocol,
+            originalId: blockMetadata.next_protocol,
             title: `Accept protocol amendment ${blockMetadata.next_protocol}`,
             net: 'tez',
             start_datetime: startTimestamp,

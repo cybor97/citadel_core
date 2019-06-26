@@ -9,6 +9,7 @@ const Connectors = require('../connectors');
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
 const NetInfo = require('../data/models/NetInfo');
+const Voting = require('../data/models/Voting');
 const utils = require('../utils');
 
 const NET_REGEX = /^\w*$/;
@@ -28,7 +29,7 @@ router
 })
 
 /**
- * @api {get} /net/:net/info Get all nets info
+ * @api {get} /net/info Get all nets info
  * @apiName getAllNetsInfo
  * @apiGroup net
  * @apiDescription Get all networks info
@@ -309,48 +310,44 @@ router
  * @apiSuccess {String} count          voting ID(block number for tezos)
  * @apiSuccess {Array}  results        [{id, title, net, start_datetime, end_datetime, answers}]
  */
-//Mockup for client api
 .get('/voting', async (req, res) => {
-    let startPeriodETA = ~~(Math.random() * 3600000);
-    let endPeriodETA = ~~(Math.random() * 3600000);
     let connectors = Connectors.getConnectors();
-    let nets = Object.keys(connectors);
-
-    let votings = await Promise.all(nets.map(async (net, i) => {
-        let connector = new connectors[net](); 
+    //TODO: Review data updating process
+    for(let net in connectors){
+        let connector = new connectors[net]();
         if(connector.getVoting){
-            return await connector.getVoting();
-        }
-
-        return {
-            id: i + 1,
-            title: `Test(mock) voting 0x${Math.abs(~~(Math.random()*Math.pow(10, 10))).toString(16)}`,
-            net: net,
-            start_datetime: Date.now() - startPeriodETA,
-            end_datetime: Date.now() + endPeriodETA,
-            answers: [
-                {
-                    id: 1,
-                    title: "Yes",
-                    vote_count: 0
-                }, 
-                {
-                    id: 2,
-                    title: "No",
-                    vote_count: 1
+            let votingData = await connector.getVoting();
+            let [votingInstance, created] = await Voting.findOrCreate({
+                where: {
+                    originalId: votingData.originalId, 
+                    net: net
                 },
-                {
-                    id: 3,
-                    title: "Pass",
-                    vote_count: 2
-                }
-            ]
+                defaults: votingData
+            });
+            if(!created){
+                votingInstance.update(votingData);
+            }
         }
-    }));
+    }
 
+    let params = {attributes: ['id', 'title', 'net', 'start_datetime', 'end_datetime', 'answers']};
+    params = Object.assign(params, utils.preparePagination(req.query));
+    if(req.query.is_active){
+        //The only way to "parse" boolean in JS(another is through JSON.parse but it's even more weird)
+        let isActive = parseInt(req.query.is_active) === 1 || (req.query.is_active === 'true');
+        params = Object.assign(params, {
+            where: {
+                end_datetime: {
+                    [isActive ? sequelize.Op.gte : sequelize.Op.lt]: Date.now()
+                }
+            }
+        });
+    }
+    let votings = await Voting.findAndCountAll(params);
+    
     res.status(200).send({
-        count: votings.length,
-        results: votings
+        count: votings.count,
+        results: votings.rows
     });
 })
 
