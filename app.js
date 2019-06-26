@@ -9,7 +9,7 @@ const path = require('path');
 const bodyparser = require('body-parser');
 const clientApi = require('./routes/clientApi');
 const explorerUpdater = require('./workers/explorerUpdater');
-explorerUpdater.init();
+//explorerUpdater.init();
 
 const app = express();
 
