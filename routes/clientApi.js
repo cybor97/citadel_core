@@ -253,6 +253,25 @@ router
 })
 
 /**
+ * @api {post} /net/:net/address/:address/transactions/prepare-reveal Prepare reveal
+ * @apiName prepareReveal
+ * @apiGroup sendTransaction
+ * @apiDescription Prepare reveal transaction
+ * 
+ * @apiParam {String} toAddress Target address 
+ * @apiParam {Number} amount    Transfer amount 
+ * 
+ * @apiSuccess transaction Prepared transaction
+ */
+.post('/:net/address/:address/transactions/prepare-reveal', async (req, res) => {
+    let connectors = Connectors.getConnectors();
+    let connector = (new connectors[req.params.net]());
+    let transaction = await connector.prepareReveal(req.params.address);
+
+    res.status(200).send(transaction);
+})
+
+/**
  * @api {post} /net/:net/address/:address/transactions/prepare-transfer Prepare transfer
  * @apiName prepareTransfer
  * @apiGroup sendTransaction

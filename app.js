@@ -9,7 +9,7 @@ const path = require('path');
 const bodyparser = require('body-parser');
 const clientApi = require('./routes/clientApi');
 const explorerUpdater = require('./workers/explorerUpdater');
-explorerUpdater.init();
+//explorerUpdater.init();
 
 const app = express();
 
@@ -17,6 +17,7 @@ app
   .use(bodyparser.json())
   .use(bodyparser.urlencoded({ extended: true }))
   .use('/poc', express.static(path.join(__dirname, 'poc')))
+  .use('/eztz.js/dist', express.static(path.join(__dirname, 'node_modules/eztz.js/dist')))
   .use('/doc', express.static(path.join(__dirname, 'doc')))
   .use('/net', clientApi)
   .use(async (err, req, res, next) => {
