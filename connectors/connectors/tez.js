@@ -135,6 +135,30 @@ class TEZ extends BaseConnector {
         }, false).catch(err => err);
     }
 
+    async prepareProposal(votingId, fromAddress, proposal){
+        let blockMetadata = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/metadata`)).data;
+
+        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+            kind: 'proposals',
+            source: fromAddress,
+            period: blockMetadata.level.voting_period,
+            proposals: [proposal]
+        }, false).catch(err => err);
+    }
+
+    async prepareBallot(votingId, fromAddress, ballot){
+        let blockMetadata = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/metadata`)).data;
+
+        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+            kind: 'ballot',
+            source: fromAddress,
+            period: blockMetadata.level.voting_period,
+            proposal: blockMetadata.next_protocol,
+            ballot: ballot
+        }, false).catch(err => err);
+    }
+
+
     async sendTransaction(address, signedTransaction){
         return await this.eztzInstance.rpc.inject(signedTransaction.opOb, signedTransaction.sopbytes);
     }

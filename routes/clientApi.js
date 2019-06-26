@@ -394,12 +394,16 @@ router
  *
  * @apiParam {String} votingId Voting ID
  * @apiParam {String} delegate Delegate address
+ * @apiParam {String} proposal Proposal
  * 
  * @apiSuccess {Object} result {"rawTransaction": "0xfedcba987654321"}
  */
-//Mockup for client api
 .post('/:net/voting/submit-proposal', async (req, res) => {
-    res.status(200).send({rawTransaction: '0x0123456789abcdef'});
+    let connectors = Connectors.getConnectors();
+    let connector = (new connectors[req.params.net]());
+    let transaction = await connector.prepareProposal(req.body.votingId, req.body.delegate, req.body.proposal);
+
+    res.status(200).send(transaction);    
 }) 
 
 /**
@@ -414,9 +418,12 @@ router
  * 
  * @apiSuccess {Object} result {"rawTransaction": "0xfedcba987654321"}
  */
-//Mockup for client api
 .post('/:net/voting/submit-ballot', async (req, res) => {
-    res.status(200).send({rawTransaction: '0xfedcba987654321'});
+    let connectors = Connectors.getConnectors();
+    let connector = (new connectors[req.params.net]());
+    let transaction = await connector.prepareBallot(req.body.votingId, req.body.delegate, req.body.ballot);
+
+    res.status(200).send(transaction);    
 });
 
 module.exports = router;
