@@ -9,6 +9,7 @@ const Connectors = require('../connectors');
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
 const NetInfo = require('../data/models/NetInfo');
+const utils = require('../utils');
 
 const NET_REGEX = /^\w*$/;
 const ADDRESS_REGEX = /^[0-9a-zA-Z]*$/;
@@ -124,11 +125,9 @@ router
  * @apiSuccess {Array} result [{"address": "0x1234", "updated": 1557868521022}]
  */
 .get('/:net/address', async (req, res) => {
-    let addresses = await Address.findAll({
-        where: {net: req.params.net},
-        limit: req.query.limit || null,
-        offset: req.query.offset || null
-    });
+    let addresses = await Address.findAll(Object.assign({
+        where: {net: req.params.net}
+    }, utils.preparePagination(req.query)));
     res.status(200).send(addresses.map(c=>({address: c.address, updated: c.updated})));
 }) 
 
@@ -208,13 +207,11 @@ router
             whereParams.value = {[sequelize.Op.ne]: 0};
         }
 
-        let transactions = await Transaction.findAndCountAll({
+        let transactions = await Transaction.findAndCountAll(Object.assign({
             attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment'],
             where: whereParams,
-            offset: req.query.offset || null,
-            limit: req.query.limit || null,
             include: [{model: Address, where: {address: req.params.address}}]
-        });
+        }, utils.preparePagination(req.query)));
         address.transactions = transactions.rows.map(tx => tx.dataValues);
         address.transactionsCount = transactions.count;
         res.status(200).send(address);
