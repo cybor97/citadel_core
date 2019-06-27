@@ -31,7 +31,7 @@ function signTezTx(opType){
 
         let tx = JSON.parse(req.responseText);
         let privateKey = privateKeyInput.value;
-        let signedTx = eztz.crypto.sign(tx.opbytes, privateKey);
+        let signedTx = eztz.crypto.sign(tx.opbytes, privateKey, new Uint8Array([3]));
         //Sign prepared transaction with privateKey
         console.log('signedTx:', signedTx);
         //Send signed transaction
