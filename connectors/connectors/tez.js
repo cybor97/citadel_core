@@ -115,11 +115,12 @@ class TEZ extends BaseConnector {
     }
 
     async prepareTransfer(fromAddress, toAddress, amount){
+        let isKT = toAddress.startsWith('KT');
         return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
             kind: 'transaction',
             fee: '1420',
-            gas_limit: '10100',
-            storage_limit: '0',
+            gas_limit: isKT ? '10600' : '10100',
+            storage_limit: isKT ? '300' : '0',
             amount: (Number(amount) * M_TEZ_MULTIPLIER).toString(),
             destination: toAddress
         }, false);
