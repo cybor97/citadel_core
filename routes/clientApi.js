@@ -332,7 +332,8 @@ router
  * @apiGroup vote
  * @apiDescription Get all votings for supported network
  * 
- * @apiParam   {Array}  nets              nets, to fetch votings for
+ * @apiParam   {Array}   nets              nets, to fetch votings for
+ * @apiParam   {Boolean} is_active         votings, where end_datetime >= current time
  *
  * @apiSuccess {String} count          voting ID(block number for tezos)
  * @apiSuccess {Array}  results        [{id, title, net, start_datetime, end_datetime, answers}]
