@@ -15,12 +15,23 @@ function signTx(opType){
 
 function signTezTx(opType){
     let req = new XMLHttpRequest();
-    req.open('POST', `/net/tez/address/${addressFromInput.value}/transactions/prepare-${opType}`);
-    req.setRequestHeader('Content-Type', 'application/json');
-    req.send(JSON.stringify({
-        toAddress: addressToInput.value,
-        amount: amountInput.value
-    }));
+    if(['transfer', 'delegation'].includes(opType)){
+        req.open('POST', `/net/tez/address/${addressFromInput.value}/transactions/prepare-${opType}`);
+        req.setRequestHeader('Content-Type', 'application/json');
+        req.send(JSON.stringify({
+            toAddress: addressToInput.value,
+            amount: amountInput.value
+        }));    
+    }
+    else if(opType == 'ballot'){
+        req.open('POST', `/net/tez/voting/submit-ballot`);
+        req.setRequestHeader('Content-Type', 'application/json');
+        req.send(JSON.stringify({
+            votingId: 1,
+            delegate: addressFromInput.value,
+            ballot: amountInput.value
+        }));
+    }
     //On response...
     req.onloadend = () => {
         //Parse response from JSON

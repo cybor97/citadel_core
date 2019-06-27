@@ -148,12 +148,13 @@ class TEZ extends BaseConnector {
 
     async prepareBallot(votingId, fromAddress, ballot){
         let blockMetadata = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/metadata`)).data;
+        let currentProposal = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/votes/current_proposal`)).data;
 
         return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
             kind: 'ballot',
             source: fromAddress,
             period: blockMetadata.level.voting_period,
-            proposal: blockMetadata.next_protocol,
+            proposal: currentProposal,
             ballot: ballot
         }, false).catch(err => err);
     }
