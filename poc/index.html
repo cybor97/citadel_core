@@ -9,11 +9,14 @@
     </head>
     <body>
         <div class="card">
-            <input id="netInput" placeholder="used net" value="orbs"/>
+            <select id="netInput" placeholder="used net" value="orbs">
+                <option>orbs</option>
+                <option>tez</option>
+            </select>
             <input id="addressFromInput" placeholder="address from"/>
             <input id="privateKeyInput" placeholder="private key"/>
             <input id="addressToInput" placeholder="address to"/>
-            <input id="amountInput" placeholder="amount"/>
+            <input id="amountInput" placeholder="amount/ballot(for voting)/doesn't act for delegation"/>
             <button onclick="signTx('transfer')">Sign&Transfer</button>        
             <button onclick="signTx('delegation')">Sign&Delegate</button>        
             <button onclick="signTx('ballot')">Sign&Vote</button>        
