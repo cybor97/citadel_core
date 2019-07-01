@@ -9,7 +9,6 @@ const Connectors = require('../connectors');
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
 const NetInfo = require('../data/models/NetInfo');
-const Voting = require('../data/models/Voting');
 const utils = require('../utils');
 
 const NET_REGEX = /^\w*$/;
@@ -340,42 +339,21 @@ router
  */
 .get('/voting', async (req, res) => {
     let connectors = Connectors.getConnectors();
-    //TODO: Review data updating process
+    let nets = req.query.nets;
+
+    let votingData = [];
     for(let net in connectors){
-        let connector = new connectors[net]();
-        if(connector.getVoting){
-            let votingData = await connector.getVoting();
-            let [votingInstance, created] = await Voting.findOrCreate({
-                where: {
-                    originalId: votingData.originalId, 
-                    net: net
-                },
-                defaults: votingData
-            });
-            if(!created){
-                votingInstance.update(votingData);
-            }
+        if(!nets || nets.includes(net)){
+            let connector = new connectors[net]();
+            if(connector.getVoting){
+                votingData.push(await connector.getVoting());
+            }    
         }
     }
-
-    let params = {attributes: ['id', 'title', 'net', 'start_datetime', 'end_datetime', 'answers']};
-    params = Object.assign(params, utils.preparePagination(req.query));
-    if(req.query.is_active){
-        //The only way to "parse" boolean in JS(another is through JSON.parse but it's even more weird)
-        let isActive = parseInt(req.query.is_active) === 1 || (req.query.is_active === 'true');
-        params = Object.assign(params, {
-            where: {
-                end_datetime: {
-                    [isActive ? sequelize.Op.gte : sequelize.Op.lt]: Date.now()
-                }
-            }
-        });
-    }
-    let votings = await Voting.findAndCountAll(params);
     
     res.status(200).send({
-        count: votings.count,
-        results: votings.rows
+        count: votingData.length,
+        results: votingData
     });
 })
 
