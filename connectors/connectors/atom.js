@@ -121,7 +121,7 @@ class ATOM extends BaseConnector {
 
     calculateRewardAmount(tags){
         return tags && tags.reduce((prev, next) => {
-            return prev + (next.key === 'rewards' ? Number(next.value.trim('uatom')[0]||0) : 0);
+            return prev + (next.key === 'rewards' && next.value && next.value.includes('uatom') ? Number(next.value.trim('uatom')[0]||0) : 0);
         }, 0) / ATOM_MULTIPLIER || 0
     }
 
