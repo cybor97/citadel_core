@@ -101,10 +101,10 @@ class ATOM extends BaseConnector {
                     hash: tx.txhash,
                     date: new Date(tx.timestamp).getTime(),
                     //reward value is reward fee(sum of fees of processed txs in blockchain)
-                    value: self.calculateAmount(tx.tx.value.fee.amount),
-                    fee: null,
+                    value: self.calculateAmount(tx.tx.value.fee.amount) + self.calculateRewardAmount(tx.tags),
+                    fee: 0,
                     //from is not applicable here
-                    from: null,
+                    from: self.findSourceValidator(tx.tags),
                     to: msg.value.delegator_address,
                     originalOpType: 'withdraw_delegator_reward',
                     type: 'payment',
@@ -112,6 +112,17 @@ class ATOM extends BaseConnector {
                 });
             });
 
+    }
+
+    findSourceValidator(tags){
+        let validatorTag = tags.find(tag => tag.key === 'source-validator');
+        return validatorTag && validatorTag.value || null;
+    }
+
+    calculateRewardAmount(tags){
+        return tags && tags.reduce((prev, next) => {
+            return prev + (next.key === 'rewards' ? Number(next.value.trim('uatom')[0]||0) : 0);
+        }, 0) / ATOM_MULTIPLIER || 0
     }
 
     calculateAmount(amount){
