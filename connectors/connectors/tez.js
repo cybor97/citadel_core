@@ -193,7 +193,7 @@ class TEZ extends BaseConnector {
         let currentQuorum = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/votes/current_quorum`)).data;
         let blockTimestamp = Date.parse(blockHeader.timestamp);
         let startTimestamp = Date.parse(startBlockHeader.timestamp);
-        let endTimestamp = Math.floor(startTimestamp + ((blockTimestamp - startTimestamp) / blockMetadata.level.voting_period_position) * currentQuorum);
+        let endTimestamp = Math.floor(startTimestamp + ((blockTimestamp - startTimestamp) / blockMetadata.level.voting_period_position)* 4 * currentQuorum);
 
         return {
             originalId: blockMetadata.next_protocol,
