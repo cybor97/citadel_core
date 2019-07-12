@@ -136,6 +136,25 @@ class ORBS extends ETHToken {
         return await Bittrex.getInfo('ORBS', 'btc-orbs');
     }
 
+    async getVoting(){
+        let validators = (await axios.get(`${this.apiUrlVotingProxy}/validators`)).result;
+
+        return {
+            originalId: 0,
+            title: 'Vote for new validator',
+            net: 'orbs',
+            start_datetime: 0,
+            end_datetime: null,
+            answers: validators.map(async (address) => {
+                let validatorData = (await axios.get(`${this.apiUrlVotingProxy}/validators/${address}`)).result;
+                return {
+                    id: address,
+                    title: validatorData.name, 
+                    vote_count: null    
+                }
+            })
+        }
+    }
 }
 
 module.exports = ORBS;
