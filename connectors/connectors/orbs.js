@@ -8,6 +8,9 @@ const DELEGATE_TOPIC = '0x510b11bb3f3c799b11307c01ab7db0d335683ef5b2da98f7697de7
 const TRANSFER_CONTRACT_HASH = '0xff56Cc6b1E6dEd347aA0B7676C85AB0B3D08B0FA';
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
+const VOTING_CONTRACT_HASH = '0x30f855afb78758Aa4C2dc706fb0fA3A98c865d2d';
+const VOTING_TOPIC = '0x94a3724087eae106b6eeb3198e1c6a4c9a6ece40950796a3d1350e110aad4b21';
+
 const PRECENDING_ZEROES = '0'.repeat(24);
 
 class ORBS extends ETHToken {
@@ -137,7 +140,7 @@ class ORBS extends ETHToken {
     }
 
     async getVoting(){
-        let validators = (await axios.get(`${this.apiUrlVotingProxy}/validators`)).result;
+        let validators = (await axios.get(`${this.apiUrlVotingProxy}/validators`)).data;
 
         return {
             originalId: 0,
@@ -145,14 +148,15 @@ class ORBS extends ETHToken {
             net: 'orbs',
             start_datetime: 0,
             end_datetime: null,
-            answers: validators.map(async (address) => {
-                let validatorData = (await axios.get(`${this.apiUrlVotingProxy}/validators/${address}`)).result;
+            answers: await Promise.all(validators.map(async (address) => {
+                let validatorData = (await axios.get(`${this.apiUrlVotingProxy}/validators/${address}`)).data;
+
                 return {
                     id: address,
                     title: validatorData.name, 
                     vote_count: null    
                 }
-            })
+            }))
         }
     }
 }
