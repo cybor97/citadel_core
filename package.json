@@ -9,7 +9,7 @@
     "eztz.js": "git+https://github.com/TezTech/eztz.git",
     "mysql2": "^1.6.5",
     "sequelize": "^6.0.0",
-    "web3": "^1.0.0-beta2"
+    "web3": "^1.0.0-beta.55"
   },
   "devDependencies": {
     "sequelize-cli": "^5.5.0"
