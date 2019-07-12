@@ -1,3 +1,4 @@
+const axios = require('axios');
 const ETHToken = require('./ethToken');
 const Bittrex = require('../bittrex');
 
@@ -48,6 +49,18 @@ class IOST extends ETHToken {
     async getInfo(){
         return await Bittrex.getInfo('IOST', 'btc-iost');
     }
+
+    async getVoting(){
+        return {
+            originalId: 0,
+            title: 'Vote for mainnet node',
+            net: 'iost',
+            start_datetime: 1072915200000,
+            end_datetime: null,
+            answers: []
+        }
+    }
+
 }
 
 module.exports = IOST;
