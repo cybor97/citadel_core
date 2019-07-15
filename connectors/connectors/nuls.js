@@ -14,6 +14,8 @@ const OP_TYPES = [
     {type: 'payment', sourceType: 1},
 ]
 
+const VOTING_CONTRACT_ADDRESS = 'NseQih5xZa6vAWsL6uY5drozyW4tqzQx';
+
 class NULS extends BaseConnector {
     constructor(){
         super();
@@ -104,6 +106,39 @@ class NULS extends BaseConnector {
     async getInfo(){
         return await CoinMarketCap.getInfo('NULS');
     }
+
+    async getVoting(){
+        let votingId = 1;
+        let result = [];
+        while(true){
+            let data = (await axios.post('https://nuls.world/addresses/contracts/call', {
+                contractAddress: VOTING_CONTRACT_ADDRESS,
+                methodName: 'queryVote',
+                args: [votingId.toString()]
+            })).data;
+
+            if(data == null){
+                break;
+            }
+
+            let votingItem = JSON.parse(data.result.replace(/\n|\r/g, ' '));
+            result.push({
+                originalId: votingItem.id,
+                title: votingItem.title,
+                net: 'nuls',
+                start_datetime: votingItem.config.startTime,
+                end_datetime: votingItem.config.endTime,
+                answers: votingItem.items.map(c => ({
+                    id: c.id,
+                    title: c.content,
+                    vote_count: null
+                }))
+            });
+            votingId++;
+        }
+        return result;
+    }
+
 }
 
 module.exports = NULS;

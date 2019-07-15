@@ -346,7 +346,13 @@ router
         if(!nets || nets.includes(net)){
             let connector = new connectors[net]();
             if(connector.getVoting){
-                votingData.push(await connector.getVoting());
+                let votingItem = await connector.getVoting();
+                if(votingItem instanceof Array){
+                    votingData = votingData.concat(votingItem);
+                }
+                else{
+                    votingData.push(votingItem);
+                }
             }    
         }
     }
