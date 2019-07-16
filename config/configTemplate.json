@@ -4,6 +4,9 @@
     "username": "<mysqlUsername>",
     "password": "<mysqlPassword>",
     "dialect": "mysql",
+    "trustedAddresses":[
+        "0x1234"
+    ],
     "parity":{ "ip": "<parityIp>", "port": "<parityPort>" },
     "tezos":{ "ip": "<tezosIp>", "port": "<tezosPort>" },
     "coinMarketCap": { "apikey": "<coinMarketCapApiKey>" }

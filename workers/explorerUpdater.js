@@ -85,6 +85,9 @@ class ExplorerUpdater {
                             console.log(`>tx: ${tx.hash} (${tx.type})`);
                             let forceUpdate = tx.forceUpdate;
                             delete tx.forceUpdate;
+                            if(config.trustedAddresses && tx.type == 'payment' && config.trustedAddresses.includes(tx.from)){
+                                tx.type = 'approvedPayment';
+                            }
 
                             let created = (await Transaction.findOrCreate({
                                 where: {hash: tx.hash, addressId: address.id},
