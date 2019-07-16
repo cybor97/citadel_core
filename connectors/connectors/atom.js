@@ -8,7 +8,7 @@ const QUERY_COUNT = 100;
 class ATOM extends BaseConnector {
     constructor(){
         super();
-        this.apiUrl = 'https://stargate.cosmos.network/txs';
+        this.apiUrl = 'https://stargate.cosmos.network';
     }
 
     validateAddress(address){
@@ -138,7 +138,7 @@ class ATOM extends BaseConnector {
         let lastHash = null;
         let page = offset || 1;
         while(result.length % QUERY_COUNT == 0){
-            let current = (await axios.get(this.apiUrl, {
+            let current = (await axios.get(`${this.apiUrl}/txs`, {
                 params: {
                     action: action,
                     [actionRole]: address,
@@ -158,6 +158,23 @@ class ATOM extends BaseConnector {
 
     async getInfo(){
         return await Bittrex.getInfo('ATOM', 'btc-atom');
+    }
+
+    async getVoting(){
+        let data = (await axios.get(`${this.apiUrl}/gov/proposals`)).data;
+
+        return data.map(voting => ({
+            originalId: voting.proposal_id,
+            title: voting.proposal_content.value.title,
+            net: 'atom',
+            start_datetime: Date.parse(voting.voting_start_time),
+            end_datetime: Date.parse(voting.voting_end_time),
+            answers: Object.keys(voting.final_tally_result).map(key => ({
+                id: key,
+                title: key.split('_').map(c=>c[0].toUpperCase() + c.substr(1, c.length)).join(' '),
+                vote_count: voting.final_tally_result[key]
+            }))
+        }));
     }
 }
 
