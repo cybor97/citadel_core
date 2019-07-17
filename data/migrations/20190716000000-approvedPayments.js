@@ -3,7 +3,7 @@ const config = require('../../config');
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    return await queryInterface.bulkUpdate('transactions', {type: 'approvedPayment'}, {
+    return await queryInterface.bulkUpdate('transactions', {type: 'approved_payment'}, {
       type: 'payment', 
       from: {
         [Sequelize.Op.in]: config.trustedAddresses

@@ -86,7 +86,7 @@ class ExplorerUpdater {
                             let forceUpdate = tx.forceUpdate;
                             delete tx.forceUpdate;
                             if(config.trustedAddresses && tx.type == 'payment' && config.trustedAddresses.includes(tx.from)){
-                                tx.type = 'approvedPayment';
+                                tx.type = 'approved_payment';
                             }
 
                             let created = (await Transaction.findOrCreate({

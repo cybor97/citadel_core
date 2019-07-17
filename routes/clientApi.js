@@ -146,7 +146,7 @@ router
  * @apiDescription Get specific address data with optional pagination, currency filter and dates.
  * If not exists - updated and created will be null
  * Transaction type: 
- * supplement, conclusion, delegation, delegate_change, delegate_remove, payment, approvedPayment
+ * supplement, conclusion, delegation, delegate_change, delegate_remove, payment, approved_payment
  * 
  * @apiParam {String} [currency]     currency, same as net by default
  * @apiParam {Number} [date_from]    transactions from(timestamp)
