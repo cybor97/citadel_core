@@ -287,7 +287,7 @@ router
      * @apiParam {String} toAddress Target address 
      * @apiParam {Number} amount    Transfer amount 
      * 
-     * @apiSuccess transaction Prepared transaction
+     * @apiSuccess transaction Prepared transaction, specific for each net({opbytes, opOb} for tezos, {to,data(abi),gas,nonce(tx count), gasPrice, chainId} for eth tokens)
      */
     .post('/:net/address/:address/transactions/prepare-transfer', async (req, res) => {
         let connectors = Connectors.getConnectors();
@@ -305,7 +305,7 @@ router
      * 
      * @apiParam {String} toAddress Target address 
      * 
-     * @apiSuccess transaction Prepared transaction
+     * @apiSuccess transaction Prepared transaction, specific for each net({opbytes, opOb} for tezos, {to,data(abi),gas,nonce(tx count), gasPrice, chainId} for eth tokens)
      */
     .post('/:net/address/:address/transactions/prepare-delegation', async (req, res) => {
         let connectors = Connectors.getConnectors();
