@@ -6,13 +6,13 @@ const config = require('../../config');
 const M_TEZ_MULTIPLIER = 1000000;
 const QUERY_COUNT = 50;
 const OP_TYPES = [
-    {type: 'origination', sourceType: 'Origination'},
-    {type: 'supplement', sourceType: 'Transaction'},
-    {type: 'delegation', sourceType: 'Delegation'},
+    { type: 'origination', sourceType: 'Origination' },
+    { type: 'supplement', sourceType: 'Transaction' },
+    { type: 'delegation', sourceType: 'Delegation' },
 ]
 
 class TEZ extends BaseConnector {
-    constructor(){
+    constructor() {
         super();
         this.apiUrl = 'https://api1.tzscan.io/v3';
         this.bakingBadUrl = 'https://baking-bad.org/';
@@ -22,20 +22,20 @@ class TEZ extends BaseConnector {
         this.eztzInstance = eztz.eztz;
     }
 
-    validateAddress(address){
+    validateAddress(address) {
         return !!address.match(/^(tz|KT)[a-zA-Z0-9]*$/);
     }
 
-    async getServiceAddresses(){
-        let bakingBadAppHtml = (await axios.get(this.bakingBadUrl, {responseType: 'text'})).data;
+    async getServiceAddresses() {
+        let bakingBadAppHtml = (await axios.get(this.bakingBadUrl, { responseType: 'text' })).data;
         let bakingBadAppJsPath = bakingBadAppHtml.match(/\/js\/app\.[a-z0-9]*\.js/)[0];
-        
+
         let data = (await axios.get(`${this.bakingBadUrl}/${bakingBadAppJsPath}`)).data;
         let tzAddressMatches = data.match(/(tz|KT)([a-zA-Z0-9]{34}): *{ *name/g)
-                                   .map(c => c.match(/(tz|KT)([a-zA-Z0-9]{34})/)[0]);
+            .map(c => c.match(/(tz|KT)([a-zA-Z0-9]{34})/)[0]);
         let uniqueMatches = [];
-        for(let address of tzAddressMatches){
-            if(uniqueMatches.indexOf(address) === -1){
+        for (let address of tzAddressMatches) {
+            if (uniqueMatches.indexOf(address) === -1) {
                 uniqueMatches.push(address);
             }
         }
@@ -46,10 +46,10 @@ class TEZ extends BaseConnector {
      * Get all transactions for address
      * @param {String} address 
      */
-    async getAllTransactions(address, lastPaths, serviceAddresses){
+    async getAllTransactions(address, lastPaths, serviceAddresses) {
         let result = {};
 
-        for(let opType of OP_TYPES){
+        for (let opType of OP_TYPES) {
             let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
                 params: {
                     type: opType.sourceType
@@ -57,15 +57,15 @@ class TEZ extends BaseConnector {
             })).data[0];
             let transactions = [];
             let offset = 0;
-            for(let tx of lastPaths){
-                if(tx.originalOpType === opType.sourceType && tx.path &&
-                    (opType.type === 'delegation' || opType === 'origination')){
-                        offset = JSON.parse(tx.path).offset;
+            for (let tx of lastPaths) {
+                if (tx.originalOpType === opType.sourceType && tx.path &&
+                    (opType.type === 'delegation' || opType === 'origination')) {
+                    offset = JSON.parse(tx.path).offset;
                 }
             }
 
-            while(transactions.length < transactionsCount){
-                let newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`,{
+            while (transactions.length < transactionsCount) {
+                let newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
                     params: {
                         type: opType.sourceType,
                         number: QUERY_COUNT,
@@ -80,14 +80,14 @@ class TEZ extends BaseConnector {
                     return {
                         hash: tx.hash,
                         date: Date.parse(txData.timestamp),
-                        value: ((txData.amount||txData.balance) / M_TEZ_MULTIPLIER) || 0,
+                        value: ((txData.amount || txData.balance) / M_TEZ_MULTIPLIER) || 0,
                         from: txData.src.tz,
                         fromAlias: txData.src.alias,
                         to: to,
                         fee: txData.fee / M_TEZ_MULTIPLIER,
                         originalOpType: opType.sourceType,
                         type: opType.type,
-                        path: JSON.stringify({queryCount: QUERY_COUNT, offset: offset})
+                        path: JSON.stringify({ queryCount: QUERY_COUNT, offset: offset })
                     };
                 })
                 transactions = transactions.concat(newTransactions);
@@ -98,23 +98,34 @@ class TEZ extends BaseConnector {
         }
 
         //Unprocessed payments/conclusions are supplements by default
-        this.processPayment([].concat(result.supplement, result.origination||[]), serviceAddresses);
+        this.processPayment([].concat(result.supplement, result.origination || []), serviceAddresses);
 
         return [].concat(...Object.values(result));
     }
 
-    async processPayment(transactions, serviceAddresses){
+    async processPayment(transactions, serviceAddresses) {
         transactions.forEach(tx => {
-            if(tx.fromAlias || serviceAddresses.indexOf(tx.from) !== -1){
+            if (tx.fromAlias || serviceAddresses.indexOf(tx.from) !== -1) {
                 tx.type = 'payment';
             }
-            else if(tx.type == 'origination'){
+            else if (tx.type == 'origination') {
                 tx.type = 'supplement';
             }
         });
     }
 
-    async prepareTransfer(fromAddress, toAddress, amount){
+    async prepareReveal(address) {
+        let isKT = address.startsWith('KT');
+        return await this.eztzInstance.rpc.prepareOperation(address, {
+            kind: 'transaction',
+            source: address,
+            fee: '1420',
+            gas_limit: isKT ? '10600' : '10100',
+            storage_limit: isKT ? '300' : '0',
+        }, false);
+    }
+
+    async prepareTransfer(fromAddress, toAddress, amount) {
         let isKT = toAddress.startsWith('KT');
         return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
             kind: 'transaction',
@@ -126,7 +137,7 @@ class TEZ extends BaseConnector {
         }, false);
     }
 
-    async prepareDelegation(fromAddress, toAddress){
+    async prepareDelegation(fromAddress, toAddress) {
         return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
             kind: 'delegation',
             fee: '1420',
@@ -136,7 +147,7 @@ class TEZ extends BaseConnector {
         }, false).catch(err => err);
     }
 
-    async prepareProposal(votingId, fromAddress, proposal){
+    async prepareProposal(votingId, fromAddress, proposal) {
         let blockMetadata = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/metadata`)).data;
 
         return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
@@ -147,7 +158,7 @@ class TEZ extends BaseConnector {
         }, false).catch(err => err);
     }
 
-    async prepareBallot(votingId, fromAddress, ballot){
+    async prepareBallot(votingId, fromAddress, ballot) {
         let blockMetadata = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/metadata`)).data;
         let currentProposal = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/votes/current_proposal`)).data;
 
@@ -161,11 +172,11 @@ class TEZ extends BaseConnector {
     }
 
 
-    async sendTransaction(address, signedTransaction){
+    async sendTransaction(address, signedTransaction) {
         return await this.eztzInstance.rpc.silentInject(signedTransaction.sopbytes);
     }
 
-    async getInfo(){
+    async getInfo() {
         let marketCapData = (await axios.get(`${this.apiUrl}/marketcap`)).data[0];
 
         let priceUsd = marketCapData.price_usd;
@@ -183,7 +194,7 @@ class TEZ extends BaseConnector {
         }
     }
 
-    async getVoting(){
+    async getVoting() {
         let blockMetadata = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/metadata`)).data;
         let blockHeader = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/header`)).data;
         let startBlockHeader = (await axios.get(
@@ -193,7 +204,7 @@ class TEZ extends BaseConnector {
         let currentQuorum = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/votes/current_quorum`)).data;
         let blockTimestamp = Date.parse(blockHeader.timestamp);
         let startTimestamp = Date.parse(startBlockHeader.timestamp);
-        let endTimestamp = Math.floor(startTimestamp + ((blockTimestamp - startTimestamp) / blockMetadata.level.voting_period_position)* 4 * currentQuorum);
+        let endTimestamp = Math.floor(startTimestamp + ((blockTimestamp - startTimestamp) / blockMetadata.level.voting_period_position) * 4 * currentQuorum);
 
         return {
             originalId: blockMetadata.next_protocol,
@@ -201,7 +212,7 @@ class TEZ extends BaseConnector {
             net: 'tez',
             start_datetime: startTimestamp,
             end_datetime: endTimestamp,
-            answers: Object.keys(currentVotingBallots).map((key, i) => ({id: i, title:key, vote_count: currentVotingBallots[key]}))
+            answers: Object.keys(currentVotingBallots).map((key, i) => ({ id: i, title: key, vote_count: currentVotingBallots[key] }))
         }
     }
 }
