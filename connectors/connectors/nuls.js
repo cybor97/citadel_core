@@ -121,24 +121,38 @@ class NULS extends BaseConnector {
                 break;
             }
 
-            let votingItem = JSON.parse(data.result.replace(/\n|\r/g, ' '));
-            result.push({
-                originalId: votingItem.id,
-                title: votingItem.title,
-                net: 'nuls',
-                start_datetime: votingItem.config.startTime,
-                end_datetime: votingItem.config.endTime,
-                answers: votingItem.items.map(c => ({
-                    id: c.id,
-                    title: c.content,
-                    vote_count: null
-                }))
-            });
+            try{
+                let votingDataStrFixed = data.result
+                    .replace(/\n|\r|\t/g, ' ')
+                    .replace(/\}\{/g, '},{');
+    
+                let votingData = JSON.parse(votingDataStrFixed);
+                result.push(this.processVotingItem(votingData));
+            }
+            catch(exc){
+                if(!(exc instanceof SyntaxError)){
+                    throw exc;
+                }
+            }
             votingId++;
         }
         return result;
     }
 
+    processVotingItem(votingItem){
+        return ({
+            originalId: votingItem.id,
+            title: votingItem.title,
+            net: 'nuls',
+            start_datetime: votingItem.config && votingItem.config.startTime,
+            end_datetime: votingItem.config && votingItem.config.endTime,
+            answers: votingItem.items.map(c => ({
+                id: c.id,
+                title: c.content,
+                vote_count: null
+            }))
+        });
+    }
 }
 
 module.exports = NULS;
