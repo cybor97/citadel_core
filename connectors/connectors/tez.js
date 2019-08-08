@@ -171,6 +171,16 @@ class TEZ extends BaseConnector {
         }, false).catch(err => err);
     }
 
+    async prepareOrigination(fromAddress, balance){
+        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+            kind: 'origination',
+            fee: '257',
+            balance: (Number(balance) * M_TEZ_MULTIPLIER).toString(),
+            gas_limit: 10100,
+            storage_limit: 277,
+            manager_pubkey: fromAddress
+        }, false).catch(err => err)
+    }
 
     async sendTransaction(address, signedTransaction) {
         return await this.eztzInstance.rpc.silentInject(signedTransaction.sopbytes);

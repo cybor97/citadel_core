@@ -324,6 +324,33 @@ router
     })
 
     /**
+     * @api {post} /net/:net/address/:address/transactions/prepare-origination Prepare origination
+     * @apiName prepareOrigination
+     * @apiGroup sendTransaction
+     * @apiDescription Prepare origination transaction
+     * 
+     * @apiParam {String} balance Target wallet balance 
+     * 
+     * @apiSuccess transaction Prepared transaction, specific for each net({opbytes, opOb} for tezos)
+     */
+    .post('/:net/address/:address/transactions/prepare-origination', async (req, res) => {
+        let connectors = Connectors.getConnectors();
+        if (!connectors[req.params.net]) {
+            return res.status(400).send('Specified net is not supported!');
+        }
+
+        let connector = (new connectors[req.params.net]());
+        if (!connector.prepareOrigination) {
+            return res.status(400).send("Specified net doesn't support origination or not yet implemented.");
+        }
+
+        let transaction = await connector.prepareOrigination(req.params.address, req.body.balance);
+
+        res.status(200).send(transaction);
+    })
+
+
+    /**
      * @api {post} /net/:net/address/:address/transactions/send Send signed transaction
      * @apiName sendTransaction
      * @apiGroup sendTransaction
