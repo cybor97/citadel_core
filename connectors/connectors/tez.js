@@ -178,7 +178,9 @@ class TEZ extends BaseConnector {
             balance: (Number(balance) * M_TEZ_MULTIPLIER).toString(),
             gas_limit: 10100,
             storage_limit: 277,
-            manager_pubkey: fromAddress
+            manager_pubkey: fromAddress,
+            spendable: true,
+            delegatable: true
         }, false).catch(err => err)
     }
 
