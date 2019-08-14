@@ -1,5 +1,5 @@
-function signTx(opType){
-    switch(netInput.value){
+function signTx(opType) {
+    switch (netInput.value) {
         case 'tez':
             signTezTx(opType);
             break;
@@ -13,17 +13,17 @@ function signTx(opType){
     }
 }
 
-function signTezTx(opType){
+function signTezTx(opType) {
     let req = new XMLHttpRequest();
-    if(['transfer', 'delegation'].includes(opType)){
+    if (['transfer', 'origination', 'delegation'].includes(opType)) {
         req.open('POST', `/net/tez/address/${addressFromInput.value}/transactions/prepare-${opType}`);
         req.setRequestHeader('Content-Type', 'application/json');
         req.send(JSON.stringify({
             toAddress: addressToInput.value,
-            amount: amountInput.value
-        }));    
+            [opType == 'origination' ? 'balance' : 'amount']: amountInput.value
+        }));
     }
-    else if(opType == 'ballot'){
+    else if (opType == 'ballot') {
         req.open('POST', `/net/tez/voting/submit-ballot`);
         req.setRequestHeader('Content-Type', 'application/json');
         req.send(JSON.stringify({
@@ -35,7 +35,7 @@ function signTezTx(opType){
     //On response...
     req.onloadend = () => {
         //Parse response from JSON
-        if(req.status !== 200){
+        if (req.status !== 200) {
             alert(req.responseText);
             return;
         }
@@ -49,14 +49,14 @@ function signTezTx(opType){
         req.open('POST', `/net/tez/address/${addressFromInput.value}/transactions/send`);
         req.setRequestHeader('Content-Type', 'application/json');
 
-        req.send(JSON.stringify({signedTransaction: {sopbytes: signedTx.sbytes}}));
+        req.send(JSON.stringify({ signedTransaction: { sopbytes: signedTx.sbytes } }));
         //On response display added transaction hash
         req.onloadend = () => alert('Sent! Hash: ' + req.responseText);
     };
 }
 
-function signETHTx(opType){
-    let web3js = new Web3();    
+function signETHTx(opType) {
+    let web3js = new Web3();
     //Send request to prepare operation of opType type from specified address
     let req = new XMLHttpRequest();
     req.open('POST', `/net/${netInput.value}/address/${addressFromInput.value}/transactions/prepare-${opType}`);
@@ -68,7 +68,7 @@ function signETHTx(opType){
     //On response...
     req.onloadend = () => {
         //Parse response from JSON
-        if(req.status !== 200){
+        if (req.status !== 200) {
             alert(req.responseText);
             return;
         }
@@ -76,7 +76,7 @@ function signETHTx(opType){
         let tx = JSON.parse(req.responseText);
         //Private key should start with 0x
         let privateKey = privateKeyInput.value;
-        if(!privateKey.startsWith('0x')){
+        if (!privateKey.startsWith('0x')) {
             privateKey = '0x' + privateKey;
         }
         //Sign prepared transaction with privateKey
@@ -85,7 +85,7 @@ function signETHTx(opType){
             //Send signed transaction
             req.open('POST', `/net/${netInput.value}/address/${addressFromInput.value}/transactions/send`);
             req.setRequestHeader('Content-Type', 'application/json');
-            req.send(JSON.stringify({signedTransaction: signedTx.rawTransaction}));
+            req.send(JSON.stringify({ signedTransaction: signedTx.rawTransaction }));
             //On response display added transaction hash
             req.onloadend = () => alert('Sent! Hash: ' + req.responseText);
         });
