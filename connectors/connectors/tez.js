@@ -171,7 +171,7 @@ class TEZ extends BaseConnector {
         }, false).catch(err => err);
     }
 
-    async prepareOrigination(fromAddress, balance){
+    async prepareOrigination(fromAddress, balance) {
         return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
             kind: 'origination',
             fee: '257',
@@ -185,7 +185,7 @@ class TEZ extends BaseConnector {
     }
 
     async sendTransaction(address, signedTransaction) {
-        return await this.eztzInstance.rpc.silentInject(signedTransaction.sopbytes);
+        return await this.eztzInstance.rpc.silentInject(signedTransaction);
     }
 
     async getInfo() {
