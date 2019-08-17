@@ -291,7 +291,16 @@ router
      */
     .post('/:net/address/:address/transactions/prepare-transfer', async (req, res) => {
         let connectors = Connectors.getConnectors();
+
+        if (!connectors[req.params.net]) {
+            return res.status(400).send('Specified net is not supported!');
+        }
+
         let connector = (new connectors[req.params.net]());
+        if (!connector.prepareReveal) {
+            return res.status(400).send("Specified net doesn't support transfer or not yet implemented.");
+        }
+        
         let transaction = await connector.prepareTransfer(req.params.address, req.body.toAddress, req.body.amount);
 
         res.status(200).send(transaction);
