@@ -185,7 +185,7 @@ class TEZ extends BaseConnector {
     }
 
     async sendTransaction(address, signedTransaction) {
-        return await this.eztzInstance.rpc.silentInject(signedTransaction);
+        return await this.eztzInstance.rpc.silentInject(signedTransaction.sopbytes);
     }
 
     async getInfo() {
