@@ -139,6 +139,17 @@ class NULS extends BaseConnector {
     //     return result;
     // }
 
+    async getVoting(){
+        return [{
+            originalId: 1,
+            title: 'Test voting(mock)',
+            net: 'nuls',
+            start_datetime: 0,
+            end_datetime: Date.now() + 86400000,
+            answers: [{"id":0,"title":"yay","vote_count":31374},{"id":1,"title":"nay","vote_count":0},{"id":2,"title":"pass","vote_count":20674}]
+        }];
+    }
+
     processVotingItem(votingItem){
         return ({
             originalId: votingItem.id,
