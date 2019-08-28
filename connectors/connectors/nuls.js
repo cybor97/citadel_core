@@ -107,37 +107,37 @@ class NULS extends BaseConnector {
         return await CoinMarketCap.getInfo('NULS');
     }
 
-    async getVoting(){
-        let votingId = 1;
-        let result = [];
-        while(true){
-            let data = (await axios.post('https://nuls.world/addresses/contracts/call', {
-                contractAddress: VOTING_CONTRACT_ADDRESS,
-                methodName: 'queryVote',
-                args: [votingId.toString()]
-            })).data;
+    // async getVoting(){
+    //     let votingId = 1;
+    //     let result = [];
+    //     while(true){
+    //         let data = (await axios.post('https://nuls.world/addresses/contracts/call', {
+    //             contractAddress: VOTING_CONTRACT_ADDRESS,
+    //             methodName: 'queryVote',
+    //             args: [votingId.toString()]
+    //         })).data;
 
-            if(data == null){
-                break;
-            }
+    //         if(data == null){
+    //             break;
+    //         }
 
-            try{
-                let votingDataStrFixed = data.result
-                    .replace(/\n|\r|\t/g, ' ')
-                    .replace(/\}\{/g, '},{');
+    //         try{
+    //             let votingDataStrFixed = data.result
+    //                 .replace(/\n|\r|\t/g, ' ')
+    //                 .replace(/\}\{/g, '},{');
     
-                let votingData = JSON.parse(votingDataStrFixed);
-                result.push(this.processVotingItem(votingData));
-            }
-            catch(exc){
-                if(!(exc instanceof SyntaxError)){
-                    throw exc;
-                }
-            }
-            votingId++;
-        }
-        return result;
-    }
+    //             let votingData = JSON.parse(votingDataStrFixed);
+    //             result.push(this.processVotingItem(votingData));
+    //         }
+    //         catch(exc){
+    //             if(!(exc instanceof SyntaxError)){
+    //                 throw exc;
+    //             }
+    //         }
+    //         votingId++;
+    //     }
+    //     return result;
+    // }
 
     processVotingItem(votingItem){
         return ({
