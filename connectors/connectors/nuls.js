@@ -70,7 +70,11 @@ class NULS extends BaseConnector {
                         let txFrom = tx.type === 2 && tx.froms && tx.froms.length ? tx.froms[0].address : null;
                         //Find 'to', that is not equal to from(is not a change)
                         let txTo = tx.type === 1 ? address : tx.tos.find(txToItem => txToItem.address != txFrom);
-                        txTo = txTo ? txTo.address : null;
+                        if(txTo && txTo.address){
+                            txTo = txTo.address;
+                        }
+                        
+
                         //TODO: Check balance calculation
                         let txValue = tx.type === 1
                             ? tx.tos.reduce((prev,  next) => next.address === address ? prev + next.value : prev, 0)
