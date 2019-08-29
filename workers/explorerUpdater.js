@@ -113,6 +113,14 @@ class ExplorerUpdater {
                     }
                 }
                 catch(err){
+                    try{
+                        address.updated = Date.now();
+                        await address.save();
+                        await new Promise(resolve => setTimeout(resolve, config.updateInterval))
+                    }
+                    catch(dbErr){
+                        console.error('dbErr', dbErr);
+                    }
                     console.error(err);
                 }
             }
