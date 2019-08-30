@@ -14,7 +14,7 @@ const OP_TYPES = [
 class TEZ extends BaseConnector {
     constructor() {
         super();
-        this.apiUrl = 'https://api1.tzscan.io/v3';
+        this.apiUrl = 'https://api6.tzscan.io/v3';
         this.bakingBadUrl = 'https://baking-bad.org/';
         this.rpcUrl = `http://${config.tezos.ip}:${config.tezos.port}`;
 
@@ -226,6 +226,55 @@ class TEZ extends BaseConnector {
             end_datetime: endTimestamp,
             answers: Object.keys(currentVotingBallots).map((key, i) => ({ id: i, title: key, vote_count: currentVotingBallots[key] }))
         }
+    }
+
+    async getDelegationBalanceInfo(address) {
+        let mainBalanceInfo = await this.getAddressBalanceInfo(address);
+        let mainBalance = parseInt(mainBalanceInfo.balance / M_TEZ_MULTIPLIER);
+        let addresses = [];
+        let delegatedBalance = 0;
+        let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
+            params: {
+                type: 'Origination'
+            }
+        })).data[0];
+        let offset = 0;
+
+        while (addresses.length < transactionsCount) {
+            let newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
+                params: {
+                    type: 'Origination',
+                    number: QUERY_COUNT,
+                    p: offset
+                }
+            })).data;
+
+            let newAddresses = newTransactions.map(tx => 
+                tx.type.operations.find(op => op.kind === 'origination').tz1.tz
+            );
+            addresses = addresses.concat(newAddresses);
+
+            delegatedBalance += (await Promise.all(newAddresses.map(async newAddress => 
+                parseInt((await this.getAddressBalanceInfo(newAddress)).balance) / M_TEZ_MULTIPLIER
+            ))).reduce((prev, next) => prev + next, 0);
+
+            offset++;
+        }
+
+        return {
+            mainBalance: mainBalance,
+            delegatedBalance: delegatedBalance,
+            originatedAddresses: addresses
+        }
+    }
+
+    async getAddressBalanceInfo(address){
+        return await axios.get(`${this.apiUrl}/node_account/${address}`, {
+            headers: {
+                'Referer': `https://tzscan.io/${address}?default=origination`
+            },
+            validateStatus: false
+        }).then(resp => resp.status === 500 ? {balance: 0} : resp.data);
     }
 }
 

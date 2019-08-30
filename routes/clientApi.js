@@ -456,7 +456,15 @@ router
      */
     .post('/:net/voting/submit-proposal', async (req, res) => {
         let connectors = Connectors.getConnectors();
-        let connector = (new connectors[req.params.net]());
+        if (!connectors[req.params.net]) {
+            return res.status(400).send('Specified net is not supported!');
+        }
+
+        let connector = new connectors[req.params.net];
+        if (!connector.prepareProposal) {
+            return res.status(400).send('Proposal for specified net is not yet supported.');
+        }
+
         let transaction = await connector.prepareProposal(req.body.votingId, req.body.delegate, req.body.proposal);
 
         res.status(200).send(transaction);
@@ -476,10 +484,44 @@ router
      */
     .post('/:net/voting/submit-ballot', async (req, res) => {
         let connectors = Connectors.getConnectors();
-        let connector = (new connectors[req.params.net]());
+        if (!connectors[req.params.net]) {
+            return res.status(400).send('Specified net is not supported!');
+        }
+
+        let connector = new connectors[req.params.net];
+        if (!connector.prepareBallot) {
+            return res.status(400).send('Ballot for specified net is not yet supported.');
+        }
         let transaction = await connector.prepareBallot(req.body.votingId, req.body.delegate, req.body.ballot);
 
         res.status(200).send(transaction);
+    })
+    
+    /**
+     * @api {post} /net/:net/address/:address/delegation-balance-info Delegation balance info
+     * @apiName delegationBalanceInfo
+     * @apiGroup delegationBalanceInfo
+     * @apiDescription Get delegation balance info
+     *
+     * @apiParam {String} net NET
+     * @apiParam {String} address Address
+     * 
+     * @apiSuccess {number} balance
+     * @apiSuccess {number} delegatedBalance
+     */
+    .get('/:net/address/:address/delegation-balance-info', async (req, res) => {
+        let connectors = Connectors.getConnectors();
+        if (!connectors[req.params.net]) {
+            return res.status(400).send('Specified net is not supported!');
+        }
+
+        let connector = (new connectors[req.params.net]());
+        if (!connector.getDelegationBalanceInfo) {
+            return res.status(400).send('Delegation balance info for specified net is not yet supported.');
+        }
+
+        res.status(200).send(await connector.getDelegationBalanceInfo(req.params.address));
     });
+;
 
 module.exports = router;
