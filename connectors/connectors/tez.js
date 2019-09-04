@@ -228,6 +228,11 @@ class TEZ extends BaseConnector {
         }
     }
 
+    async validateDelegationAddress(address){
+        let valid = address.match(/^tz[a-zA-Z0-9]*/);
+        return {valid: !!valid, message: valid ? 'OK' : 'Address should be TZ for tezos!'};
+    }
+
     async getDelegationBalanceInfo(address) {
         let mainBalanceInfo = await this.getAddressBalanceInfo(address);
         let mainBalance = parseInt(mainBalanceInfo.balance / M_TEZ_MULTIPLIER);

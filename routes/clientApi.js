@@ -506,8 +506,9 @@ router
      * @apiParam {String} net NET
      * @apiParam {String} address Address
      * 
-     * @apiSuccess {number} balance
+     * @apiSuccess {number} mainBalance
      * @apiSuccess {number} delegatedBalance
+     * @apiSuccess {array} originatedAddresses
      */
     .get('/:net/address/:address/delegation-balance-info', async (req, res) => {
         let connectors = Connectors.getConnectors();
@@ -518,6 +519,13 @@ router
         let connector = (new connectors[req.params.net]());
         if (!connector.getDelegationBalanceInfo) {
             return res.status(400).send('Delegation balance info for specified net is not yet supported.');
+        }
+
+        if(connector.validateDelegationAddress){
+            let addressValidation = await connector.validateDelegationAddress(req.params.address);
+            if(!addressValidation.valid){
+                return res.status(400).send(addressValidation.message);
+            }    
         }
 
         res.status(200).send(await connector.getDelegationBalanceInfo(req.params.address));
