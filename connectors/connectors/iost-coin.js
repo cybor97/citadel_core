@@ -10,12 +10,6 @@ class IOSTCoin extends BaseConnector {
 
 
     async getDelegationBalanceInfo(address) {
-        let ramgasOperations = await axios.get(`${this.apiUrl}/account/${address}/actions?type=ramgas`);
-        ramgasOperations = ramgasOperations.data.actions;
-        let pledgedTotal = ramgasOperations
-            .filter(c => c.action_name === 'pledge')
-            .reduce((prev, next) => prev + parseFloat(JSON.parse(next.data)[2]), 0);
-
         let delegatedData = await axios.get(`${this.apiUrl}/voters/${address}`);
         delegatedData = delegatedData.data;
         let delegation = delegatedData.voters.find(c => c.account === address);
@@ -28,8 +22,7 @@ class IOSTCoin extends BaseConnector {
         availableBalanceData = availableBalanceData.data.data;
 
         return {
-            //TODO: Use available balance
-            mainBalance: delegatedTotal + pledgedTotal + parseFloat(availableBalanceData.balance),
+            mainBalance: parseFloat(availableBalanceData.balance),
             delegatedBalance: delegatedTotal,
             originatedAddresses: createdAccounts
         }
