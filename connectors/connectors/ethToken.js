@@ -19,8 +19,8 @@ class ETHToken extends BaseConnector {
             fromBlock: fromBlock || 'earliest',
             toBlock: 'latest',
             address: contractHash,
-            topics: [methodTopic, address]
-        })
+            topics: [methodTopic, topic === 'topic1' ? address : null, topic === 'topic2' ? address : null]
+        });
 
         let result = await Promise.all(resp
             .map(async tx => {

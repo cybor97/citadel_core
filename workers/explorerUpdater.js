@@ -29,7 +29,10 @@ class ExplorerUpdater {
                 try {
                     let addresses = await Address.findAll({
                         limit: 1,
-                        order: [['updated', 'asc'], ['created', 'desc']]
+                        order: [['updated', 'asc'], ['created', 'desc']],
+                        where: {
+                            isService: false
+                        }
                     });
                     let serviceAddresses = await Address.findAll({
                         order: [['created', 'desc']],
