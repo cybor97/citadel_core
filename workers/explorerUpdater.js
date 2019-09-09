@@ -20,19 +20,16 @@ const LAST_PATHS_QUERY = `
  `
 
 class ExplorerUpdater {
-    static init(){
+    static init() {
         this.initConnectors();
         let connectors = this.connectors;
         //TODO: Re-implement: should run as different instances(best: 1-app, 1-updater, N-workers)
         Promise.resolve().then(async () => {
-            while(true){
-                try{
+            while (true) {
+                try {
                     let addresses = await Address.findAll({
                         limit: 1,
-                        order: [['updated', 'asc'], ['created', 'desc']],
-                        where: {
-                            isService: false
-                        }
+                        order: [['updated', 'asc'], ['created', 'desc']]
                     });
                     let serviceAddresses = await Address.findAll({
                         order: [['created', 'desc']],
@@ -41,20 +38,23 @@ class ExplorerUpdater {
                         }
                     });
 
-                    if(addresses.length > 0){
+                    if (addresses.length > 0) {
                         let address = addresses[0];
+                        address.updated = Date.now();
+                        await address.save();
+
                         let lastPaths = await sequelizeConnection.query(LAST_PATHS_QUERY, {
-                            replacements: {addressId: address.id},
+                            replacements: { addressId: address.id },
                             type: sequelizeConnection.QueryTypes.SELECT
                         });
                         let connector = await connectors[address.net];
-                        if(serviceAddresses.length === 0 
-                            || Date.now() - serviceAddresses[0].updated > config.bakingBadUpdateInterval){
-                            if(connector.getServiceAddresses){
+                        if (serviceAddresses.length === 0
+                            || Date.now() - serviceAddresses[0].updated > config.bakingBadUpdateInterval) {
+                            if (connector.getServiceAddresses) {
                                 let newServiceAddresses = await connector.getServiceAddresses();
-                                for(let newServiceAddress of newServiceAddresses){
+                                for (let newServiceAddress of newServiceAddresses) {
                                     let created = await Address.findOrCreate({
-                                        where: {address: newServiceAddress, net: address.net},
+                                        where: { address: newServiceAddress, net: address.net },
                                         defaults: {
                                             net: address.net,
                                             currency: address.currency,
@@ -64,16 +64,16 @@ class ExplorerUpdater {
                                             updated: Date.now()
                                         }
                                     });
-                                    if(!created){
+                                    if (!created) {
                                         Address.update({
                                             updated: Date.now()
                                         }, {
-                                            where: {address: newServiceAddress, net: address.net},
+                                            where: { address: newServiceAddress, net: address.net },
                                         });
                                     }
                                 }
-                                if(serviceAddresses.length === 0 && newServiceAddresses.length !== 0){
-                                    serviceAddresses = newServiceAddresses.map(c => ({address: c}));
+                                if (serviceAddresses.length === 0 && newServiceAddresses.length !== 0) {
+                                    serviceAddresses = newServiceAddresses.map(c => ({ address: c }));
                                 }
                             }
                         }
@@ -81,26 +81,26 @@ class ExplorerUpdater {
                         console.log(`Updating ${address.address} (${address.net})`);
                         let transactions = await connector.getAllTransactions(address.address, lastPaths, serviceAddresses.map(c => c.address));
 
-                        for(let tx of transactions){
+                        for (let tx of transactions) {
                             console.log(`>tx: ${tx.hash} (${tx.type})`);
                             let forceUpdate = tx.forceUpdate;
                             delete tx.forceUpdate;
-                            if(config.trustedAddresses && tx.type == 'payment' && config.trustedAddresses.includes(tx.from)){
+                            if (config.trustedAddresses && tx.type == 'payment' && config.trustedAddresses.includes(tx.from)) {
                                 tx.type = 'approved_payment';
                             }
 
                             let created = (await Transaction.findOrCreate({
-                                where: {hash: tx.hash, addressId: address.id},
-                                defaults: Object.assign({addressId: address.id}, tx)
+                                where: { hash: tx.hash, addressId: address.id },
+                                defaults: Object.assign({ addressId: address.id }, tx)
                             }))[1];
 
-                            if(forceUpdate && !created){
+                            if (forceUpdate && !created) {
                                 let transaction = await Transaction.findOne({
-                                    where: {hash: tx.hash, addressId: address.id}
+                                    where: { hash: tx.hash, addressId: address.id }
                                 });
-                                
-                                let newTxData = Object.assign({addressId: address.id}, tx);
-                                for(let key in Object.keys(newTxData)){
+
+                                let newTxData = Object.assign({ addressId: address.id }, tx);
+                                for (let key in Object.keys(newTxData)) {
                                     transaction.key = newTxData[key];
                                 }
 
@@ -112,25 +112,17 @@ class ExplorerUpdater {
                         await new Promise(resolve => setTimeout(resolve, config.updateInterval))
                     }
                 }
-                catch(err){
-                    try{
-                        address.updated = Date.now();
-                        await address.save();
-                        await new Promise(resolve => setTimeout(resolve, config.updateInterval))
-                    }
-                    catch(dbErr){
-                        console.error('dbErr', dbErr);
-                    }
+                catch (err) {
                     console.error(err);
                 }
             }
         });
     }
 
-    static initConnectors(){
+    static initConnectors() {
         this.connectors = {};
         let connectorsModules = Connectors.getConnectors();
-        for(let connectorName in connectorsModules){
+        for (let connectorName in connectorsModules) {
             this.connectors[connectorName] = new (connectorsModules[connectorName])();
         }
     }
