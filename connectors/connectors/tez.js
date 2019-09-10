@@ -120,7 +120,7 @@ class TEZ extends BaseConnector {
             kind: 'transaction',
             source: address,
             fee: '1420',
-            gas_limit: isKT ? '10600' : '10100',
+            gas_limit: '400000',
             storage_limit: isKT ? '300' : '0',
         }, false);
     }
@@ -130,7 +130,7 @@ class TEZ extends BaseConnector {
         return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
             kind: 'transaction',
             fee: '1420',
-            gas_limit: isKT ? '10600' : '10100',
+            gas_limit: '400000',
             storage_limit: isKT ? '300' : '0',
             amount: (Number(amount) * M_TEZ_MULTIPLIER).toString(),
             destination: toAddress
@@ -141,7 +141,7 @@ class TEZ extends BaseConnector {
         return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
             kind: 'delegation',
             fee: '1420',
-            gas_limit: '10100',
+            gas_limit: '400000',
             storage_limit: '0',
             delegate: toAddress
         }, false).catch(err => err);
@@ -176,7 +176,7 @@ class TEZ extends BaseConnector {
             kind: 'origination',
             fee: '257',
             balance: (Number(balance) * M_TEZ_MULTIPLIER).toString(),
-            gas_limit: 10100,
+            gas_limit: '400000',
             storage_limit: 277,
             manager_pubkey: fromAddress,
             spendable: true,
@@ -228,9 +228,9 @@ class TEZ extends BaseConnector {
         }
     }
 
-    async validateDelegationAddress(address){
+    async validateDelegationAddress(address) {
         let valid = address.match(/^tz[a-zA-Z0-9]*/);
-        return {valid: !!valid, message: valid ? 'OK' : 'Address should be TZ for tezos!'};
+        return { valid: !!valid, message: valid ? 'OK' : 'Address should be TZ for tezos!' };
     }
 
     async getDelegationBalanceInfo(address) {
@@ -254,12 +254,12 @@ class TEZ extends BaseConnector {
                 }
             })).data;
 
-            let newAddresses = newTransactions.map(tx => 
+            let newAddresses = newTransactions.map(tx =>
                 tx.type.operations.find(op => op.kind === 'origination').tz1.tz
             );
             addresses = addresses.concat(newAddresses);
 
-            delegatedBalance += (await Promise.all(newAddresses.map(async newAddress => 
+            delegatedBalance += (await Promise.all(newAddresses.map(async newAddress =>
                 parseInt((await this.getAddressBalanceInfo(newAddress)).balance) / M_TEZ_MULTIPLIER
             ))).reduce((prev, next) => prev + next, 0);
 
@@ -273,13 +273,13 @@ class TEZ extends BaseConnector {
         }
     }
 
-    async getAddressBalanceInfo(address){
+    async getAddressBalanceInfo(address) {
         return await axios.get(`${this.apiUrl}/node_account/${address}`, {
             headers: {
                 'Referer': `https://tzscan.io/${address}?default=origination`
             },
             validateStatus: false
-        }).then(resp => resp.status === 500 ? {balance: 0} : resp.data);
+        }).then(resp => resp.status === 500 ? { balance: 0 } : resp.data);
     }
 }
 
