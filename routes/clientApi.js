@@ -11,8 +11,8 @@ const Transaction = require('../data/models/Transaction');
 const NetInfo = require('../data/models/NetInfo');
 const utils = require('../utils');
 
-const NET_REGEX = /^\w*$/;
-const ADDRESS_REGEX = /^[0-9a-zA-Z]*$/;
+const NET_REGEX = /^[a-z-]*$/;
+const ADDRESS_REGEX = /^[0-9a-zA-Z_-]*$/;
 
 router
     /**
