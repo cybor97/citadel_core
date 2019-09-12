@@ -31,10 +31,7 @@ class ExplorerUpdater {
                         let addresses = await Address.findAll({
                             limit: 1,
                             order: [['updated', 'asc']],
-                            where: {
-                                isService: false,
-                                net: net,
-                            }
+                            where: { net: net }
                         });
                         let serviceAddresses = await Address.findAll({
                             order: [['created', 'desc']],
@@ -57,6 +54,7 @@ class ExplorerUpdater {
                             if (serviceAddresses.length === 0
                                 || Date.now() - serviceAddresses[0].updated > config.bakingBadUpdateInterval) {
                                 if (connector.getServiceAddresses) {
+                                    console.log(`Updating ${net} service addresses`);
                                     let newServiceAddresses = await connector.getServiceAddresses();
                                     for (let newServiceAddress of newServiceAddresses) {
                                         let created = await Address.findOrCreate({
@@ -88,7 +86,9 @@ class ExplorerUpdater {
                             let transactions = await connector.getAllTransactions(address.address, lastPaths, serviceAddresses.map(c => c.address));
 
                             for (let tx of transactions) {
-                                console.log(`>tx: ${tx.hash} (${tx.type})`);
+                                if (process.argv.includes('-vTX')) {
+                                    console.log(`>tx: ${tx.hash} (${tx.type})`);
+                                }
                                 let forceUpdate = tx.forceUpdate;
                                 delete tx.forceUpdate;
                                 if (config.trustedAddresses && tx.type == 'payment' && config.trustedAddresses.includes(tx.from)) {

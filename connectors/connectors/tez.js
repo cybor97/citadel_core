@@ -67,6 +67,7 @@ class TEZ extends BaseConnector {
                         p: page
                     }
                 })).data;
+                console.log('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactions.length}`);
 
                 transactions = transactions.concat(newTransactions.map((tx, i, arr) => {
                     let txData = tx.type.operations[0];

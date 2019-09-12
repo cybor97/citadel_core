@@ -12,7 +12,7 @@ class IOSTCoin extends BaseConnector {
     constructor() {
         super();
         this.apiUrl = 'https://www.iostabc.com/api';
-        this.apiUrlAdditional = `https://api.iostabc.com/api/?apikey=${config.iostCoin.apikey}`;
+        this.apiUrlAdditional = `https://api.iostabc.com/api`;
     }
 
     validateAddress(address) {
@@ -41,6 +41,7 @@ class IOSTCoin extends BaseConnector {
         while (newTransactionsData == null || newTransactionsData.length == QUERY_COUNT) {
             let resp = await axios.get(`${this.apiUrlAdditional}`, {
                 params: {
+                    apikey: config.iostCoin.apikey,
                     module: 'account',
                     action: 'get-account-tx',
                     account: address,
@@ -49,11 +50,13 @@ class IOSTCoin extends BaseConnector {
                 }
             });
             newTransactionsData = resp.data.data.transactions;
-
+            console.log('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactionsData.length}`);
             result = result.concat(newTransactionsData
                 .map(tx => {
                     //0 - token, 1 - from, 2 - to, 3 - amount, 4 - message(optional)
                     tx.data = JSON.parse(tx.data);
+                    //offset should include non-matching
+                    offset++;
                     return tx;
                 })
                 .filter(tx => tx.data[0] === 'iost')
@@ -68,7 +71,7 @@ class IOSTCoin extends BaseConnector {
                     fee: 0,
                     originalOpType: `${tx.contract}/${tx.action_name}`,
                     type: opTypes[`${tx.contract}/${tx.action_name}`],
-                    path: JSON.stringify({ queryCount: QUERY_COUNT, offset: (++offset) })
+                    path: JSON.stringify({ queryCount: QUERY_COUNT, offset: offset })
                 }))
             );
         }
