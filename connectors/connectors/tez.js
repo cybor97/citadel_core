@@ -50,30 +50,25 @@ class TEZ extends BaseConnector {
         let result = {};
 
         for (let opType of OP_TYPES) {
-            let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
-                params: {
-                    type: opType.sourceType
-                }
-            })).data[0];
             let transactions = [];
+            let newTransactions = null;
             let offset = 0;
             for (let tx of lastPaths) {
-                if (tx.originalOpType === opType.sourceType && tx.path &&
-                    (opType.type === 'delegation' || opType === 'origination')) {
+                if (tx.originalOpType === opType.sourceType && tx.path) {
                     offset = JSON.parse(tx.path).offset;
                 }
             }
-
-            while (transactions.length < transactionsCount) {
-                let newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
+            while (newTransactions == null || newTransactions.length == QUERY_COUNT) {
+                const page = ~~(offset / QUERY_COUNT);
+                newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
                     params: {
                         type: opType.sourceType,
                         number: QUERY_COUNT,
-                        p: offset
+                        p: page
                     }
                 })).data;
 
-                newTransactions = newTransactions.map((tx, i, arr) => {
+                transactions = transactions.concat(newTransactions.map((tx, i, arr) => {
                     let txData = tx.type.operations[0];
                     let toField = txData.destination || txData.delegate || txData.tz1;
                     let to = toField ? toField.tz : null;
@@ -87,20 +82,18 @@ class TEZ extends BaseConnector {
                         fee: txData.fee / M_TEZ_MULTIPLIER,
                         originalOpType: opType.sourceType,
                         type: opType.type,
-                        path: JSON.stringify({ queryCount: QUERY_COUNT, offset: offset })
+                        path: JSON.stringify({ queryCount: QUERY_COUNT, offset: (++offset) })
                     };
-                })
-                transactions = transactions.concat(newTransactions);
-                offset++;
+                }));
             }
-
             result[opType.type] = transactions;
         }
 
         //Unprocessed payments/conclusions are supplements by default
         this.processPayment([].concat(result.supplement, result.origination || []), serviceAddresses);
+        let resultTransactions = [].concat(...Object.values(result));
 
-        return [].concat(...Object.values(result));
+        return resultTransactions;
     }
 
     async processPayment(transactions, serviceAddresses) {

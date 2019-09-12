@@ -15,12 +15,6 @@ class ETHToken extends BaseConnector {
     //FIXME: Consider re-implement with RPCs eth_getLogs&eth_getTransactionByHash
     async getTransactionsForContractMethod(contractHash, methodTopic, type, address, topic, fromBlock = null) {
         const web3 = new Web3(`http://${config.parity.ip}:${config.parity.port}`);
-        console.log({
-            fromBlock: fromBlock || 'earliest',
-            toBlock: 'latest',
-            address: contractHash,
-            topics: [methodTopic, topic === 'topic1' ? address : null, topic === 'topic2' ? address : null]
-        });
         const resp = await web3.eth.getPastLogs({
             fromBlock: fromBlock || 'earliest',
             toBlock: 'latest',
