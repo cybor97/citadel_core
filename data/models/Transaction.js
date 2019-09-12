@@ -28,7 +28,7 @@ const Transaction = connection.define('transactions', {
     to: sequelize.STRING,
     fee: sequelize.DOUBLE,
     type: sequelize.STRING,
-    comment: sequelize.STRING
+    comment: sequelize.TEXT
 }, { timestamps: false });
 
 Address.hasMany(Transaction);
