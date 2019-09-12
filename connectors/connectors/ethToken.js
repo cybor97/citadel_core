@@ -21,7 +21,7 @@ class ETHToken extends BaseConnector {
             address: contractHash,
             topics: [methodTopic, topic === 'topic1' ? address : null, topic === 'topic2' ? address : null]
         });
-        console.log(resp)
+
         let result = await Promise.all(resp
             .map(async tx => {
                 let txData = await web3.eth.getTransaction(tx.transactionHash);
