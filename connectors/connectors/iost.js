@@ -14,7 +14,6 @@ class IOST extends ETHToken {
     }
 
     async getAllTransactions(address, lastPaths) {
-        return [];
         //ETH has a bit longer addresses with precending 0-es
         if (address.length === 42) {
             address = address.replace('0x', `0x${PRECENDING_ZEROES}`);
