@@ -18,8 +18,8 @@ if (!fs.existsSync(configFilename)) {
 }
 
 module.exports = Object.assign({
-    //1m
-    updateInterval: 1000,
+    //2s
+    updateInterval: 2000,
     //1d
     bakingBadUpdateInterval: 86400000,
     //1h
