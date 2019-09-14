@@ -7,10 +7,16 @@ require('./utils/expressAsyncErrors');
 
 const path = require('path');
 const clientApi = require('./routes/clientApi');
-const explorerUpdater = require('./workers/explorerUpdater');
-explorerUpdater.init();
+
+if (!process.argv.includes('--api-server')) {
+  console.log('API Server mode, data collection disabled');
+  const explorerUpdater = require('./workers/explorerUpdater');
+  explorerUpdater.init();
+}
 
 if (!process.argv.includes('--worker')) {
+  console.log('Worker mode, API disabled');
+
   const app = express();
 
   app
