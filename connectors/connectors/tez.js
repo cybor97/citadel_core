@@ -50,6 +50,12 @@ class TEZ extends BaseConnector {
         let result = {};
 
         for (let opType of OP_TYPES) {
+            let total = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
+                params: {
+                    type: opType.sourceType
+                }
+            })).data[0];
+
             let transactions = [];
             let newTransactions = null;
             let offset = 0;
@@ -67,7 +73,7 @@ class TEZ extends BaseConnector {
                         p: page
                     }
                 })).data;
-                console.log('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactions.length}`);
+                console.log('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactions.length}|total:${total}`);
 
                 transactions = transactions.concat(newTransactions.map((tx, i, arr) => {
                     let txData = tx.type.operations[0];

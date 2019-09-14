@@ -20,10 +20,18 @@ const LAST_PATHS_QUERY = `
 
 class ExplorerUpdater {
     static init() {
+        let specificNet = process.argv.find(c => c.match(/^--net=/) && c);
+        if (specificNet) {
+            specificNet = specificNet.split('--net=')[1];
+        }
+
         this.initConnectors();
         let connectors = this.connectors;
         //TODO: Re-implement: should run as different instances(best: 1-app, 1-updater, N-workers)
-        Object.keys(connectors).forEach(net =>
+        Object.keys(connectors).forEach(net => {
+            if (specificNet && net !== specificNet) {
+                return;
+            }
             Promise.resolve().then(async () => {
                 while (true) {
                     try {
@@ -128,7 +136,8 @@ class ExplorerUpdater {
                         console.error(err);
                     }
                 }
-            }));
+            })
+        });
     }
 
     static initConnectors() {
