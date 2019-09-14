@@ -36,7 +36,7 @@ class ICON extends BaseConnector {
                     page: ~~(offset / QUERY_COUNT)
                 }
             });
-            newTransactionsData = resp.data.data;
+            newTransactionsData = resp.data.data || [];
             console.log('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactionsData.length}|total:${resp.data.totalSize}`);
             result = result.concat(newTransactionsData
                 .map((tx) => ({
