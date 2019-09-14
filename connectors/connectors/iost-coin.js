@@ -13,6 +13,7 @@ class IOSTCoin extends BaseConnector {
         super();
         this.apiUrl = 'https://www.iostabc.com/api';
         this.apiUrlAdditional = `https://api.iostabc.com/api`;
+        this.apiUrlBinance = 'https://www.binance.com/api';
     }
 
     validateAddress(address) {
@@ -81,22 +82,20 @@ class IOSTCoin extends BaseConnector {
     }
 
     async getInfo() {
-        let marketCapData = (await axios.get(`${this.apiUrl}/marketcap`)).data[0];
+        let marketCapData = await axios.get(`${this.apiUrl}/general/market`);
+        let binanceData = await axios.get(`${this.apiUrlBinance}/v1/aggTrades?limit=80&symbol=IOSTBTC`);
+        marketCapData = marketCapData.data;
+        binanceData = binanceData.data;
 
-        let priceUsd = marketCapData.price_usd;
-        let priceBtc = marketCapData.price_btc;
-
-        //priceUsd | priceBtc | priceUsdDelta24 | priceBtcDelta24 | yield | marketCap | circulatingSupply
-        //    V    |    E     |        V        |        E        |   E   |      V    |           V 
-
+        let priceUsd = marketCapData.usd_price;
         return {
             priceUsd: priceUsd,
-            priceBtc: priceBtc,
-            priceUsdDelta24: priceUsd * marketCapData.percent_change_24h,
-            priceBtcDelta24: priceBtc * marketCapData.percent_change_24h,
+            priceBtc: binanceData[binanceData.length - 1]['p'],
+            priceUsdDelta24: priceUsd * (marketCapData.percent_change_24h / 100),
+            priceBtcDelta24: (binanceData[0]['p'] - binanceData[binanceData.length - 1]['p']).toFixed(10),
             yield: 0,
-            marketCap: marketCapData.total_supply * priceUsd,
-            circulatingSupply: marketCapData.total_supply,
+            marketCap: marketCapData.market_cap,
+            circulatingSupply: marketCapData.circulating_supply,
             stakingRate: 0,
             unbondingPeriod: 0
         }
