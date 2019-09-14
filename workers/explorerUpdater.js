@@ -2,7 +2,6 @@
  * @author cybor97
  */
 const Connectors = require('../connectors');
-
 const sequelizeConnection = require('../data').getConnection();
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
@@ -84,34 +83,41 @@ class ExplorerUpdater {
 
                             console.log(`Updating ${address.address} (${address.net})`);
                             let transactions = await connector.getAllTransactions(address.address, lastPaths, serviceAddresses.map(c => c.address));
-
-                            for (let tx of transactions) {
-                                if (process.argv.includes('-vTX')) {
-                                    console.log(`>tx: ${tx.hash} (${tx.type})`);
-                                }
-                                let forceUpdate = tx.forceUpdate;
-                                delete tx.forceUpdate;
-                                if (config.trustedAddresses && tx.type == 'payment' && config.trustedAddresses.includes(tx.from)) {
-                                    tx.type = 'approved_payment';
-                                }
-
-                                let created = (await Transaction.findOrCreate({
-                                    where: { hash: tx.hash, addressId: address.id },
-                                    defaults: Object.assign({ addressId: address.id }, tx)
-                                }))[1];
-
-                                if (forceUpdate && !created) {
-                                    let transaction = await Transaction.findOne({
-                                        where: { hash: tx.hash, addressId: address.id }
-                                    });
-
-                                    let newTxData = Object.assign({ addressId: address.id }, tx);
-                                    for (let key in Object.keys(newTxData)) {
-                                        transaction.key = newTxData[key];
+                            console.log(`Downloaded, pushing DB ${address.address} (${address.net})`);
+                            const txSqlTransaction = await sequelizeConnection.transaction();
+                            try {
+                                await Promise.all(transactions.map(async tx => {
+                                    if (process.argv.includes('-vTX')) {
+                                        console.log(`>tx: ${tx.hash} (${tx.type})`);
+                                    }
+                                    let forceUpdate = tx.forceUpdate;
+                                    delete tx.forceUpdate;
+                                    if (config.trustedAddresses && tx.type == 'payment' && config.trustedAddresses.includes(tx.from)) {
+                                        tx.type = 'approved_payment';
                                     }
 
-                                    await transaction.save();
-                                }
+                                    let created = (await Transaction.findOrCreate({
+                                        where: { hash: tx.hash, addressId: address.id },
+                                        defaults: Object.assign({ addressId: address.id }, tx),
+                                        transaction: txSqlTransaction
+                                    }))[1];
+
+                                    if (forceUpdate && !created) {
+                                        let transaction = await Transaction.findOne({
+                                            where: { hash: tx.hash, addressId: address.id }
+                                        });
+
+                                        let newTxData = Object.assign({ addressId: address.id }, tx);
+                                        for (let key in Object.keys(newTxData)) {
+                                            transaction.key = newTxData[key];
+                                        }
+                                    }
+                                }));
+                                await txSqlTransaction.commit();
+                            }
+                            catch (exc) {
+                                console.log(`Update failed, rollback ${address.address} (${address.net})`)
+                                await txSqlTransaction.rollback();
                             }
                             address.updated = Date.now();
                             await address.save();
