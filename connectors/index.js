@@ -10,7 +10,8 @@ class Connectors {
             iost: require('./connectors/iost'),
             'iost-coin': require('./connectors/iost-coin'),
             nuls: require('./connectors/nuls'),
-            atom: require('./connectors/atom')
+            atom: require('./connectors/atom'),
+            icon: require('./connectors/icon')
         };
     }
 }
