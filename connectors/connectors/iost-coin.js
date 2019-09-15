@@ -128,7 +128,10 @@ class IOSTCoin extends BaseConnector {
     }
 
     async sendTransaction(address, signedTransaction) {
-        console.log(address, signedTransaction)
+        let accountInfo = await axios.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getAccount/${address}/true`);
+        accountInfo = accountInfo.data;
+        console.log('accountInfo', accountInfo);
+
         return await this.rpc.transaction.sendTx(signedTransaction);
     }
 }
