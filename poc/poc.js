@@ -7,6 +7,9 @@ function signTx(opType) {
         case 'iost':
             signETHTx(opType);
             break;
+        case 'iost-coin':
+            signIostCoinTx(opType);
+            break;
         default:
             alert(`Net ${netInput.value} is currently unsupported`);
             break;
@@ -90,4 +93,57 @@ function signETHTx(opType) {
             req.onloadend = () => alert('Sent! Hash: ' + req.responseText);
         });
     };
+}
+
+function signIostCoinTx(opType) {
+    if (opType != 'transfer') {
+        return alert('Operation is not supported!');
+    }
+    let iost = new IOST.IOST({ // will use default setting if not set
+        gasRatio: 100,
+        gasLimit: 2000000,
+        delay: 0,
+    }, new IOST.HTTPProvider('http://localhost:30001'));
+
+    //Send request to prepare operation of opType type from specified address
+    let req = new XMLHttpRequest();
+    req.open('POST', `/net/${netInput.value}/address/${addressFromInput.value}/transactions/prepare-${opType}`);
+    req.setRequestHeader('Content-Type', 'application/json');
+    req.send(JSON.stringify({
+        toAddress: addressToInput.value,
+        amount: amountInput.value
+    }));
+    //On response...
+    req.onloadend = () => {
+        //Parse response from JSON
+        if (req.status !== 200) {
+            alert(req.responseText);
+            return;
+        }
+
+        let tx = JSON.parse(req.responseText);
+
+        let privateKey = privateKeyInput.value;
+        let kp = new IOST.KeyPair(Base58.decode(privateKey));
+        let account = new IOST.Account();
+        account.addKeyPair(kp, 'owner');
+        account.addKeyPair(kp, 'active');
+
+        let txObject = new IOST.Tx();
+        for (let txKey in tx) {
+            txObject[txKey] = tx[txKey];
+        }
+
+        account.signTx(txObject);
+
+        let signedTx = JSON.parse(JSON.stringify(txObject));
+        console.log('signedTx:', signedTx);
+        //Send signed transaction
+        req.open('POST', `/net/${netInput.value}/address/${addressFromInput.value}/transactions/send`);
+        req.setRequestHeader('Content-Type', 'application/json');
+        req.send(JSON.stringify({ signedTransaction: signedTx }));
+        //On response display added transaction hash
+        req.onloadend = () => alert('Sent! Hash: ' + req.responseText);
+
+    }
 }

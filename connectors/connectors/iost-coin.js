@@ -1,6 +1,7 @@
 const axios = require('axios');
 const BaseConnector = require('./baseConnector');
 const config = require('../../config');
+const IOST = require('iost');
 
 const QUERY_COUNT = 50;
 const OP_TYPES = [
@@ -14,6 +15,8 @@ class IOSTCoin extends BaseConnector {
         this.apiUrl = 'https://www.iostabc.com/api';
         this.apiUrlAdditional = `https://api.iostabc.com/api`;
         this.apiUrlBinance = 'https://www.binance.com/api';
+        this.rpc = new IOST.RPC(new IOST.HTTPProvider(`http://${config.iostCoin.ip}:${config.iostCoin.port}`));
+        this.iost = new IOST.IOST();
     }
 
     validateAddress(address) {
@@ -118,6 +121,15 @@ class IOSTCoin extends BaseConnector {
             delegatedBalance: delegatedTotal,
             originatedAddresses: createdAccounts
         }
+    }
+
+    async prepareTransfer(fromAddress, toAddress, amount) {
+        return this.iost.transfer('iost', fromAddress, toAddress, amount, 'transfer via citadel_core');
+    }
+
+    async sendTransaction(address, signedTransaction) {
+        console.log(address, signedTransaction)
+        return await this.rpc.transaction.sendTx(signedTransaction);
     }
 }
 
