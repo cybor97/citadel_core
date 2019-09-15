@@ -1,7 +1,11 @@
 const axios = require('axios');
 const BaseConnector = require('./baseConnector');
+const IconService = require('icon-sdk-js');
 
 const QUERY_COUNT = 50;
+//1 - mainnet, 2 - exchanges testnet, 3 - D-Apps testnet
+const NETWORK_ID = 1;
+const ICON_VERSION = 3;
 
 class ICON extends BaseConnector {
     constructor() {
@@ -57,6 +61,21 @@ class ICON extends BaseConnector {
 
         return result;
 
+    }
+
+    async prepareTransfer(fromAddress, toAddress, amount) {
+        // console.log(IconService.IconBuilder)
+        return new IconService.IconBuilder.IcxTransactionBuilder()
+            .from(fromAddress)
+            .to(toAddress)
+            .value(IconService.IconAmount.of(amount, IconService.IconAmount.Unit.ICX).toLoop())
+            .stepLimit(IconService.IconConverter.toBigNumber(100000))
+            .nid(IconService.IconConverter.toBigNumber(NETWORK_ID))
+            .nonce(IconService.IconConverter.toBigNumber(Date.now()))
+            .version(IconService.IconConverter.toBigNumber(ICON_VERSION))
+            //ICON uses nanoseconds
+            .timestamp(Date.now() * 1000)
+            .build();
     }
 }
 
