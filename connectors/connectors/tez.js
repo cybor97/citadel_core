@@ -15,7 +15,7 @@ class TEZ extends BaseConnector {
     constructor() {
         super();
         this.apiUrl = 'https://api6.tzscan.io/v3';
-        this.bakingBadUrl = 'https://baking-bad.org/';
+        this.bakingBadUrl = 'https://test.baking-bad.org/v1/bakers';
         this.rpcUrl = `http://${config.tezos.ip}:${config.tezos.port}`;
 
         eztz.eztz.node.setProvider(this.rpcUrl);
@@ -27,19 +27,14 @@ class TEZ extends BaseConnector {
     }
 
     async getServiceAddresses() {
-        let bakingBadAppHtml = (await axios.get(this.bakingBadUrl, { responseType: 'text' })).data;
-        let bakingBadAppJsPath = bakingBadAppHtml.match(/\/js\/app\.[a-z0-9]*\.js/)[0];
-
-        let data = (await axios.get(`${this.bakingBadUrl}/${bakingBadAppJsPath}`)).data;
-        let tzAddressMatches = data.match(/(tz|KT)([a-zA-Z0-9]{34}): *{ *name/g)
-            .map(c => c.match(/(tz|KT)([a-zA-Z0-9]{34})/)[0]);
-        let uniqueMatches = [];
-        for (let address of tzAddressMatches) {
-            if (uniqueMatches.indexOf(address) === -1) {
-                uniqueMatches.push(address);
+        let bakersData = (await axios.get(this.bakingBadUrl, {
+            params: {
+                configs: false,
+                rating: false,
+                insurance: false
             }
-        }
-        return uniqueMatches;
+        })).data;
+        return bakersData.map(c => c.address);
     }
 
     /**
