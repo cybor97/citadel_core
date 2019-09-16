@@ -4,10 +4,27 @@
     "username": "<mysqlUsername>",
     "password": "<mysqlPassword>",
     "dialect": "mysql",
-    "trustedAddresses":[
+    "trustedAddresses": [
         "0x1234"
     ],
-    "parity":{ "ip": "<parityIp>", "port": "<parityPort>" },
-    "tezos":{ "ip": "<tezosIp>", "port": "<tezosPort>" },
-    "coinMarketCap": { "apikey": "<coinMarketCapApiKey>" }
+    "parity": {
+        "ip": "<parityIp>",
+        "port": "<parityPort>"
+    },
+    "tezos": {
+        "ip": "<tezosIp>",
+        "port": "<tezosPort>"
+    },
+    "coinMarketCap": {
+        "apikey": "<coinMarketCapApiKey>"
+    },
+    "iostCoin": {
+        "apikey": "<iostApiKey>",
+        "ip": "<iostIp>",
+        "port": "<iostPort>"
+    },
+    "icon": {
+        "ip": "<iconIp>",
+        "port": "<iconPort>"
+    }
 }
