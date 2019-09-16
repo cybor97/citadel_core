@@ -16,7 +16,11 @@ class IOSTCoin extends BaseConnector {
         this.apiUrlAdditional = `https://api.iostabc.com/api`;
         this.apiUrlBinance = 'https://www.binance.com/api';
         this.rpc = new IOST.RPC(new IOST.HTTPProvider(`http://${config.iostCoin.ip}:${config.iostCoin.port}`));
-        this.iost = new IOST.IOST();
+        this.iost = new IOST.IOST({
+            gasRatio: 1,
+            gasLimit: 100000,
+            delay: 0
+        });
     }
 
     validateAddress(address) {
@@ -137,9 +141,9 @@ class IOSTCoin extends BaseConnector {
     async sendTransaction(address, signedTransaction) {
         let accountInfo = await axios.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getAccount/${address}/true`);
         accountInfo = accountInfo.data;
-        console.log('accountInfo', accountInfo);
+        const sendResult = await this.rpc.transaction.sendTx(signedTransaction);
 
-        return await this.rpc.transaction.sendTx(signedTransaction);
+        return sendResult && sendResult.hash;
     }
 }
 

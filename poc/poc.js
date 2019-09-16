@@ -1,4 +1,5 @@
 const IconService = require('icon-sdk-js');
+const IOST = require('iost');
 
 document.addEventListener('DOMContentLoaded', () => {
     addressFromInput.value = localStorage.getItem('from');
@@ -136,17 +137,14 @@ function signIostCoinTx(opType) {
 
         let privateKey = privateKeyInput.value;
         let kp = new IOST.KeyPair(Base58.decode(privateKey));
-        let account = new IOST.Account();
-        account.addKeyPair(kp, 'owner');
-        account.addKeyPair(kp, 'active');
 
         let txObject = new IOST.Tx();
         for (let txKey in tx) {
             txObject[txKey] = tx[txKey];
         }
+        txObject.addPublishSign(addressFromInput.value, kp);
 
-        account.signTx(txObject);
-
+        console.log(txObject)
         let signedTx = JSON.parse(JSON.stringify(txObject));
         console.log('signedTx:', signedTx);
         //Send signed transaction
