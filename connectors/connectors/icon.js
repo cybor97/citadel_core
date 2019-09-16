@@ -1,6 +1,7 @@
 const axios = require('axios');
 const BaseConnector = require('./baseConnector');
 const IconService = require('icon-sdk-js');
+const config = require('../../config');
 
 const QUERY_COUNT = 50;
 //1 - mainnet, 2 - exchanges testnet, 3 - D-Apps testnet
@@ -79,7 +80,7 @@ class ICON extends BaseConnector {
     }
 
     async sendTransaction(address, signedTransaction) {
-        return (await axios.post('http://35.182.230.167:9000/api/v3', {
+        return (await axios.post(`http://${config.icon.ip}:${config.icon.port}/api/v3`, {
             jsonrpc: "2.0",
             method: "icx_sendTransaction",
             id: 1234,
