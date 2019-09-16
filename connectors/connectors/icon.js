@@ -77,6 +77,15 @@ class ICON extends BaseConnector {
             .timestamp(Date.now() * 1000)
             .build();
     }
+
+    async sendTransaction(address, signedTransaction) {
+        return (await axios.post('http://35.182.230.167:9000/api/v3', {
+            jsonrpc: "2.0",
+            method: "icx_sendTransaction",
+            id: 1234,
+            params: signedTransaction,
+        }, { validateStatus: false })).data;
+    }
 }
 
 module.exports = ICON;

@@ -1,18 +1,18 @@
 <html>
 
 <head>
+    <script src="https://requirejs.org/docs/release/2.3.6/minified/require.js"></script>
     <!--Web3.js required to sign ETH transaction-->
     <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.34/dist/web3.min.js"></script>
     <!--IOST and Base58 are required to sign IOST transactions-->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/iost@0.1.18/dist/iost.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/base-58@0.0.1/Base58.min.js"></script>
-    <!--ICON SDK is required to sign ICON transactions-->
-    <script src="https://cdn.jsdelivr.net/gh/icon-project/icon-sdk-js@latest/build/icon-sdk-js.web.min.js"></script>
     <!--EZTZ required to sign tezos transaction-->
     <script src="/eztz.js/dist/eztz.min.js"></script>
-    <script src=""></script>
-    <script src="./poc.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/icon-project/icon-sdk-js@latest/build/icon-sdk-js.web.min.js"></script>
+    <script src="./poc.bundle.js"></script>
     <link rel="stylesheet" href="./poc.css">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
 </head>
 
 <body>
@@ -21,15 +21,24 @@
             <option>orbs</option>
             <option>tez</option>
             <option>iost-coin</option>
+            <option>icon</option>
         </select>
         <input id="addressFromInput" placeholder="address from" />
         <input id="privateKeyInput" placeholder="private key" />
         <input id="addressToInput" placeholder="address to" />
         <input id="amountInput" placeholder="amount/ballot(for voting)/doesn't act for delegation" />
-        <button onclick="signTx('transfer')">Sign&Transfer</button>
-        <button onclick="signTx('delegation')">Sign&Delegate</button>
-        <button onclick="signTx('origination')">Sign&Originate</button>
-        <button onclick="signTx('ballot')">Sign&Vote</button>
+        <button id="signAndTransferButton">
+            <div class="content">Sign&Transfer</div>
+        </button>
+        <button id="signAndDelegateButton">
+            <div class="content">Sign&Delegate</div>
+        </button>
+        <button id="signAndOriginateButton">
+            <div class="content">Sign&Originate</div>
+        </button>
+        <button id="signAndVoteButton">
+            <div class=" content">Sign&Vote</div>
+        </button>
     </div>
 </body>
 

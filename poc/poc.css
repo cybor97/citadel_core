@@ -5,14 +5,24 @@ body{
 }
 
 div.card{
+    width: calc(100% - 1rem);
     display: flex; 
     flex-direction: column;
-    width: 500px;
+    max-width: 500px;
     padding: 10px;
     border-radius: 10px;
     box-shadow: #232323 5px 5px 15px;
+    margin: 2rem;
 }
 
 div.card > * {
     margin-bottom: 3px;
+}
+
+button .content{
+    white-space: nowrap;
+    display: block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+
 }

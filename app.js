@@ -3,6 +3,7 @@
  */
 
 const express = require('express');
+const browserify = require('browserify-middleware');
 require('./utils/expressAsyncErrors');
 
 const path = require('path');
@@ -26,10 +27,11 @@ if (!process.argv.includes('--worker')) {
   app
     .use(express.json())
     .use(express.urlencoded({ extended: true }))
-    .use('/poc', express.static(path.join(__dirname, 'poc')))
     .use('/eztz.js/dist', express.static(path.join(__dirname, 'node_modules/eztz.js/dist')))
     .use('/iost/dist', express.static(path.join(__dirname, 'node_modules/iost/dist/iost.node.js')))
     .use('/doc', express.static(path.join(__dirname, 'doc')))
+    .use('/poc', express.static(path.join(__dirname, 'poc')))
+    .use('/poc/poc.bundle.js', browserify(path.join(__dirname, 'poc/poc.js')))
     .use('/net', clientApi)
     .use(async (err, req, res, next) => {
       console.error(err);
