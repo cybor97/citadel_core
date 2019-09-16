@@ -113,7 +113,14 @@ class IOSTCoin extends BaseConnector {
         let createdAccounts = await axios.get(`${this.apiUrl}/account/${address}/created`);
         createdAccounts = createdAccounts.data.accounts;
 
-        let availableBalanceData = await axios.get(`${this.apiUrlAdditional}&module=account&action=get-account-balance&account=${address}`);
+        let availableBalanceData = await axios.get(this.apiUrlAdditional, {
+            params: {
+                apikey: config.iostCoin.apikey,
+                module: 'account',
+                action: 'get-account-balance',
+                account: address
+            }
+        });
         availableBalanceData = availableBalanceData.data.data;
 
         return {
