@@ -20,7 +20,6 @@ class ATOM extends BaseConnector {
      * @param {String} address 
      */
     async getAllTransactions(address, lastPaths) {
-        return [];
         let offsets = {};
         for (let tx of lastPaths) {
             if (tx.type != 'supplement') {

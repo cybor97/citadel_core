@@ -31,7 +31,6 @@ class NULS extends BaseConnector {
      * @param {String} address 
      */
     async getAllTransactions(address, lastPaths) {
-        return [];
         let result = {};
         for (let opType of OP_TYPES) {
             let transactionsCount = null;
