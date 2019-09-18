@@ -14,7 +14,7 @@ const OP_TYPES = [
 class TEZ extends BaseConnector {
     constructor() {
         super();
-        this.apiUrl = `http://${config.tezos.apiIp || config.tezos.ip}:${config.tezos.apiPort || 8080}`;
+        this.apiUrl = `http://${config.tezos.apiIp || config.tezos.ip}:${config.tezos.apiPort || 8080}/v1`;
         this.rpcUrl = `http://${config.tezos.ip}:${config.tezos.port}`;
         this.bakingBadUrl = 'https://test.baking-bad.org/v1/bakers';
 
