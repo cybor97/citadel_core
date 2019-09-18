@@ -14,9 +14,9 @@ const OP_TYPES = [
 class TEZ extends BaseConnector {
     constructor() {
         super();
-        this.apiUrl = 'https://api6.tzscan.io/v3';
-        this.bakingBadUrl = 'https://test.baking-bad.org/v1/bakers';
+        this.apiUrl = `http://${config.tezos.apiIp || config.tezos.ip}:${config.tezos.apiPort || 8080}`;
         this.rpcUrl = `http://${config.tezos.ip}:${config.tezos.port}`;
+        this.bakingBadUrl = 'https://test.baking-bad.org/v1/bakers';
 
         eztz.eztz.node.setProvider(this.rpcUrl);
         this.eztzInstance = eztz.eztz;
