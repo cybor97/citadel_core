@@ -4,8 +4,9 @@ const BaseConnector = require('./baseConnector');
 
 const M_NULS_MULTIPLIER = Math.pow(10, 8);
 
-const RPC_ID = 5898;
+const RPC_ID = 945;
 const RPC_VERSION = '2.0';
+const CHAIN_ID = 1;
 
 const QUERY_COUNT = 100;
 
@@ -19,7 +20,7 @@ const VOTING_CONTRACT_ADDRESS = 'NseQih5xZa6vAWsL6uY5drozyW4tqzQx';
 class NULS extends BaseConnector {
     constructor() {
         super();
-        this.apiUrl = 'https://api.nuls.io';
+        this.apiUrl = 'https://public1.nuls.io';
     }
 
     validateAddress(address) {
@@ -33,8 +34,8 @@ class NULS extends BaseConnector {
     async getAllTransactions(address, lastPaths) {
         let result = {};
         for (let opType of OP_TYPES) {
-            let transactionsCount = null;
             let transactions = [];
+            let newTransactionsCount = null;
             let offset = 0;
             for (let tx of lastPaths) {
                 if (parseInt(tx.originalOpType) === opType.sourceType && tx.path) {
@@ -42,34 +43,36 @@ class NULS extends BaseConnector {
                     break;
                 }
             }
-
-            while (transactionsCount === null || transactions.length < transactionsCount) {
+            while (newTransactionsCount === null || newTransactionsCount > 0) {
                 let transactionsListResponse = (await axios.post(this.apiUrl, {
                     'id': RPC_ID,
                     'jsonrpc': RPC_VERSION,
                     'method': 'getAccountTxs',
-                    'params': [offset, QUERY_COUNT, address, opType.sourceType, true]
+                    //chainId, page, count, address, type, blockFrom, blockTo(-1 = latest)
+                    //offset starts with 1, citadel defines 0
+                    'params': [CHAIN_ID, offset + 1, QUERY_COUNT, address, opType.sourceType, 0, -1]
                 })).data.result;
-                if (transactionsListResponse) {
-                    transactionsCount = transactionsListResponse.totalCount;
-                    let transactionsList = transactionsListResponse.list;
 
+                if (transactionsListResponse) {
+                    let transactionsCount = transactionsListResponse.totalCount;
+                    let transactionsList = transactionsListResponse.list;
+                    newTransactionsCount = transactionsList.length || 0;
                     for (let txItem of transactionsList) {
                         let tx = (await axios.post(this.apiUrl, {
                             'id': RPC_ID,
                             'jsonrpc': RPC_VERSION,
                             'method': 'getTx',
-                            'params': [txItem.txHash]
+                            'params': [CHAIN_ID, txItem.txHash]
                         })).data.result;
 
-                        if (!tx.froms && !tx.tos) {
+                        if (!tx.coinFroms && !tx.coinTos) {
                             console.log(`NULS empty transaction: ${tx.hash}!`);
                             continue;
                         }
 
-                        let txFrom = tx.type === 2 && tx.froms && tx.froms.length ? tx.froms[0].address : null;
+                        let txFrom = tx.type === 2 && tx.coinFroms && tx.coinFroms.length ? tx.coinTos[0].address : null;
                         //Find 'to', that is not equal to from(is not a change)
-                        let txTo = tx.type === 1 ? address : tx.tos.find(txToItem => txToItem.address != txFrom);
+                        let txTo = tx.type === 1 ? address : tx.coinTos.find(txToItem => txToItem.address != txFrom) || tx.coinTos[0] || null;
                         if (txTo && txTo.address) {
                             txTo = txTo.address;
                         }
@@ -77,17 +80,17 @@ class NULS extends BaseConnector {
 
                         //TODO: Check balance calculation
                         let txValue = tx.type === 1
-                            ? tx.tos.reduce((prev, next) => next.address === address ? prev + next.value : prev, 0)
+                            ? tx.coinTos.reduce((prev, next) => next.address === address ? prev + next.amount : prev, 0)
                             //If 2, other unsupported
-                            : tx.tos[0].value;
+                            : tx.coinTos[0].amount;
 
                         transactions.push({
                             hash: tx.hash,
-                            date: tx.createTime,
+                            date: tx.createTime * 1000,
                             value: txValue / M_NULS_MULTIPLIER,
                             from: txFrom,
                             to: txTo,
-                            fee: tx.fee / M_NULS_MULTIPLIER,
+                            fee: tx.fee.value / M_NULS_MULTIPLIER,
                             originalOpType: opType.sourceType,
                             type: opType.type,
                             path: JSON.stringify({ queryCount: QUERY_COUNT, offset: offset })
@@ -97,7 +100,8 @@ class NULS extends BaseConnector {
                     offset++;
                 }
                 else {
-                    transactionsCount = 0;
+                    console.error(`NULS empty response for ${address}`);
+                    newTransactionsCount = 0;
                 }
             }
 

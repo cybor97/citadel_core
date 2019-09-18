@@ -91,7 +91,7 @@ class ExplorerUpdater {
 
                             console.log(`Updating ${address.address} (${address.net})`);
                             let transactions = await connector.getAllTransactions(address.address, lastPaths, serviceAddresses.map(c => c.address));
-                            console.log(`Downloaded, pushing DB ${address.address} (${address.net})`);
+                            console.log(`Downloaded, pushing DB ${address.address} (${address.net}, ${transactions && transactions.length || 0} txes)`);
                             const txSqlTransaction = await sequelizeConnection.transaction();
                             try {
                                 await Promise.all(transactions.map(async tx => {
