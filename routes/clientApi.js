@@ -10,6 +10,7 @@ const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
 const NetInfo = require('../data/models/NetInfo');
 const utils = require('../utils');
+const explorerUpdater = require('../workers/explorerUpdater');
 
 const NET_REGEX = /^[a-z-]*$/;
 const ADDRESS_REGEX = /^[0-9a-zA-Z_-]*$/;
@@ -170,6 +171,7 @@ router
      *    "comment": ""
      * }]
      * @apiSuccess {Number} transactionsCount count of all matching transactions
+     * @apiSuccess {Number} forceUpdate 1/0 forced update data for address
      */
     .get('/:net/address/:address', async (req, res) => {
         if (!NET_REGEX.test(req.params.net)) {
@@ -195,8 +197,7 @@ router
                     currency: req.query.currency || req.params.net,
                     updated: null,
                     created: Date.now()
-                },
-                raw: true
+                }
             }))[0];
 
             // let whereParams = {[sequelize.Op.or]: [{from: req.params.address}, {to: req.params.address}]};
@@ -220,8 +221,30 @@ router
                 where: whereParams,
                 include: [{ model: Address, where: { address: req.params.address } }]
             }, utils.preparePagination(req.query)));
+
+            if (!transactions.length && req.query.forceUpdate) {
+                let serviceAddresses = await Address.findAll({
+                    order: [['created', 'desc']],
+                    where: {
+                        isService: true,
+                        net: req.params.net
+                    }
+                });
+
+                await explorerUpdater.doWork(req.params.net, connector, address, serviceAddresses);
+                //FIXME: Review duplicate
+                transactions = await Transaction.findAndCountAll(Object.assign({
+                    attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment'],
+                    where: whereParams,
+                    include: [{ model: Address, where: { address: req.params.address } }]
+                }, utils.preparePagination(req.query)));
+
+            }
+
+            address = address.dataValues;
             address.transactions = transactions.rows.map(tx => tx.dataValues);
             address.transactionsCount = transactions.count;
+
             res.status(200).send(address);
         }
         catch (err) {
