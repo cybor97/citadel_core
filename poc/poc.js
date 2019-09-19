@@ -1,5 +1,6 @@
 const IconService = require('icon-sdk-js');
 const IOST = require('iost');
+const Web3 = require('web3');
 
 document.addEventListener('DOMContentLoaded', () => {
     addressFromInput.value = localStorage.getItem('from');
@@ -104,9 +105,9 @@ function signETHTx(opType) {
         let tx = JSON.parse(req.responseText);
         //Private key should start with 0x
         let privateKey = privateKeyInput.value;
-        if (!privateKey.startsWith('0x')) {
-            privateKey = '0x' + privateKey;
-        }
+        // if (!privateKey.startsWith('0x')) {
+        //     privateKey = '0x' + privateKey;
+        // }
         //Sign prepared transaction with privateKey
         web3js.eth.accounts.signTransaction(tx, privateKey).then(signedTx => {
             console.log('signedTx:', signedTx);
