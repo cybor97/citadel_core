@@ -1,6 +1,7 @@
 const axios = require('axios');
 const Bittrex = require('../bittrex');
 const BaseConnector = require('./baseConnector');
+const StakedYield = require('../stakedYields');
 
 const ATOM_MULTIPLIER = Math.pow(10, 6);
 const QUERY_COUNT = 100;
@@ -157,7 +158,7 @@ class ATOM extends BaseConnector {
     }
 
     async getInfo() {
-        return await Bittrex.getInfo('ATOM', 'btc-atom');
+        return Object.assign(await Bittrex.getInfo('ATOM', 'btc-atom'), await StakedYield.getInfo('ATOM'));
     }
 
     async getVoting() {

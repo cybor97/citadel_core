@@ -2,6 +2,7 @@ const axios = require('axios');
 const eztz = require('eztz.js');
 const BaseConnector = require('./baseConnector');
 const config = require('../../config');
+const StakedYields = require('../stakedYields');
 
 const M_TEZ_MULTIPLIER = 1000000;
 const QUERY_COUNT = 50;
@@ -9,7 +10,7 @@ const OP_TYPES = [
     { type: 'origination', sourceType: 'Origination' },
     { type: 'supplement', sourceType: 'Transaction' },
     { type: 'delegation', sourceType: 'Delegation' },
-]
+];
 
 class TEZ extends BaseConnector {
     constructor() {
@@ -183,10 +184,9 @@ class TEZ extends BaseConnector {
 
     async getInfo() {
         let marketCapData = (await axios.get(`${this.apiUrl}/marketcap`)).data[0];
-
         let priceUsd = marketCapData.price_usd;
         let priceBtc = marketCapData.price_btc;
-        return {
+        return Object.assign({
             priceUsd: priceUsd,
             priceBtc: priceBtc,
             priceUsdDelta24: priceUsd * marketCapData.percent_change_24h,
@@ -196,7 +196,7 @@ class TEZ extends BaseConnector {
             circulatingSupply: marketCapData.total_supply,
             stakingRate: 0,
             unbondingPeriod: 0
-        }
+        }, await StakedYields.getInfo('XTZ'));
     }
 
     async getVoting() {
