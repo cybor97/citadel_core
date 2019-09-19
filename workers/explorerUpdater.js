@@ -51,6 +51,7 @@ class ExplorerUpdater {
                         if (addresses.length > 0) {
                             let address = addresses[0];
                             await this.doWork(net, connectors[address.net], address, serviceAddresses);
+                            await new Promise(resolve => setTimeout(resolve, config.updateInterval));
                         }
                     }
                     catch (err) {
@@ -71,6 +72,7 @@ class ExplorerUpdater {
             replacements: { addressId: address.id },
             type: sequelizeConnection.QueryTypes.SELECT
         });
+
         if (serviceAddresses.length === 0
             || Date.now() - serviceAddresses[0].updated > config.bakingBadUpdateInterval) {
             if (connector.getServiceAddresses) {
@@ -100,7 +102,6 @@ class ExplorerUpdater {
                     serviceAddresses = newServiceAddresses.map(c => ({ address: c }));
                 }
             }
-            return transactions;
         }
 
         console.log(`Updating ${address.address} (${address.net})`);
@@ -144,7 +145,8 @@ class ExplorerUpdater {
         }
         address.updated = Date.now();
         await address.save();
-        await new Promise(resolve => setTimeout(resolve, config.updateInterval))
+
+        return transactions;
     }
 
     static initConnectors() {
