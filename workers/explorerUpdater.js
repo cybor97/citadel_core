@@ -33,6 +33,7 @@ class ExplorerUpdater {
                 return;
             }
             Promise.resolve().then(async () => {
+                const subscribedAddresses = new Set();
                 while (true) {
                     try {
                         let addresses = await Address.findAll({
@@ -50,7 +51,20 @@ class ExplorerUpdater {
 
                         if (addresses.length > 0) {
                             let address = addresses[0];
-                            await this.doWork(net, connectors[address.net], address, serviceAddresses);
+                            address.updated = Date.now();
+                            await address.save();
+
+                            if (connectors[address.net].subscribe) {
+                                if (!subscribedAddresses.has(address.address)) {
+                                    connectors[address.net]
+                                        .subscribe(address.address)
+                                        .on('data', data => this.saveDb(address, data));
+                                    subscribedAddresses.add(address.address);
+                                }
+                            }
+                            else {
+                                await this.doWork(net, connectors[address.net], address, serviceAddresses);
+                            }
                             await new Promise(resolve => setTimeout(resolve, config.updateInterval));
                         }
                     }
@@ -64,8 +78,6 @@ class ExplorerUpdater {
     }
 
     static async doWork(net, connector, address, serviceAddresses) {
-        address.updated = Date.now();
-        await address.save();
         let transactions = [];
 
         let lastPaths = await sequelizeConnection.query(LAST_PATHS_QUERY, {
@@ -105,8 +117,17 @@ class ExplorerUpdater {
         }
 
         console.log(`Updating ${address.address} (${address.net})`);
+        if (connector.subscribe) {
+            connector.subscribe(address.address);
+        }
         transactions = await connector.getAllTransactions(address.address, lastPaths, serviceAddresses.map(c => c.address));
-        console.log(`Downloaded, pushing DB ${address.address} (${address.net}, ${transactions && transactions.length || 0} txes)`);
+        await this.saveDb(address, transactions);
+        return transactions;
+    }
+
+    static async saveDb(address, transactions) {
+        console.log(`Pushing DB ${address.address} (${address.net}, ${transactions && transactions.length || 0} txes)`);
+
         const txSqlTransaction = await sequelizeConnection.transaction();
         try {
             await Promise.all(transactions.map(async tx => {
@@ -145,8 +166,6 @@ class ExplorerUpdater {
         }
         address.updated = Date.now();
         await address.save();
-
-        return transactions;
     }
 
     static initConnectors() {

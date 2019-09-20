@@ -1,5 +1,6 @@
 const axios = require('axios');
 const Web3 = require('web3');
+const EventEmitter = require('events');
 const ETHToken = require('./ethToken');
 const Bittrex = require('../bittrex');
 const config = require('../../config')
@@ -18,8 +19,57 @@ const PRECENDING_ZEROES = '0'.repeat(24);
 class ORBS extends ETHToken {
     constructor() {
         super();
-        this.apiUrl = `http://${config.parity.ip}:${config.parity.port}`//'https://api.etherscan.io/api';
+        this.subscriptions = new Map();
         this.apiUrlVotingProxy = 'https://orbs-voting-proxy-server.herokuapp.com/api';
+    }
+
+    subscribe(address) {
+        if (address.length === 42) {
+            address = address.replace('0x', `0x${PRECENDING_ZEROES}`);
+        }
+        if (!this.subscriptions.has(address)) {
+            let emitter = new EventEmitter();
+            let netSubscriptions = [
+                super.subscribeForContractMethod(DELEGATE_CONTRACT_HASH, DELEGATE_TOPIC, 'delegation', address, 'topic1'),
+                super.subscribeForContractMethod(DELEGATE_CONTRACT_HASH, DELEGATE_TOPIC, 'delegation', address, 'topic2'),
+                super.subscribeForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, 'topic1'),
+                super.subscribeForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, 'topic2')
+            ];
+            let subscriptionData = {
+                emitter: emitter,
+                netSubscriptions: netSubscriptions,
+
+                emitTimeout: null,
+                lastUpdate: Date.now(),
+                buffer: []
+            };
+            netSubscriptions.forEach(subscription => subscription.on('data', data => {
+                subscriptionData.buffer.push(data);
+                if (subscriptionData.emitTimeout) {
+                    clearTimeout(subscriptionData.emitTimeout);
+                }
+                subscriptionData.emitTimeout = setTimeout(() => {
+                    emitter.emit('data', subscriptionData.buffer);
+                    subscriptionData.buffer = [];
+                    subscriptionData.lastUpdate = Date.now();
+                    subscriptionData.emitTimeout = null;
+                }, config.updateInterval);
+            }));
+
+            this.subscriptions.set(address, subscriptionData);
+            return emitter;
+        }
+        console.log('shouldNotResubscribe')
+
+        return this.subscriptions.get(address).emitter;
+    }
+
+    //TODO: Trigger on address delete
+    unsubscribe(address) {
+        if (this.subscriptions.has(address)) {
+            this.subscriptions.get(address).netSubscriptions.forEach(c => c.unsubscribe());
+            this.subscriptions.delete(address);
+        }
     }
 
     async getAllTransactions(address, lastPaths = []) {
@@ -167,7 +217,7 @@ class ORBS extends ETHToken {
     }
 
     async prepareBallot(votingId, fromAddress, ballot) {
-        let web3 = new Web3(`http://${config.parity.ip}:${config.parity.port}`);
+        let web3 = new Web3(`${config.parity.protocol || 'http'}://${config.parity.ip}:${config.parity.port}`);
         let contractAddress = VOTING_CONTRACT_HASH;
         let contract = new web3.eth.Contract(this.getVotingABI(), contractAddress);
         let transferData = contract.methods.voteOut([ballot]);
