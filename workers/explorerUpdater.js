@@ -51,8 +51,10 @@ class ExplorerUpdater {
 
                         if (addresses.length > 0) {
                             let address = addresses[0];
-                            if (connectors[address.net].subscribe) {
+                            address.updated = Date.now();
+                            await address.save();
 
+                            if (connectors[address.net].subscribe) {
                                 if (!subscribedAddresses.has(address.address)) {
                                     connectors[address.net]
                                         .subscribe(address.address)
@@ -76,8 +78,6 @@ class ExplorerUpdater {
     }
 
     static async doWork(net, connector, address, serviceAddresses) {
-        address.updated = Date.now();
-        await address.save();
         let transactions = [];
 
         let lastPaths = await sequelizeConnection.query(LAST_PATHS_QUERY, {
