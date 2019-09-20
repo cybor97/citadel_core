@@ -1,4 +1,5 @@
 const axios = require('axios');
+const EventEmitter = require('events');
 const ETHToken = require('./ethToken');
 const Bittrex = require('../bittrex');
 
@@ -10,7 +11,47 @@ const PRECENDING_ZEROES = '0'.repeat(24);
 class IOST extends ETHToken {
     constructor() {
         super();
+        this.subscriptions = new Map();
         this.apiUrl = 'https://api.etherscan.io/api';
+    }
+
+    subscribe(address) {
+        if (address.length === 42) {
+            address = address.replace('0x', `0x${PRECENDING_ZEROES}`);
+        }
+        if (!this.subscriptions.has(address)) {
+            let emitter = new EventEmitter();
+            let netSubscriptions = [
+                super.subscribeForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, 'topic1'),
+                super.subscribeForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, 'topic2'),
+            ];
+            let subscriptionData = {
+                emitter: emitter,
+                netSubscriptions: netSubscriptions,
+
+                emitTimeout: null,
+                lastUpdate: Date.now(),
+                buffer: []
+            };
+            netSubscriptions.forEach(subscription => subscription.on('data', data => {
+                subscriptionData.buffer.push(data);
+                if (subscriptionData.emitTimeout) {
+                    clearTimeout(subscriptionData.emitTimeout);
+                }
+                subscriptionData.emitTimeout = setTimeout(() => {
+                    emitter.emit('data', subscriptionData.buffer);
+                    subscriptionData.buffer = [];
+                    subscriptionData.lastUpdate = Date.now();
+                    subscriptionData.emitTimeout = null;
+                }, config.updateInterval);
+            }));
+
+            this.subscriptions.set(address, subscriptionData);
+            return emitter;
+        }
+        console.log('shouldNotResubscribe')
+
+        return this.subscriptions.get(address).emitter;
     }
 
     async getAllTransactions(address, lastPaths) {
