@@ -55,6 +55,14 @@ class IOST extends ETHToken {
         return this.subscriptions.get(address).emitter;
     }
 
+    //TODO: Trigger on address delete
+    unsubscribe(address) {
+        if (this.subscriptions.has(address)) {
+            this.subscriptions.get(address).netSubscriptions.forEach(c => c.unsubscribe());
+            this.subscriptions.delete(address);
+        }
+    }
+
     async getAllTransactions(address, lastPaths) {
         //ETH has a bit longer addresses with precending 0-es
         if (address.length === 42) {

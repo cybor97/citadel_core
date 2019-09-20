@@ -64,6 +64,7 @@ class ORBS extends ETHToken {
         return this.subscriptions.get(address).emitter;
     }
 
+    //TODO: Trigger on address delete
     unsubscribe(address) {
         if (this.subscriptions.has(address)) {
             this.subscriptions.get(address).netSubscriptions.forEach(c => c.unsubscribe());
