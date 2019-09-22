@@ -5,6 +5,7 @@ const Connectors = require('../connectors');
 const sequelizeConnection = require('../data').getConnection();
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
+const log = require('../utils/log');
 
 const config = require('../config');
 const LAST_PATHS_QUERY = `
@@ -74,7 +75,7 @@ class ExplorerUpdater {
                         }
                     }
                     catch (err) {
-                        console.error(err);
+                        log.err(err);
                         await new Promise(resolve => setTimeout(resolve, config.updateInterval * 2))
                     }
                 }
@@ -94,7 +95,7 @@ class ExplorerUpdater {
             if (serviceAddresses.length === 0
                 || Date.now() - serviceAddresses[0].updated > config.bakingBadUpdateInterval) {
                 if (connector.getServiceAddresses) {
-                    console.log(`Updating ${net} service addresses`);
+                    log.info(`Updating ${net} service addresses`);
                     let newServiceAddresses = await connector.getServiceAddresses();
                     for (let newServiceAddress of newServiceAddresses) {
                         let created = await Address.findOrCreate({
@@ -122,7 +123,7 @@ class ExplorerUpdater {
                 }
             }
 
-            console.log(`Updating ${address.address} (${address.net})`);
+            log.info(`Updating ${address.address} (${address.net})`);
             if (connector.subscribe) {
                 connector.subscribe(address.address);
             }
@@ -132,7 +133,7 @@ class ExplorerUpdater {
         }
         catch (err) {
             if (err.message && err.message.match('TX_LIMIT_OVERFLOW')) {
-                console.log(`Detected ${address.address} tx limit overflow, should be exchange.`);
+                log.warn(`Detected ${address.address} tx limit overflow, should be exchange.`);
                 address.isExchange = true;
                 await address.save();
             }
@@ -140,13 +141,13 @@ class ExplorerUpdater {
     }
 
     static async saveDb(address, transactions) {
-        console.log(`Pushing DB ${address.address} (${address.net}, ${transactions && transactions.length || 0} txes)`);
+        log.info(`Pushing DB ${address.address} (${address.net}, ${transactions && transactions.length || 0} txes)`);
 
         const txSqlTransaction = await sequelizeConnection.transaction();
         try {
             await Promise.all(transactions.map(async tx => {
                 if (process.argv.includes('-vTX')) {
-                    console.log(`>tx: ${tx.hash} (${tx.type})`);
+                    log.info(`>tx: ${tx.hash} (${tx.type})`);
                 }
                 let forceUpdate = tx.forceUpdate;
                 delete tx.forceUpdate;
@@ -174,7 +175,7 @@ class ExplorerUpdater {
             await txSqlTransaction.commit();
         }
         catch (exc) {
-            console.log(`Update failed, rollback ${address.address} (${address.net})`);
+            log.err(`Update failed, rollback ${address.address} (${address.net})`);
             await new Promise(resolve => setTimeout(resolve, config.updateInterval * 2))
             await txSqlTransaction.rollback();
         }

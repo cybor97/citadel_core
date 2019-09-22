@@ -3,6 +3,8 @@ const config = require('../../config');
 const CoinMarketCap = require('../coinmarketcap');
 const BaseConnector = require('./baseConnector');
 
+const log = require('../../utils/log');
+
 const M_NULS_MULTIPLIER = Math.pow(10, 8);
 
 const RPC_ID = 945;
@@ -72,7 +74,7 @@ class NULS extends BaseConnector {
                         })).data.result;
 
                         if (!tx.coinFroms && !tx.coinTos) {
-                            console.log(`NULS empty transaction: ${tx.hash}!`);
+                            log.warn(`NULS empty transaction: ${tx.hash}!`);
                             continue;
                         }
 
@@ -106,7 +108,7 @@ class NULS extends BaseConnector {
                     offset++;
                 }
                 else {
-                    console.error(`NULS empty response for ${address}`);
+                    log.err(`NULS empty response for ${address}`);
                     newTransactionsCount = 0;
                 }
             }

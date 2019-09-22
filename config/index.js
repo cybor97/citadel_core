@@ -3,6 +3,7 @@
  */
 const path = require('path');
 const fs = require('fs');
+const log = require('../utils/log');
 
 const oldConfigFilename = path.join(__dirname, './creds.json');
 const configFilename = path.join(__dirname, './config.json');
@@ -12,8 +13,8 @@ if (fs.existsSync(oldConfigFilename)) {
 }
 
 if (!fs.existsSync(configFilename)) {
-    console.error("File config.json doesn't exist!")
-    console.log('Should contain "host", "database", "username" and "password" keys.');
+    log.err("File config.json doesn't exist!")
+    log.info('Should contain "host", "database", "username" and "password" keys.');
     process.kill(process.pid);
 }
 

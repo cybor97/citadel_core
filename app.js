@@ -4,6 +4,7 @@
 
 const express = require('express');
 const browserify = require('browserify-middleware');
+const log = require('./utils/log');
 require('./utils/expressAsyncErrors');
 
 const path = require('path');
@@ -11,7 +12,7 @@ const clientApi = require('./routes/clientApi');
 
 if (!process.argv.includes('--api-server')) {
   if (process.argv.includes('--worker')) {
-    console.log('Worker mode, API disabled');
+    log.info('Worker mode, API disabled');
   }
   const explorerUpdater = require('./workers/explorerUpdater');
   explorerUpdater.init();
@@ -19,7 +20,7 @@ if (!process.argv.includes('--api-server')) {
 
 if (!process.argv.includes('--worker')) {
   if (process.argv.includes('--api-server')) {
-    console.log('API Server mode, data collection disabled');
+    log.info('API Server mode, data collection disabled');
   }
 
   const app = express();
@@ -34,7 +35,7 @@ if (!process.argv.includes('--worker')) {
     .use('/poc/poc.bundle.js', browserify(path.join(__dirname, 'poc/poc.js')))
     .use('/net', clientApi)
     .use(async (err, req, res, next) => {
-      console.error(err);
+      log.err(err);
       res.status(500).send({
         message: err.message,
         stack: err.stack

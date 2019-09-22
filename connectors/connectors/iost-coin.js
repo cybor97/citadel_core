@@ -2,6 +2,7 @@ const axios = require('axios');
 const BaseConnector = require('./baseConnector');
 const config = require('../../config');
 const IOST = require('iost');
+const log = require('../../utils/log');
 
 const QUERY_COUNT = 50;
 const OP_TYPES = [
@@ -58,7 +59,7 @@ class IOSTCoin extends BaseConnector {
                 }
             });
             newTransactionsData = resp.data.data.transactions;
-            console.log('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactionsData.length}`);
+            log.info('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactionsData.length}`);
 
             result = result.concat(newTransactionsData
                 .map(tx => {

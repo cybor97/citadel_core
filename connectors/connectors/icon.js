@@ -2,6 +2,7 @@ const axios = require('axios');
 const BaseConnector = require('./baseConnector');
 const IconService = require('icon-sdk-js');
 const config = require('../../config');
+const log = require('../../utils/log');
 
 const QUERY_COUNT = 50;
 //1 - mainnet, 2 - exchanges testnet, 3 - D-Apps testnet
@@ -42,7 +43,7 @@ class ICON extends BaseConnector {
                 }
             });
             newTransactionsData = resp.data.data || [];
-            console.log('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactionsData.length}|total:${resp.data.totalSize}`);
+            log.info('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactionsData.length}|total:${resp.data.totalSize}`);
             if (resp.data.totalSize > config.maxTransactionsTracked) {
                 throw new Error("TX_LIMIT_OVERFLOW");
             }
@@ -69,7 +70,6 @@ class ICON extends BaseConnector {
     }
 
     async prepareTransfer(fromAddress, toAddress, amount) {
-        // console.log(IconService.IconBuilder)
         return new IconService.IconBuilder.IcxTransactionBuilder()
             .from(fromAddress)
             .to(toAddress)

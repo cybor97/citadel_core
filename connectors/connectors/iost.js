@@ -4,6 +4,8 @@ const ETHToken = require('./ethToken');
 const Bittrex = require('../bittrex');
 const config = require('../../config');
 
+const log = require('../../utils/log');
+
 const TRANSFER_CONTRACT_HASH = '0xFA1a856Cfa3409CFa145Fa4e20Eb270dF3EB21ab';
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
@@ -59,7 +61,7 @@ class IOST extends ETHToken {
             this.subscriptions.set(address, subscriptionData);
             return emitter;
         }
-        console.log('shouldNotResubscribe')
+        log.warn('shouldNotResubscribe')
 
         return this.subscriptions.get(address).emitter;
     }

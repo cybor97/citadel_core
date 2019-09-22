@@ -5,6 +5,8 @@ const EventEmitter = require('events');
 const BaseConnector = require('./baseConnector');
 const config = require('../../config')
 
+const log = require('../../utils/log');
+
 const VALUE_FEE_MULTIPLIER = Math.pow(10, 18);
 const PRECENDING_ZEROES = '0'.repeat(24);
 
@@ -90,8 +92,8 @@ class ETHToken extends BaseConnector {
                     originalOpType: 'transaction'
                 }));
             })
-            .on('changed', (...params) => { console.log('changed_data', params); })
-            .on('error', (...params) => { console.log('error', params); });
+            .on('changed', (...params) => { log.debug('changed_data', params); })
+            .on('error', (...params) => { log.err('error', params); });
         return emitter;
     }
 

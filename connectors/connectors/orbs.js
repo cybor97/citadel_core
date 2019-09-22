@@ -5,6 +5,8 @@ const ETHToken = require('./ethToken');
 const Bittrex = require('../bittrex');
 const config = require('../../config')
 
+const log = require('../../utils/log');
+
 const DELEGATE_CONTRACT_HASH = '0x30f855afb78758Aa4C2dc706fb0fA3A98c865d2d';
 const DELEGATE_TOPIC = '0x510b11bb3f3c799b11307c01ab7db0d335683ef5b2da98f7697de744f465eacc';
 
@@ -77,7 +79,7 @@ class ORBS extends ETHToken {
             this.subscriptions.set(address, subscriptionData);
             return emitter;
         }
-        console.log('shouldNotResubscribe')
+        log.warn('shouldNotResubscribe')
 
         return this.subscriptions.get(address).emitter;
     }
@@ -135,7 +137,7 @@ class ORBS extends ETHToken {
             )).data;
         }
         catch (err) {
-            console.error(err);
+            log.err(err);
             return [];
         }
 

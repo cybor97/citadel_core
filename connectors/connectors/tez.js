@@ -4,6 +4,8 @@ const BaseConnector = require('./baseConnector');
 const config = require('../../config');
 const StakedYields = require('../stakedYields');
 
+const log = require('../../utils/log');
+
 const M_TEZ_MULTIPLIER = 1000000;
 const QUERY_COUNT = 50;
 const OP_TYPES = [
@@ -77,7 +79,7 @@ class TEZ extends BaseConnector {
                         p: page
                     }
                 })).data;
-                console.log('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactions.length}|total:${total}`);
+                log.info('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactions.length}|total:${total}`);
 
                 transactions = transactions.concat(newTransactions.map((tx, i, arr) => {
                     let txData = tx.type.operations[0];

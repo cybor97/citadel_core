@@ -11,6 +11,7 @@ const Transaction = require('../data/models/Transaction');
 const NetInfo = require('../data/models/NetInfo');
 const utils = require('../utils');
 const explorerUpdater = require('../workers/explorerUpdater');
+const log = require('../utils/log');
 
 const NET_REGEX = /^[a-z-]*$/;
 const ADDRESS_REGEX = /^[0-9a-zA-Z_-]*$/;
@@ -248,7 +249,7 @@ router
             res.status(200).send(address);
         }
         catch (err) {
-            console.error(err);
+            log.err(err);
             res.status(500).send({ err: err.message, stack: err.stack });
         }
     })
