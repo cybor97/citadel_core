@@ -63,7 +63,7 @@ class ETHToken extends BaseConnector {
      * @returns {EventEmitter}
      */
     subscribeForContractMethod(contractHash, methodTopic, type, address, topic, fromBlock) {
-        let web3 = new Web3(new Web3.providers.WebsocketProvider(`${config.parity.wsProtocol || 'ws'}://${config.parity.ip}:${config.parity.port}/ws`));
+        let web3 = new Web3(new Web3.providers.WebsocketProvider(`${config.parity.wsProtocol || 'ws'}://${config.parity.ip}:${config.parity.port}/ws${config.parity.path || ''}`));
         let emitter = new EventEmitter();
         web3.eth.subscribe('logs', {
             fromBlock: fromBlock || 'earliest',
@@ -71,8 +71,10 @@ class ETHToken extends BaseConnector {
             topics: [methodTopic, topic === 'topic1' ? address : null, topic === 'topic2' ? address : null]
         })
             .on('data', async (tx) => {
-                let txData = await web3.eth.getTransaction(tx.transactionHash);
-                let blockData = await web3.eth.getBlock(tx.blockHash);
+                const web3Internal = new Web3(this.getParityUrl());
+
+                let txData = await web3Internal.eth.getTransaction(tx.transactionHash);
+                let blockData = await web3Internal.eth.getBlock(tx.blockHash);
 
                 emitter.emit('data', ({
                     //0 is methodId
