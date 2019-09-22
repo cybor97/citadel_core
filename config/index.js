@@ -23,7 +23,8 @@ module.exports = Object.assign({
     //1d
     bakingBadUpdateInterval: 86400000,
     //1h
-    netInfoUpdateInterval: 3600000
+    netInfoUpdateInterval: 3600000,
+    maxTransactionsTracked: 1500
 },
     JSON.parse(fs.readFileSync(configFilename))
 );

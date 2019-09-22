@@ -56,8 +56,13 @@ class ExplorerUpdater {
 
                             if (connectors[address.net].subscribe) {
                                 if (!subscribedAddresses.has(address.address)) {
+                                    let lastPaths = await sequelizeConnection.query(LAST_PATHS_QUERY, {
+                                        replacements: { addressId: address.id },
+                                        type: sequelizeConnection.QueryTypes.SELECT
+                                    });
+
                                     connectors[address.net]
-                                        .subscribe(address.address)
+                                        .subscribe(address.address, lastPaths)
                                         .on('data', data => this.saveDb(address, data));
                                     subscribedAddresses.add(address.address);
                                 }
@@ -78,51 +83,60 @@ class ExplorerUpdater {
     }
 
     static async doWork(net, connector, address, serviceAddresses) {
-        let transactions = [];
+        try {
+            let transactions = [];
 
-        let lastPaths = await sequelizeConnection.query(LAST_PATHS_QUERY, {
-            replacements: { addressId: address.id },
-            type: sequelizeConnection.QueryTypes.SELECT
-        });
+            let lastPaths = await sequelizeConnection.query(LAST_PATHS_QUERY, {
+                replacements: { addressId: address.id },
+                type: sequelizeConnection.QueryTypes.SELECT
+            });
 
-        if (serviceAddresses.length === 0
-            || Date.now() - serviceAddresses[0].updated > config.bakingBadUpdateInterval) {
-            if (connector.getServiceAddresses) {
-                console.log(`Updating ${net} service addresses`);
-                let newServiceAddresses = await connector.getServiceAddresses();
-                for (let newServiceAddress of newServiceAddresses) {
-                    let created = await Address.findOrCreate({
-                        where: { address: newServiceAddress, net: address.net },
-                        defaults: {
-                            net: address.net,
-                            currency: address.currency,
-                            address: newServiceAddress,
-                            isService: true,
-                            created: Date.now(),
-                            updated: Date.now()
-                        }
-                    });
-                    if (!created) {
-                        Address.update({
-                            updated: Date.now()
-                        }, {
+            if (serviceAddresses.length === 0
+                || Date.now() - serviceAddresses[0].updated > config.bakingBadUpdateInterval) {
+                if (connector.getServiceAddresses) {
+                    console.log(`Updating ${net} service addresses`);
+                    let newServiceAddresses = await connector.getServiceAddresses();
+                    for (let newServiceAddress of newServiceAddresses) {
+                        let created = await Address.findOrCreate({
                             where: { address: newServiceAddress, net: address.net },
+                            defaults: {
+                                net: address.net,
+                                currency: address.currency,
+                                address: newServiceAddress,
+                                isService: true,
+                                created: Date.now(),
+                                updated: Date.now()
+                            }
                         });
+                        if (!created) {
+                            Address.update({
+                                updated: Date.now()
+                            }, {
+                                where: { address: newServiceAddress, net: address.net },
+                            });
+                        }
+                    }
+                    if (serviceAddresses.length === 0 && newServiceAddresses.length !== 0) {
+                        serviceAddresses = newServiceAddresses.map(c => ({ address: c }));
                     }
                 }
-                if (serviceAddresses.length === 0 && newServiceAddresses.length !== 0) {
-                    serviceAddresses = newServiceAddresses.map(c => ({ address: c }));
-                }
+            }
+
+            console.log(`Updating ${address.address} (${address.net})`);
+            if (connector.subscribe) {
+                connector.subscribe(address.address);
+            }
+            transactions = await connector.getAllTransactions(address.address, lastPaths, serviceAddresses.map(c => c.address));
+            await this.saveDb(address, transactions);
+            return transactions;
+        }
+        catch (err) {
+            if (err.message && err.message.match('TX_LIMIT_OVERFLOW')) {
+                console.log(`Detected ${address.address} tx limit overflow, should be exchange.`);
+                address.isExchange = true;
+                await address.save();
             }
         }
-
-        console.log(`Updating ${address.address} (${address.net})`);
-        if (connector.subscribe) {
-            connector.subscribe(address.address);
-        }
-        transactions = await connector.getAllTransactions(address.address, lastPaths, serviceAddresses.map(c => c.address));
-        await this.saveDb(address, transactions);
-        return transactions;
     }
 
     static async saveDb(address, transactions) {

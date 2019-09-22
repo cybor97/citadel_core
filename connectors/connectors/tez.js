@@ -51,6 +51,9 @@ class TEZ extends BaseConnector {
                     type: opType.sourceType
                 }
             })).data[0];
+            if (total > config.maxTransactionsTracked) {
+                throw new Error("TX_LIMIT_OVERFLOW");
+            }
 
             let transactions = [];
             let newTransactions = null;

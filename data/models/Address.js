@@ -41,10 +41,14 @@ const Address = connection.define('address', {
     updated: {
         type: sequelize.BIGINT,
         defaultValue: null
+    },
+    isExchange: {
+        type: sequelize.BOOLEAN,
+        defaultValue: false
     }
-}, { 
+}, {
     timestamps: false,
- });
+});
 Address.sync();
 
 module.exports = Address;

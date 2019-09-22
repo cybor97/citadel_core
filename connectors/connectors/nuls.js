@@ -1,4 +1,5 @@
 const axios = require('axios');
+const config = require('../../config');
 const CoinMarketCap = require('../coinmarketcap');
 const BaseConnector = require('./baseConnector');
 
@@ -55,6 +56,11 @@ class NULS extends BaseConnector {
 
                 if (transactionsListResponse) {
                     let transactionsCount = transactionsListResponse.totalCount;
+                    if (transactionsCount > config.maxTransactionsTracked) {
+                        throw new Error("TX_LIMIT_OVERFLOW");
+                    }
+
+
                     let transactionsList = transactionsListResponse.list;
                     newTransactionsCount = transactionsList.length || 0;
                     for (let txItem of transactionsList) {

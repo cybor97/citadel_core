@@ -1,4 +1,5 @@
 const axios = require('axios');
+const config = require('../../config');
 const Bittrex = require('../bittrex');
 const BaseConnector = require('./baseConnector');
 const StakedYield = require('../stakedYields');
@@ -150,6 +151,9 @@ class ATOM extends BaseConnector {
 
             if (current.length === 0 || (lastHash !== null && current[current.length - 1].txhash === lastHash)) {
                 break;
+            }
+            if (result.length > config.maxTransactionsTracked) {
+                throw new Error("TX_LIMIT_OVERFLOW");
             }
             result = result.concat(current);
             page++;

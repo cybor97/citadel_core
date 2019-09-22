@@ -16,15 +16,24 @@ class IOST extends ETHToken {
         this.apiUrl = 'https://api.etherscan.io/api';
     }
 
-    subscribe(address) {
+    subscribe(address, lastPaths) {
         if (address.length === 42) {
             address = address.replace('0x', `0x${PRECENDING_ZEROES}`);
         }
+
+        let supplementFromBlock = null;
+        for (let tx of lastPaths) {
+            if (tx.type === 'supplement' && tx.path) {
+                supplementFromBlock = JSON.parse(tx.path).blockNumber;
+                break;
+            }
+        }
+
         if (!this.subscriptions.has(address)) {
             let emitter = new EventEmitter();
             let netSubscriptions = [
-                super.subscribeForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, 'topic1'),
-                super.subscribeForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, 'topic2'),
+                super.subscribeForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, 'topic1', supplementFromBlock),
+                super.subscribeForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, 'topic2', supplementFromBlock),
             ];
             let subscriptionData = {
                 emitter: emitter,

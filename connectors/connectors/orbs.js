@@ -23,17 +23,33 @@ class ORBS extends ETHToken {
         this.apiUrlVotingProxy = 'https://orbs-voting-proxy-server.herokuapp.com/api';
     }
 
-    subscribe(address) {
+    subscribe(address, lastPaths) {
+        let supplementFromBlock = 0;;
+        let delegateFromBlock = 0;
+        let rewardLastUpdate = 0;
+        for (let tx of lastPaths) {
+            if (tx.type === 'supplement' && tx.path) {
+                supplementFromBlock = JSON.parse(tx.path).blockNumber;
+            }
+            if (tx.type === 'delegation' && tx.path) {
+                delegateFromBlock = JSON.parse(tx.path).blockNumber;
+            }
+            if (tx.type === 'payment' && tx.path) {
+                rewardLastUpdate = JSON.parse(tx.path).updatedAt;
+            }
+        }
+
+
         if (address.length === 42) {
             address = address.replace('0x', `0x${PRECENDING_ZEROES}`);
         }
         if (!this.subscriptions.has(address)) {
             let emitter = new EventEmitter();
             let netSubscriptions = [
-                super.subscribeForContractMethod(DELEGATE_CONTRACT_HASH, DELEGATE_TOPIC, 'delegation', address, 'topic1'),
-                super.subscribeForContractMethod(DELEGATE_CONTRACT_HASH, DELEGATE_TOPIC, 'delegation', address, 'topic2'),
-                super.subscribeForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, 'topic1'),
-                super.subscribeForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, 'topic2')
+                super.subscribeForContractMethod(DELEGATE_CONTRACT_HASH, DELEGATE_TOPIC, 'delegation', address, 'topic1', delegateFromBlock),
+                super.subscribeForContractMethod(DELEGATE_CONTRACT_HASH, DELEGATE_TOPIC, 'delegation', address, 'topic2', delegateFromBlock),
+                super.subscribeForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, 'topic1', supplementFromBlock),
+                super.subscribeForContractMethod(TRANSFER_CONTRACT_HASH, TRANSFER_TOPIC, 'supplement', address, 'topic2', supplementFromBlock)
             ];
             let subscriptionData = {
                 emitter: emitter,
@@ -49,6 +65,8 @@ class ORBS extends ETHToken {
                     clearTimeout(subscriptionData.emitTimeout);
                 }
                 subscriptionData.emitTimeout = setTimeout(() => {
+                    this.getRewardTransactions(address, rewardLastUpdate);
+
                     emitter.emit('data', subscriptionData.buffer);
                     subscriptionData.buffer = [];
                     subscriptionData.lastUpdate = Date.now();

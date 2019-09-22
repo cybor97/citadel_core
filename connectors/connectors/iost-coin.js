@@ -59,6 +59,7 @@ class IOSTCoin extends BaseConnector {
             });
             newTransactionsData = resp.data.data.transactions;
             console.log('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactionsData.length}`);
+
             result = result.concat(newTransactionsData
                 .map(tx => {
                     //0 - token, 1 - from, 2 - to, 3 - amount, 4 - message(optional)
@@ -82,6 +83,11 @@ class IOSTCoin extends BaseConnector {
                     path: JSON.stringify({ queryCount: QUERY_COUNT, offset: offset })
                 }))
             );
+
+            if (offset > config.maxTransactionsTracked) {
+                throw new Error("TX_LIMIT_OVERFLOW");
+            }
+
         }
 
         return result;

@@ -43,6 +43,10 @@ class ICON extends BaseConnector {
             });
             newTransactionsData = resp.data.data || [];
             console.log('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactionsData.length}|total:${resp.data.totalSize}`);
+            if (resp.data.totalSize > config.maxTransactionsTracked) {
+                throw new Error("TX_LIMIT_OVERFLOW");
+            }
+
             result = result.concat(newTransactionsData
                 .map((tx) => ({
                     hash: tx.txHash,
