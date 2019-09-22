@@ -51,9 +51,6 @@ class TEZ extends BaseConnector {
                     type: opType.sourceType
                 }
             })).data[0];
-            if (total > config.maxTransactionsTracked) {
-                throw new Error("TX_LIMIT_OVERFLOW");
-            }
 
             let transactions = [];
             let newTransactions = null;
@@ -63,6 +60,10 @@ class TEZ extends BaseConnector {
                     offset = JSON.parse(tx.path).offset;
                 }
             }
+            if (total > config.maxTransactionsTracked || offset > config.maxTransactionsTracked) {
+                throw new Error("TX_LIMIT_OVERFLOW");
+            }
+
             while (newTransactions == null || newTransactions.length == QUERY_COUNT) {
                 const page = ~~(offset / QUERY_COUNT);
                 newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
