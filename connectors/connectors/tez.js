@@ -65,6 +65,10 @@ class TEZ extends BaseConnector {
             }
 
             while (newTransactions == null || newTransactions.length == QUERY_COUNT) {
+                if (total > config.maxTransactionsTracked || offset > config.maxTransactionsTracked) {
+                    throw new Error("TX_LIMIT_OVERFLOW");
+                }
+
                 const page = ~~(offset / QUERY_COUNT);
                 newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
                     params: {
