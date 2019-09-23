@@ -195,7 +195,7 @@ router
                 defaults: {
                     address: req.params.address,
                     net: req.params.net,
-                    currency: req.query.currency || req.params.net,
+                    currency: req.params.net,
                     updated: null,
                     created: Date.now()
                 }
@@ -252,6 +252,52 @@ router
             log.err(err);
             res.status(500).send({ err: err.message, stack: err.stack });
         }
+    })
+
+    /**
+     * @api {get} /net/:net/address/:address Get specific address data
+     * @apiName getAddressInfo
+     * @apiGroup address
+     * @apiDescription Get specific address info.
+     */
+    .get('/:net/address/:address/info', async (req, res) => {
+        if (!NET_REGEX.test(req.params.net)) {
+            return res.status(400).send('Invalid net format!');
+        }
+
+        let connectors = Connectors.getConnectors();
+        if (!connectors[req.params.net]) {
+            return res.status(400).send('Specified net is not supported!');
+        }
+
+        let connector = new connectors[req.params.net]();
+        if (!ADDRESS_REGEX.test(req.params.address) || !connector.validateAddress(req.params.address)) {
+            return res.status(400).send('Invalid address format!');
+        }
+
+        let [address, created] = (await Address.findOrCreate({
+            where: { net: req.params.net, address: req.params.address },
+            defaults: {
+                address: req.params.address,
+                net: req.params.net,
+                currency: req.params.net,
+                updated: null,
+                created: Date.now()
+            }
+        }));
+        if (created) {
+            try {
+                await explorerUpdater.doWork(req.params.net, connector, address, []);
+            }
+            catch (err) {
+                if (err.message && err.message.match('TX_LIMIT_OVERFLOW')) {
+                    log.warn(`Detected ${address.address} tx limit overflow, should be exchange.`);
+                    address.isExchange = true;
+                    address = await address.save();
+                }
+            }
+        }
+        return res.status(200).send(address.dataValues);
     })
 
     /**
