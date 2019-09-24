@@ -9,13 +9,13 @@ const log = require('../utils/log');
 
 const config = require('../config');
 const LAST_PATHS_QUERY = `
-    SELECT id, originalOpType, path, type
-    FROM citadel_core.transactions 
+    SELECT id, "originalOpType", path, type
+    FROM transactions 
     WHERE id IN (
         SELECT max(id)
         FROM transactions
-        WHERE addressId = :addressId
-        GROUP BY originalOpType
+        WHERE "addressId" = :addressId
+        GROUP BY "originalOpType"
     );
  `
 
@@ -71,8 +71,9 @@ class ExplorerUpdater {
                             else {
                                 await this.doWork(net, connectors[address.net], address, serviceAddresses);
                             }
-                            await new Promise(resolve => setTimeout(resolve, config.updateInterval));
                         }
+                        await new Promise(resolve => setTimeout(resolve, config.updateInterval));
+
                     }
                     catch (err) {
                         log.err(err);
@@ -136,6 +137,9 @@ class ExplorerUpdater {
                 log.warn(`Detected ${address.address} tx limit overflow, should be exchange.`);
                 address.isExchange = true;
                 await address.save();
+            }
+            else {
+                log.err(err);
             }
         }
     }

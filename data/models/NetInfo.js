@@ -25,11 +25,10 @@ const NetInfo = connection.define('netInfo', {
     circulatingSupply: sequelize.FLOAT,
     stakingRate: sequelize.FLOAT,
     unbondingPeriod: sequelize.FLOAT,
-    
+
     updatedAt: sequelize.BIGINT
-}, { 
+}, {
     timestamps: false,
- });
- NetInfo.sync();
+});
 
 module.exports = NetInfo;

@@ -34,6 +34,4 @@ const Transaction = connection.define('transactions', {
 Address.hasMany(Transaction);
 Transaction.belongsTo(Address);
 
-Transaction.sync();
-
 module.exports = Transaction;

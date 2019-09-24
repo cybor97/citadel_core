@@ -5,10 +5,10 @@ const Sequelize = require('sequelize');
 const config = require('../config');
 
 class DBConnection {
-    static getConnection(){
-        if(!this.connection){
+    static getConnection() {
+        if (!this.connection) {
             this.connection = new Sequelize({
-                dialect: 'mysql',
+                dialect: config.dialect,
                 host: config.host,
                 database: config.database,
                 username: config.username,
