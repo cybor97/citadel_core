@@ -5,6 +5,7 @@
 const express = require('express');
 const browserify = require('browserify-middleware');
 const log = require('./utils/log');
+const config = require('./config');
 require('./utils/expressAsyncErrors');
 
 const path = require('path');
@@ -48,6 +49,6 @@ Promise.resolve()
             stack: err.stack
           });
         });
-      app.listen(8080);
+      app.listen(config.app && config.app.port || 8080, config.app && config.app.host || '0.0.0.0');
     }
   });
