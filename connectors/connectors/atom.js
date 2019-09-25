@@ -86,7 +86,8 @@ class ATOM extends BaseConnector {
                     to: msg.value.validator_address,
                     originalOpType: 'delegate',
                     type: 'delegation',
-                    path: JSON.stringify({ queryCount: QUERY_COUNT, offset: ~~(i / QUERY_COUNT) + 1 })
+                    path: JSON.stringify({ queryCount: QUERY_COUNT, offset: ~~(i / QUERY_COUNT) + 1 }),
+                    isCancelled: tx.logs && tx.logs.length > 0 && tx.logs[0].success != null && !tx.logs[0].success
                 });
             });
     }
