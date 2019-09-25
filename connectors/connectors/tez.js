@@ -95,7 +95,8 @@ class TEZ extends BaseConnector {
                         fee: txData.fee / M_TEZ_MULTIPLIER,
                         originalOpType: opType.sourceType,
                         type: opType.type,
-                        path: JSON.stringify({ queryCount: QUERY_COUNT, offset: (++offset) })
+                        path: JSON.stringify({ queryCount: QUERY_COUNT, offset: (++offset) }),
+                        isCancelled: txData.failed
                     };
                 }));
             }
