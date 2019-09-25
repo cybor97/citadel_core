@@ -218,7 +218,7 @@ router
             }
 
             let transactions = await Transaction.findAndCountAll(Object.assign({
-                attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment'],
+                attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                 where: whereParams,
                 include: [{ model: Address, where: { address: req.params.address } }]
             }, utils.preparePagination(req.query)));
@@ -235,7 +235,7 @@ router
                 await explorerUpdater.doWork(req.params.net, connector, address, serviceAddresses);
                 //FIXME: Review duplicate
                 transactions = await Transaction.findAndCountAll(Object.assign({
-                    attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment'],
+                    attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                     where: whereParams,
                     include: [{ model: Address, where: { address: req.params.address } }]
                 }, utils.preparePagination(req.query)));
@@ -255,7 +255,7 @@ router
     })
 
     /**
-     * @api {get} /net/:net/address/:address Get specific address data
+     * @api {get} /net/:net/address/:address/info Get specific address info
      * @apiName getAddressInfo
      * @apiGroup address
      * @apiDescription Get specific address info.
