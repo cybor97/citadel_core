@@ -343,6 +343,10 @@ router
             return res.status(400).send("Specified net doesn't support reveal or not yet implemented.");
         }
 
+        if (connector.isRevealed && await connector.isRevealed(req.params.address)) {
+            return res.status(400).send("Specified address already revealed.");
+        }
+
         let transaction = await connector.prepareReveal(req.params.address);
 
         res.status(200).send(transaction);

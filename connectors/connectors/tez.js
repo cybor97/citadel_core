@@ -110,6 +110,10 @@ class TEZ extends BaseConnector {
         return resultTransactions;
     }
 
+    async isRevealed(address) {
+        return (await axios.get(`${this.apiUrl}/operations/${address}`, { params: { type: 'Reveal' } })).data.length > 0;
+    }
+
     async processPayment(transactions, serviceAddresses) {
         transactions.forEach(tx => {
             if (tx.fromAlias || serviceAddresses.indexOf(tx.from) !== -1) {
@@ -128,6 +132,8 @@ class TEZ extends BaseConnector {
             fee: '1420',
             gas_limit: '10600',
             storage_limit: '300',
+            amount: '1420',
+            destination: address
         }, false);
     }
 
