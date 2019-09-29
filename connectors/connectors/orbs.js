@@ -36,7 +36,7 @@ class ORBS extends ETHToken {
             if (tx.type === 'delegation' && tx.path) {
                 delegateFromBlock = JSON.parse(tx.path).blockNumber;
             }
-            if (tx.type === 'payment' && tx.path) {
+            if ((tx.type === 'payment' || tx.type === 'approved_payment') && tx.path) {
                 rewardLastUpdate = JSON.parse(tx.path).updatedAt;
             }
         }
@@ -106,7 +106,7 @@ class ORBS extends ETHToken {
             if (tx.type === 'delegation' && tx.path) {
                 delegateFromBlock = JSON.parse(tx.path).blockNumber;
             }
-            if (tx.type === 'payment' && tx.path) {
+            if ((tx.type === 'payment' || tx.type === 'approved_payment') && tx.path) {
                 rewardLastUpdate = JSON.parse(tx.path).updatedAt;
             }
         }
@@ -148,7 +148,7 @@ class ORBS extends ETHToken {
             date: Date.now(),
             value: data.delegatorReward,
             fee: 0,
-            type: 'payment',
+            type: 'approved_payment',
             path: JSON.stringify({ updatedAt: Date.now() }),
             originalOpType: 'delegatorReward',
 
@@ -160,7 +160,7 @@ class ORBS extends ETHToken {
             date: Date.now(),
             value: data.guardianReward,
             fee: 0,
-            type: 'payment',
+            type: 'approved_payment',
             path: JSON.stringify({ updatedAt: Date.now() }),
             originalOpType: 'guardianReward',
 
@@ -172,7 +172,7 @@ class ORBS extends ETHToken {
             date: Date.now(),
             value: data.validatorReward,
             fee: 0,
-            type: 'payment',
+            type: 'approved_payment',
             path: JSON.stringify({ updatedAt: Date.now() }),
             originalOpType: 'validatorReward',
 
