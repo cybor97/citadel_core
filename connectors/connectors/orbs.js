@@ -67,9 +67,9 @@ class ORBS extends ETHToken {
                     clearTimeout(subscriptionData.emitTimeout);
                 }
                 subscriptionData.emitTimeout = setTimeout(() => {
-                    this.getRewardTransactions(address, rewardLastUpdate);
+                    let rewardTransactions = this.getRewardTransactions(address, rewardLastUpdate);
 
-                    emitter.emit('data', subscriptionData.buffer);
+                    emitter.emit('data', [].concat(rewardTransactions, subscriptionData.buffer));
                     subscriptionData.buffer = [];
                     subscriptionData.lastUpdate = Date.now();
                     subscriptionData.emitTimeout = null;
