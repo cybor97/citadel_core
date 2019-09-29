@@ -242,7 +242,14 @@ router
             }
 
             address = address.dataValues;
-            address.transactions = transactions.rows.map(tx => tx.dataValues);
+            address.transactions = transactions.rows.map(tx => {
+                let txData = tx.dataValues;
+                //FIXME: ASAP, should be processed on collection
+                if (tx.type === 'supplement' && txData.from && txData.from.toLowerCase() === req.params.address.toLowerCase()) {
+                    txData.type = 'conclusion';
+                }
+                return txData;
+            });
             address.transactionsCount = transactions.count;
 
             res.status(200).send(address);
