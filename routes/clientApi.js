@@ -239,7 +239,6 @@ router
                     where: whereParams,
                     include: [{ model: Address, where: { address: req.params.address } }]
                 }, utils.preparePagination(req.query)));
-
             }
 
             address = address.dataValues;

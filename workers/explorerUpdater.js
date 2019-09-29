@@ -124,9 +124,7 @@ class ExplorerUpdater {
             }
 
             log.info(`Updating ${address.address} (${address.net})`);
-            if (connector.subscribe) {
-                connector.subscribe(address.address);
-            }
+
             transactions = await connector.getAllTransactions(address.address, lastPaths, serviceAddresses.map(c => c.address));
             await this.saveDb(address, transactions);
             return transactions;
