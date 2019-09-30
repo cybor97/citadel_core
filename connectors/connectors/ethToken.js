@@ -126,6 +126,10 @@ class ETHToken extends BaseConnector {
     }
 
     async prepareDelegation(fromAddress, toAddress) {
+        if (!this.getDelegationContractAddress) {
+            throw new ValidationError(`Specified net doesn't support delegation or not yet implemented.`);
+        }
+
         return await this.wrapPrepareOperation(async () => {
             let web3 = new Web3(this.getParityUrl());
             let contractAddress = this.getDelegationContractAddress();
