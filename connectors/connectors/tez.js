@@ -127,7 +127,7 @@ class TEZ extends BaseConnector {
     }
 
     async prepareReveal(address) {
-        return await this.eztzInstance.rpc.prepareOperation(address, {
+        return await this.prepareOperation(address, {
             kind: 'transaction',
             source: address,
             fee: '1420',
@@ -139,7 +139,7 @@ class TEZ extends BaseConnector {
     }
 
     async prepareTransfer(fromAddress, toAddress, amount) {
-        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+        return await this.prepareOperation(fromAddress, {
             kind: 'transaction',
             fee: '1420',
             gas_limit: '10600',
@@ -150,41 +150,41 @@ class TEZ extends BaseConnector {
     }
 
     async prepareDelegation(fromAddress, toAddress) {
-        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+        return await this.prepareOperation(fromAddress, {
             kind: 'delegation',
             fee: '1420',
             gas_limit: '10100',
             storage_limit: '0',
             delegate: toAddress
-        }, false).catch(err => err);
+        }, false);
     }
 
     async prepareProposal(votingId, fromAddress, proposal) {
         let blockMetadata = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/metadata`)).data;
 
-        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+        return await this.prepareOperation(fromAddress, {
             kind: 'proposals',
             source: fromAddress,
             period: blockMetadata.level.voting_period,
             proposals: [proposal]
-        }, false).catch(err => err);
+        }, false);
     }
 
     async prepareBallot(votingId, fromAddress, ballot) {
         let blockMetadata = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/metadata`)).data;
         let currentProposal = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/votes/current_proposal`)).data;
 
-        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+        return await this.prepareOperation(fromAddress, {
             kind: 'ballot',
             source: fromAddress,
             period: blockMetadata.level.voting_period,
             proposal: currentProposal,
             ballot: ballot
-        }, false).catch(err => err);
+        }, false);
     }
 
     async prepareOrigination(fromAddress, balance) {
-        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+        return await this.prepareOperation(fromAddress, {
             kind: 'origination',
             fee: '1420',
             balance: (Number(balance) * M_TEZ_MULTIPLIER).toString(),
@@ -193,7 +193,25 @@ class TEZ extends BaseConnector {
             manager_pubkey: fromAddress,
             spendable: true,
             delegatable: true
-        }, false).catch(err => err)
+        }, false);
+    }
+
+    async prepareOperation(...params) {
+        try {
+            return await this.eztzInstance.rpc.prepareOperation(...params);
+        }
+        catch (err) {
+            if (typeof (err) === 'string') {
+                if (err.match(/(Cannot parse contract id)|(Invalid contract notation)|(Unexpected data \(Signature.Public_key_hash\))/)) {
+                    throw new ValidationError('Invalid address');
+                }
+                else if (err.match(/unexpected string value .* instead of "nay" , "yay" or "pass"/)) {
+                    throw new ValidationError('Invalid voting value, should be nay, yay or pass');
+                }
+                throw new Error(err);
+            }
+            throw err;
+        }
     }
 
     async sendTransaction(address, signedTransaction) {
