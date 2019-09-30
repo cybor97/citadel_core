@@ -3,7 +3,7 @@ const eztz = require('eztz.js');
 const BaseConnector = require('./baseConnector');
 const config = require('../../config');
 const StakedYields = require('../stakedYields');
-const { ValidationError } = require('../../utils/errors');
+const { ValidationError, TransactionError } = require('../../utils/errors');
 
 const log = require('../../utils/log');
 
@@ -201,7 +201,28 @@ class TEZ extends BaseConnector {
             throw new ValidationError('signedTransaction should be string or object contains sopbytes');
         }
 
-        return await this.eztzInstance.rpc.silentInject(typeof (signedTransaction) === 'string' ? signedTransaction : signedTransaction.sopbytes);
+        try {
+            return await this.eztzInstance.rpc.silentInject(typeof (signedTransaction) === 'string'
+                ? signedTransaction
+                : signedTransaction.sopbytes);
+        }
+        catch (err) {
+            let errMessage = err && ((typeof (err) === 'string' && err) || err.message || (err.length && err[0] && err[0].msg) || err.name);
+            log.err('Send transaction error', err);
+            if (errMessage) {
+                if (errMessage.match(/(Empty implicit contract)/)) {
+                    throw new TransactionError('Insufficient balance');
+                }
+                else if (errMessage.match(/(Counter.* already used for contract)/)) {
+                    throw new TransactionError('Address already have pending transaction on node')
+                }
+                else if (errMessage.match(/(The operation signature is invalid)/)) {
+                    throw new TransactionError('Invalid signature')
+                }
+            }
+            throw err;
+        }
+
     }
 
     async getInfo() {

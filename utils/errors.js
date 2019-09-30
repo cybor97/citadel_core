@@ -1,3 +1,7 @@
+class ValidationError extends Error { };
+class TransactionError extends ValidationError { }
+
 module.exports = {
-    ValidationError: class ValidationError extends Error { }
+    ValidationError: ValidationError,
+    TransactionError: TransactionError
 }
