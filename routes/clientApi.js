@@ -57,13 +57,13 @@ router
         let result = [];
         for (let net of nets) {
             if (!connectors[net]) {
-                return res.status(400).send(`Net ${net} is not supported.`);
+                return res.status(400).send({ message: `Net ${net} is not supported.` });
             }
 
             let connector = new connectors[net];
 
             if (!connector.getInfo) {
-                return res.status(400).send('Info for specified net is not yet supported.');
+                return res.status(400).send({ message: 'Info for specified net is not yet supported.' });
             }
 
             let [netInfo, created] = await NetInfo.findOrCreate({
@@ -102,12 +102,12 @@ router
         let connectors = Connectors.getConnectors();
 
         if (!connectors[req.params.net]) {
-            return res.status(400).send('Specified net is not supported!');
+            return res.status(400).send({ message: 'Specified net is not supported!' });
         }
         let connector = new connectors[req.params.net];
 
         if (!connector.getInfo) {
-            return res.status(400).send('Info for specified net is not yet supported.');
+            return res.status(400).send({ message: 'Info for specified net is not yet supported.' });
         }
 
         let [netInfo, created] = await NetInfo.findOrCreate({
@@ -177,17 +177,17 @@ router
      */
     .get('/:net/address/:address', async (req, res) => {
         if (!NET_REGEX.test(req.params.net)) {
-            return res.status(400).send('Invalid net format!');
+            return res.status(400).send({ message: 'Invalid net format!' });
         }
 
         let connectors = Connectors.getConnectors();
         if (!connectors[req.params.net]) {
-            return res.status(400).send('Specified net is not supported!');
+            return res.status(400).send({ message: 'Specified net is not supported!' });
         }
 
         let connector = new connectors[req.params.net]();
         if (!ADDRESS_REGEX.test(req.params.address) || !connector.validateAddress(req.params.address)) {
-            return res.status(400).send('Invalid address format!');
+            return res.status(400).send({ message: 'Invalid address format!' });
         }
 
         try {
@@ -269,17 +269,17 @@ router
      */
     .get('/:net/address/:address/info', async (req, res) => {
         if (!NET_REGEX.test(req.params.net)) {
-            return res.status(400).send('Invalid net format!');
+            return res.status(400).send({ message: 'Invalid net format!' });
         }
 
         let connectors = Connectors.getConnectors();
         if (!connectors[req.params.net]) {
-            return res.status(400).send('Specified net is not supported!');
+            return res.status(400).send({ message: 'Specified net is not supported!' });
         }
 
         let connector = new connectors[req.params.net]();
         if (!ADDRESS_REGEX.test(req.params.address) || !connector.validateAddress(req.params.address)) {
-            return res.status(400).send('Invalid address format!');
+            return res.status(400).send({ message: 'Invalid address format!' });
         }
 
         let [address, created] = (await Address.findOrCreate({
@@ -324,7 +324,7 @@ router
             res.status(200).send({ success: true });
         }
         else {
-            res.status(404).send({ error: 'Address not found' });
+            res.status(404).send({ message: 'Address not found' });
         }
     })
 
@@ -342,16 +342,16 @@ router
     .post('/:net/address/:address/transactions/prepare-reveal', async (req, res) => {
         let connectors = Connectors.getConnectors();
         if (!connectors[req.params.net]) {
-            return res.status(400).send('Specified net is not supported!');
+            return res.status(400).send({ message: 'Specified net is not supported!' });
         }
 
         let connector = (new connectors[req.params.net]());
         if (!connector.prepareReveal) {
-            return res.status(400).send("Specified net doesn't support reveal or not yet implemented.");
+            return res.status(400).send({ message: "Specified net doesn't support reveal or not yet implemented." });
         }
 
         if (connector.isRevealed && await connector.isRevealed(req.params.address)) {
-            return res.status(400).send("Specified address already revealed.");
+            return res.status(400).send({ message: "Specified address already revealed." });
         }
 
         let transaction = await connector.prepareReveal(req.params.address);
@@ -373,12 +373,12 @@ router
     .post('/:net/address/:address/transactions/prepare-transfer', async (req, res) => {
         let connectors = Connectors.getConnectors();
         if (!connectors[req.params.net]) {
-            return res.status(400).send('Specified net is not supported!');
+            return res.status(400).send({ message: 'Specified net is not supported!' });
         }
 
         let connector = (new connectors[req.params.net]());
         if (!connector.prepareTransfer) {
-            return res.status(400).send("Specified net doesn't support transfer or not yet implemented.");
+            return res.status(400).send({ message: "Specified net doesn't support transfer or not yet implemented." });
         }
 
         let transaction = await connector.prepareTransfer(req.params.address, req.body.toAddress, req.body.amount);
@@ -399,12 +399,12 @@ router
     .post('/:net/address/:address/transactions/prepare-delegation', async (req, res) => {
         let connectors = Connectors.getConnectors();
         if (!connectors[req.params.net]) {
-            return res.status(400).send('Specified net is not supported!');
+            return res.status(400).send({ message: 'Specified net is not supported!' });
         }
 
         let connector = (new connectors[req.params.net]());
         if (!connector.prepareDelegation) {
-            return res.status(400).send("Specified net doesn't support delegation or not yet implemented.");
+            return res.status(400).send({ message: "Specified net doesn't support delegation or not yet implemented." });
         }
 
         let transaction = await connector.prepareDelegation(req.params.address, req.body.toAddress);
@@ -425,12 +425,12 @@ router
     .post('/:net/address/:address/transactions/prepare-origination', async (req, res) => {
         let connectors = Connectors.getConnectors();
         if (!connectors[req.params.net]) {
-            return res.status(400).send('Specified net is not supported!');
+            return res.status(400).send({ message: 'Specified net is not supported!' });
         }
 
         let connector = (new connectors[req.params.net]());
         if (!connector.prepareOrigination) {
-            return res.status(400).send("Specified net doesn't support origination or not yet implemented.");
+            return res.status(400).send({ message: "Specified net doesn't support origination or not yet implemented." });
         }
 
         let transaction = await connector.prepareOrigination(req.params.address, req.body.balance);
@@ -458,7 +458,7 @@ router
         }
         catch (exc) {
             if (exc instanceof ValidationError) {
-                res.status(400).send(exc.message);
+                res.status(400).send({ message: exc.message });
             }
             else {
                 if (typeof (exc) === 'string') {
@@ -526,12 +526,12 @@ router
     .get('/:net/voting', async (req, res) => {
         let connectors = Connectors.getConnectors();
         if (!connectors[req.params.net]) {
-            return res.status(400).send('Specified net is not supported!');
+            return res.status(400).send({ message: 'Specified net is not supported!' });
         }
 
         let connector = new connectors[req.params.net];
         if (!connector.getVoting) {
-            return res.status(400).send('Info for specified net is not yet supported.');
+            return res.status(400).send({ message: 'Info for specified net is not yet supported.' });
         }
 
         res.status(200).send(await connector.getVoting());
@@ -552,12 +552,12 @@ router
     .post('/:net/voting/submit-proposal', async (req, res) => {
         let connectors = Connectors.getConnectors();
         if (!connectors[req.params.net]) {
-            return res.status(400).send('Specified net is not supported!');
+            return res.status(400).send({ message: 'Specified net is not supported!' });
         }
 
         let connector = new connectors[req.params.net];
         if (!connector.prepareProposal) {
-            return res.status(400).send('Proposal for specified net is not yet supported.');
+            return res.status(400).send({ message: 'Proposal for specified net is not yet supported.' });
         }
 
         let transaction = await connector.prepareProposal(req.body.votingId, req.body.delegate, req.body.proposal);
@@ -580,12 +580,12 @@ router
     .post('/:net/voting/submit-ballot', async (req, res) => {
         let connectors = Connectors.getConnectors();
         if (!connectors[req.params.net]) {
-            return res.status(400).send('Specified net is not supported!');
+            return res.status(400).send({ message: 'Specified net is not supported!' });
         }
 
         let connector = new connectors[req.params.net];
         if (!connector.prepareBallot) {
-            return res.status(400).send('Ballot for specified net is not yet supported.');
+            return res.status(400).send({ message: 'Ballot for specified net is not yet supported.' });
         }
         let transaction = await connector.prepareBallot(req.body.votingId, req.body.delegate, req.body.ballot);
 
@@ -608,18 +608,18 @@ router
     .get('/:net/address/:address/delegation-balance-info', async (req, res) => {
         let connectors = Connectors.getConnectors();
         if (!connectors[req.params.net]) {
-            return res.status(400).send('Specified net is not supported!');
+            return res.status(400).send({ message: 'Specified net is not supported!' });
         }
 
         let connector = (new connectors[req.params.net]());
         if (!connector.getDelegationBalanceInfo) {
-            return res.status(400).send('Delegation balance info for specified net is not yet supported.');
+            return res.status(400).send({ message: 'Delegation balance info for specified net is not yet supported.' });
         }
 
         if (connector.validateDelegationAddress) {
             let addressValidation = await connector.validateDelegationAddress(req.params.address);
             if (!addressValidation.valid) {
-                return res.status(400).send(addressValidation.message);
+                return res.status(400).send({ message: addressValidation.message });
             }
         }
 
