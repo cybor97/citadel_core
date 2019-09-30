@@ -271,7 +271,8 @@ class TEZ extends BaseConnector {
 
     async getDelegationBalanceInfo(address) {
         let mainBalanceInfo = await this.getAddressBalanceInfo(address);
-        let mainBalance = parseInt(mainBalanceInfo.balance / M_TEZ_MULTIPLIER);
+        let mainBalance = mainBalanceInfo.balance / M_TEZ_MULTIPLIER;
+
         let addresses = [];
         let delegatedBalance = 0;
         let offset = 0;
