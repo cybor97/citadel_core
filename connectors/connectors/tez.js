@@ -3,6 +3,7 @@ const eztz = require('eztz.js');
 const BaseConnector = require('./baseConnector');
 const config = require('../../config');
 const StakedYields = require('../stakedYields');
+const { ValidationError } = require('../../utils/errors');
 
 const log = require('../../utils/log');
 
@@ -196,7 +197,11 @@ class TEZ extends BaseConnector {
     }
 
     async sendTransaction(address, signedTransaction) {
-        return await this.eztzInstance.rpc.silentInject(signedTransaction.sopbytes);
+        if (typeof (signedTransaction) !== 'string' && !signedTransaction.sopbytes) {
+            throw new ValidationError('signedTransaction should be string or object contains sopbytes');
+        }
+
+        return await this.eztzInstance.rpc.silentInject(typeof (signedTransaction) === 'string' ? signedTransaction : signedTransaction.sopbytes);
     }
 
     async getInfo() {

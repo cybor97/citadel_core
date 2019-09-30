@@ -12,6 +12,7 @@ const NetInfo = require('../data/models/NetInfo');
 const utils = require('../utils');
 const explorerUpdater = require('../workers/explorerUpdater');
 const log = require('../utils/log');
+const { ValidationError } = require('../utils/errors');
 
 const NET_REGEX = /^[a-z-]*$/;
 const ADDRESS_REGEX = /^[0-9a-zA-Z_-]*$/;
@@ -451,9 +452,24 @@ router
     .post('/:net/address/:address/transactions/send', async (req, res) => {
         let connectors = Connectors.getConnectors();
         let connector = (new connectors[req.params.net]());
-        let result = await connector.sendTransaction(req.params.address, req.body.signedTransaction);
-
-        res.status(200).send(result);
+        try {
+            let result = await connector.sendTransaction(req.params.address, req.body.signedTransaction);
+            res.status(200).send(result);
+        }
+        catch (exc) {
+            if (exc instanceof ValidationError) {
+                res.status(400).send(exc.message);
+            }
+            else {
+                if (typeof (exc) === 'string') {
+                    try {
+                        exc = JSON.parse(exc);
+                    }
+                    catch{ }
+                }
+                res.status(500).send(exc && ((typeof (exc) === 'string' && exc) || exc.message || (exc.length && exc[0] && exc[0].msg) || exc.name));
+            }
+        }
     })
 
     /**
