@@ -186,10 +186,10 @@ class TEZ extends BaseConnector {
     async prepareOrigination(fromAddress, balance) {
         return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
             kind: 'origination',
-            fee: '257',
+            fee: '1420',
             balance: (Number(balance) * M_TEZ_MULTIPLIER).toString(),
             gas_limit: 10100,
-            storage_limit: 277,
+            storage_limit: 300,
             manager_pubkey: fromAddress,
             spendable: true,
             delegatable: true
