@@ -46,6 +46,9 @@ if (!process.argv.includes('--worker')) {
         message: err.message,
         stack: err.stack
       });
+    })
+    .use((req, res, next) => {
+      return res.status(404).send({ message: 'Method not found' });
     });
   app.listen(8080);
 }
