@@ -253,25 +253,22 @@ class TEZ extends BaseConnector {
         let mainBalance = parseInt(mainBalanceInfo.balance / M_TEZ_MULTIPLIER);
         let addresses = [];
         let delegatedBalance = 0;
-        let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
-            params: {
-                type: 'Origination'
-            }
-        })).data[0];
         let offset = 0;
+        let newTransactions = null;
 
-        while (addresses.length < transactionsCount) {
-            let newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
+        while (newTransactions == null || newTransactions.length == QUERY_COUNT) {
+            newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
                 params: {
                     type: 'Origination',
                     number: QUERY_COUNT,
-                    p: offset
+                    p: ~~(offset / QUERY_COUNT)
                 }
             })).data;
 
-            let newAddresses = newTransactions.map(tx =>
-                tx.type.operations.find(op => op.kind === 'origination').tz1.tz
-            );
+            let newAddresses = newTransactions.map(tx => {
+                offset++;
+                return tx.type.operations.find(op => op.kind === 'origination').tz1.tz
+            });
             addresses = addresses.concat(newAddresses);
 
             delegatedBalance += (await Promise.all(newAddresses.map(async newAddress =>
