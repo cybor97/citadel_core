@@ -69,14 +69,22 @@ class ETHToken extends BaseConnector {
         let emitter = new EventEmitter();
         web3.eth.subscribe('logs', {
             fromBlock: fromBlock || 'earliest',
+            toBlock: 'latest',
             address: contractHash,
             topics: [methodTopic, topic === 'topic1' ? address : null, topic === 'topic2' ? address : null]
         })
             .on('data', async (tx) => {
                 const web3Internal = new Web3(this.getParityUrl());
 
-                let txData = await web3Internal.eth.getTransaction(tx.transactionHash);
-                let blockData = await web3Internal.eth.getBlock(tx.blockHash);
+                let txData = null;
+                let blockData = null;
+                //FIXME: Remove, sometimes web3 returrns null
+                while (blockData === null) {
+                    blockData = await web3Internal.eth.getBlock(tx.blockHash);
+                }
+                while (txData === null) {
+                    txData = await web3Internal.eth.getTransaction(tx.transactionHash);
+                }
 
                 emitter.emit('data', ({
                     //0 is methodId
