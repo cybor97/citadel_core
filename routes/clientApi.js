@@ -224,7 +224,9 @@ router
                 include: [{ model: Address, where: { address: req.params.address } }]
             }, utils.preparePagination(req.query)));
 
-            if (!transactions.length && req.query.forceUpdate) {
+            if (!transactions.length && req.query.forceUpdate
+                //FIXME: Remove ASAP(as subscriptions brought to work)
+                || req.params.net === 'orbs' || req.params.net === 'iost') {
                 let serviceAddresses = await Address.findAll({
                     order: [['created', 'desc']],
                     where: {
