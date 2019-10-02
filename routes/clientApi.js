@@ -17,6 +17,10 @@ const { ValidationError } = require('../utils/errors');
 const NET_REGEX = /^[a-z-]*$/;
 const ADDRESS_REGEX = /^[0-9a-zA-Z_-]*$/;
 
+//net: voting
+//FIXME: Remove ASAP, reimplement with db and proper invalidation
+const votesCache = {};
+
 router
     /**
      * @api {get} /net Get all tracked networks
@@ -495,12 +499,26 @@ router
             if (!nets || nets.includes(net)) {
                 let connector = new connectors[net]();
                 if (connector.getVoting) {
-                    let votingItem = await connector.getVoting();
-                    if (votingItem instanceof Array) {
-                        votingData = votingData.concat(votingItem);
+                    let votingItem = null;
+                    try {
+                        votingItem = await connector.getVoting();
+                        votesCache[net] = votingItem;
+                    }
+                    catch (err) {
+                        log.err('Get all nets voting error', err);
+                        votingItem = votesCache[net];
+                    }
+
+                    if (votingItem) {
+                        if (votingItem instanceof Array) {
+                            votingData = votingData.concat(votingItem);
+                        }
+                        else {
+                            votingData.push(votingItem);
+                        }
                     }
                     else {
-                        votingData.push(votingItem);
+                        log.err(`Nothing get for voting(net: ${net})`);
                     }
                 }
             }
