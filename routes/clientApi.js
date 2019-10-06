@@ -55,8 +55,8 @@ router
     .get('/info', async (req, res) => {
         let connectors = Connectors.getConnectors();
 
-
         let nets = req.query.nets || Object.keys(connectors);
+        let defaultNets = !req.query.nets;
 
         let result = [];
         for (let net of nets) {
@@ -67,6 +67,9 @@ router
             let connector = new connectors[net];
 
             if (!connector.getInfo) {
+                if (defaultNets) {
+                    continue;
+                }
                 return res.status(400).send({ message: 'Info for specified net is not yet supported.' });
             }
 
