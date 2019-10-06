@@ -85,7 +85,8 @@ class ICON extends BaseConnector {
             originalId: 0,
             title: 'Vote for P-Rep',
             net: 'iost',
-            start_datetime: 1072915200000,
+            //https://medium.com/helloiconworld/icon-mainnet-1-0-launched-d54b9132017e
+            start_datetime: 1516818300000,
             end_datetime: null,
             answers: data.map(prep => ({
                 id: prep.address,
