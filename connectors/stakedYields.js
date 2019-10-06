@@ -16,7 +16,13 @@ class StakedYields {
                 .map(item => dom(item).text().replace(/  /g, '').trim().split('\n').pop())
             )
             .reduce((prev, next) => {
-                prev[next[0]] = { yield: next[1], stakingRate: next[2], unbondingPeriod: next[3] };
+                if (next.length >= 4) {
+                    prev[next[0]] = {
+                        yield: parseFloat(next[1].split('%').pop()),
+                        stakingRate: parseFloat(next[2].split('%').pop()),
+                        unbondingPeriod: parseFloat(next[3].split('%').pop())
+                    };
+                }
                 return prev;
             }, {})[net];
     }
