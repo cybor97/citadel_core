@@ -142,6 +142,32 @@ class IOSTCoin extends BaseConnector {
         }
     }
 
+    async getVoting() {
+        let total = (await axios.get(`${this.apiUrl}/producers`, {
+            params: {
+                size: 1
+            }
+        })).data.total;
+        let data = (await axios.get(`${this.apiUrl}/producers`, {
+            params: {
+                size: total
+            }
+        })).data.producers;
+
+        return {
+            originalId: 0,
+            title: 'Vote for validator',
+            net: 'iost',
+            start_datetime: 1072915200000,
+            end_datetime: null,
+            answers: data.map(producer => ({
+                id: producer.account,
+                title: producer.alias_en || producer.alias || producer.account,
+                vote_count: producer.votes
+            }))
+        }
+    }
+
     async prepareTransfer(fromAddress, toAddress, amount) {
         return this.iost.transfer('iost', fromAddress, toAddress, amount, 'transfer via citadel_core');
     }
