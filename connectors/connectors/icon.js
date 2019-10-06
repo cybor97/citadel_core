@@ -67,7 +67,32 @@ class ICON extends BaseConnector {
         }
 
         return result;
+    }
 
+    async getVoting() {
+        let total = (await axios.get(`${this.apiUrl}/iiss/prep/list`, {
+            params: {
+                count: 1
+            }
+        })).data.totalSize;
+        let data = (await axios.get(`${this.apiUrl}/iiss/prep/list`, {
+            params: {
+                size: total
+            }
+        })).data.data;
+
+        return {
+            originalId: 0,
+            title: 'Vote for P-Rep',
+            net: 'iost',
+            start_datetime: 1072915200000,
+            end_datetime: null,
+            answers: data.map(prep => ({
+                id: prep.address,
+                title: prep.name || prep.address,
+                vote_count: prep.totalDelegated
+            }))
+        }
     }
 
     async prepareTransfer(fromAddress, toAddress, amount) {
