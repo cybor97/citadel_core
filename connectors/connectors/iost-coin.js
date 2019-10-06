@@ -3,6 +3,7 @@ const BaseConnector = require('./baseConnector');
 const config = require('../../config');
 const IOST = require('iost');
 const log = require('../../utils/log');
+const { ValidationError } = require('../../utils/errors');
 
 const QUERY_COUNT = 50;
 const OP_TYPES = [
@@ -173,11 +174,26 @@ class IOSTCoin extends BaseConnector {
     }
 
     async sendTransaction(address, signedTransaction) {
-        let accountInfo = await axios.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getAccount/${address}/true`);
-        accountInfo = accountInfo.data;
-        const sendResult = await this.rpc.transaction.sendTx(signedTransaction);
+        try {
+            let accountInfo = await axios.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getAccount/${address}/true`);
+            accountInfo = accountInfo.data;
+            const sendResult = await this.rpc.transaction.sendTx(signedTransaction);
 
-        return sendResult && sendResult.hash;
+            return sendResult && sendResult.hash;
+        }
+        catch (err) {
+            if (err && err.response && err.response.data) {
+                err = err.response.data;
+            }
+
+            if (err && err && err.message) {
+                if (err.message.match(/id invalid/)) {
+                    throw new ValidationError('Invalid address');
+                }
+                throw new Error(err.message);
+            }
+            throw err;
+        }
     }
 }
 

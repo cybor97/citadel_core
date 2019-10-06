@@ -4,11 +4,13 @@
 
 const express = require('express');
 const browserify = require('browserify-middleware');
+const path = require('path');
+
 const log = require('./utils/log');
 require('./utils/expressAsyncErrors');
 
-const path = require('path');
 const clientApi = require('./routes/clientApi');
+const { ValidationError } = require('./utils/errors');
 
 if (!process.argv.includes('--api-server')) {
   if (process.argv.includes('--worker')) {
@@ -36,10 +38,17 @@ if (!process.argv.includes('--worker')) {
     .use('/net', clientApi)
     .use(async (err, req, res, next) => {
       log.err(err);
-      res.status(500).send({
+      if (err instanceof ValidationError) {
+        return res.status(400).send({ message: err.message });
+      }
+
+      return res.status(500).send({
         message: err.message,
         stack: err.stack
       });
+    })
+    .use((req, res, next) => {
+      return res.status(404).send({ message: 'Method not found' });
     });
   app.listen(8080);
 }

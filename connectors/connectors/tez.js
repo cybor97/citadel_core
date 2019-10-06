@@ -3,6 +3,7 @@ const eztz = require('eztz.js');
 const BaseConnector = require('./baseConnector');
 const config = require('../../config');
 const StakedYields = require('../stakedYields');
+const { ValidationError, TransactionError } = require('../../utils/errors');
 
 const log = require('../../utils/log');
 
@@ -126,7 +127,7 @@ class TEZ extends BaseConnector {
     }
 
     async prepareReveal(address) {
-        return await this.eztzInstance.rpc.prepareOperation(address, {
+        return await this.prepareOperation(address, {
             kind: 'transaction',
             source: address,
             fee: '1420',
@@ -138,7 +139,7 @@ class TEZ extends BaseConnector {
     }
 
     async prepareTransfer(fromAddress, toAddress, amount) {
-        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+        return await this.prepareOperation(fromAddress, {
             kind: 'transaction',
             fee: '1420',
             gas_limit: '10600',
@@ -149,54 +150,97 @@ class TEZ extends BaseConnector {
     }
 
     async prepareDelegation(fromAddress, toAddress) {
-        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+        return await this.prepareOperation(fromAddress, {
             kind: 'delegation',
             fee: '1420',
             gas_limit: '10100',
             storage_limit: '0',
             delegate: toAddress
-        }, false).catch(err => err);
+        }, false);
     }
 
     async prepareProposal(votingId, fromAddress, proposal) {
         let blockMetadata = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/metadata`)).data;
 
-        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+        return await this.prepareOperation(fromAddress, {
             kind: 'proposals',
             source: fromAddress,
             period: blockMetadata.level.voting_period,
             proposals: [proposal]
-        }, false).catch(err => err);
+        }, false);
     }
 
     async prepareBallot(votingId, fromAddress, ballot) {
         let blockMetadata = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/metadata`)).data;
         let currentProposal = (await axios.get(`${this.rpcUrl}/chains/main/blocks/head/votes/current_proposal`)).data;
 
-        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+        return await this.prepareOperation(fromAddress, {
             kind: 'ballot',
             source: fromAddress,
             period: blockMetadata.level.voting_period,
             proposal: currentProposal,
             ballot: ballot
-        }, false).catch(err => err);
+        }, false);
     }
 
     async prepareOrigination(fromAddress, balance) {
-        return await this.eztzInstance.rpc.prepareOperation(fromAddress, {
+        return await this.prepareOperation(fromAddress, {
             kind: 'origination',
-            fee: '257',
+            fee: '1420',
             balance: (Number(balance) * M_TEZ_MULTIPLIER).toString(),
             gas_limit: 10100,
-            storage_limit: 277,
+            storage_limit: 300,
             manager_pubkey: fromAddress,
             spendable: true,
             delegatable: true
-        }, false).catch(err => err)
+        }, false);
+    }
+
+    async prepareOperation(...params) {
+        try {
+            return await this.eztzInstance.rpc.prepareOperation(...params);
+        }
+        catch (err) {
+            if (typeof (err) === 'string') {
+                if (err.match(/(Cannot parse contract id)|(Invalid contract notation)|(Unexpected data \(Signature.Public_key_hash\))/)) {
+                    throw new ValidationError('Invalid address');
+                }
+                else if (err.match(/unexpected string value .* instead of "nay" , "yay" or "pass"/)) {
+                    throw new ValidationError('Invalid voting value, should be nay, yay or pass');
+                }
+                throw new Error(err);
+            }
+            throw err;
+        }
     }
 
     async sendTransaction(address, signedTransaction) {
-        return await this.eztzInstance.rpc.silentInject(signedTransaction.sopbytes);
+        if (typeof (signedTransaction) !== 'string' && !signedTransaction.sopbytes) {
+            throw new ValidationError('signedTransaction should be string or object contains sopbytes');
+        }
+
+        try {
+            return await this.eztzInstance.rpc.silentInject(typeof (signedTransaction) === 'string'
+                ? signedTransaction
+                : signedTransaction.sopbytes);
+        }
+        catch (err) {
+            let errMessage = err && ((typeof (err) === 'string' && err) || err.message || (err.length && err[0] && err[0].msg) || err.name);
+            log.err('Send transaction error', err);
+            if (errMessage) {
+                if (errMessage.match(/(Empty implicit contract)/)) {
+                    throw new TransactionError('Insufficient balance');
+                }
+                else if (errMessage.match(/(Counter.* already used for contract)/)) {
+                    throw new TransactionError('Address already have pending transaction on node')
+                }
+                else if (errMessage.match(/(The operation signature is invalid)/)) {
+                    throw new TransactionError('Invalid signature')
+                }
+            }
+            throw err;
+        }
+
     }
 
     async getInfo() {
@@ -245,28 +289,26 @@ class TEZ extends BaseConnector {
 
     async getDelegationBalanceInfo(address) {
         let mainBalanceInfo = await this.getAddressBalanceInfo(address);
-        let mainBalance = parseInt(mainBalanceInfo.balance / M_TEZ_MULTIPLIER);
+        let mainBalance = mainBalanceInfo.balance / M_TEZ_MULTIPLIER;
+
         let addresses = [];
         let delegatedBalance = 0;
-        let transactionsCount = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
-            params: {
-                type: 'Origination'
-            }
-        })).data[0];
         let offset = 0;
+        let newTransactions = null;
 
-        while (addresses.length < transactionsCount) {
-            let newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
+        while (newTransactions == null || newTransactions.length == QUERY_COUNT) {
+            newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
                 params: {
                     type: 'Origination',
                     number: QUERY_COUNT,
-                    p: offset
+                    p: ~~(offset / QUERY_COUNT)
                 }
             })).data;
 
-            let newAddresses = newTransactions.map(tx =>
-                tx.type.operations.find(op => op.kind === 'origination').tz1.tz
-            );
+            let newAddresses = newTransactions.map(tx => {
+                offset++;
+                return tx.type.operations.find(op => op.kind === 'origination').tz1.tz
+            });
             addresses = addresses.concat(newAddresses);
 
             delegatedBalance += (await Promise.all(newAddresses.map(async newAddress =>
