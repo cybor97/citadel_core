@@ -18,9 +18,9 @@ class StakedYields {
             .reduce((prev, next) => {
                 if (next.length >= 4) {
                     prev[next[0]] = {
-                        yield: parseFloat(next[1].split('%').shift() || 0),
-                        stakingRate: parseFloat(next[2].split('%').shift() || 0),
-                        unbondingPeriod: parseFloat(next[3].split('%').shift() || 0)
+                        yield: parseFloat(next[1].split('%').shift() || 0) || 0,
+                        stakingRate: parseFloat(next[2].split('%').shift() || 0) || 0,
+                        unbondingPeriod: parseFloat(next[3].split('%').shift() || 0) || 0
                     };
                 }
                 return prev;
