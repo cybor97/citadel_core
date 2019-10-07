@@ -3,6 +3,7 @@ const BaseConnector = require('./baseConnector');
 const IconService = require('icon-sdk-js');
 const config = require('../../config');
 const log = require('../../utils/log');
+const { ValidationError } = require('../../utils/errors');
 
 const QUERY_COUNT = 50;
 //1 - mainnet, 2 - exchanges testnet, 3 - D-Apps testnet
@@ -66,7 +67,33 @@ class ICON extends BaseConnector {
         }
 
         return result;
+    }
 
+    async getVoting() {
+        let total = (await axios.get(`${this.apiUrl}/iiss/prep/list`, {
+            params: {
+                count: 1
+            }
+        })).data.totalSize;
+        let data = (await axios.get(`${this.apiUrl}/iiss/prep/list`, {
+            params: {
+                size: total
+            }
+        })).data.data;
+
+        return {
+            originalId: 0,
+            title: 'Vote for P-Rep',
+            net: 'iost',
+            //https://medium.com/helloiconworld/icon-mainnet-1-0-launched-d54b9132017e
+            start_datetime: 1516818300000,
+            end_datetime: null,
+            answers: data.map(prep => ({
+                id: prep.address,
+                title: prep.name || prep.address,
+                vote_count: prep.totalDelegated
+            }))
+        }
     }
 
     async prepareTransfer(fromAddress, toAddress, amount) {
@@ -84,12 +111,33 @@ class ICON extends BaseConnector {
     }
 
     async sendTransaction(address, signedTransaction) {
-        return (await axios.post(`http://${config.icon.ip}:${config.icon.port}/api/v3`, {
-            jsonrpc: "2.0",
-            method: "icx_sendTransaction",
-            id: 1234,
-            params: signedTransaction,
-        }, { validateStatus: false })).data;
+        try {
+            return (await axios.post(`http://${config.icon.ip}:${config.icon.port}/api/v3`, {
+                jsonrpc: "2.0",
+                method: "icx_sendTransaction",
+                id: 1234,
+                params: signedTransaction,
+            })).data;
+        }
+        catch (err) {
+            if (err && err.response && err.response.data) {
+                err = err.response.data;
+            }
+
+            if (err && err.error && err.error.message) {
+                if (err.error.message.match(/\'from\' has an invalid value/)) {
+                    throw new ValidationError('Invalid address');
+                }
+                else if (err.error.message.match(/Out of balance/)) {
+                    throw new ValidationError(err.error.message);
+                }
+                else if (err.error.message.match(/fail tx invalid unknown/)) {
+                    throw new ValidationError('Unknown error, possibly invalid signature');
+                }
+                throw new Error(err.error.message);
+            }
+            throw err;
+        }
     }
 }
 

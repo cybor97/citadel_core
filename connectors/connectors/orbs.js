@@ -36,7 +36,7 @@ class ORBS extends ETHToken {
             if (tx.type === 'delegation' && tx.path) {
                 delegateFromBlock = JSON.parse(tx.path).blockNumber;
             }
-            if (tx.type === 'payment' && tx.path) {
+            if ((tx.type === 'payment' || tx.type === 'approved_payment') && tx.path) {
                 rewardLastUpdate = JSON.parse(tx.path).updatedAt;
             }
         }
@@ -61,15 +61,15 @@ class ORBS extends ETHToken {
                 lastUpdate: Date.now(),
                 buffer: []
             };
-            netSubscriptions.forEach(subscription => subscription.on('data', data => {
+            netSubscriptions.forEach(async subscription => subscription.on('data', async data => {
                 subscriptionData.buffer.push(data);
                 if (subscriptionData.emitTimeout) {
                     clearTimeout(subscriptionData.emitTimeout);
                 }
-                subscriptionData.emitTimeout = setTimeout(() => {
-                    this.getRewardTransactions(address, rewardLastUpdate);
+                subscriptionData.emitTimeout = setTimeout(async () => {
+                    let rewardTransactions = await this.getRewardTransactions(address, rewardLastUpdate);
 
-                    emitter.emit('data', subscriptionData.buffer);
+                    emitter.emit('data', [].concat(rewardTransactions, subscriptionData.buffer));
                     subscriptionData.buffer = [];
                     subscriptionData.lastUpdate = Date.now();
                     subscriptionData.emitTimeout = null;
@@ -106,7 +106,7 @@ class ORBS extends ETHToken {
             if (tx.type === 'delegation' && tx.path) {
                 delegateFromBlock = JSON.parse(tx.path).blockNumber;
             }
-            if (tx.type === 'payment' && tx.path) {
+            if ((tx.type === 'payment' || tx.type === 'approved_payment') && tx.path) {
                 rewardLastUpdate = JSON.parse(tx.path).updatedAt;
             }
         }
@@ -148,7 +148,7 @@ class ORBS extends ETHToken {
             date: Date.now(),
             value: data.delegatorReward,
             fee: 0,
-            type: 'payment',
+            type: 'approved_payment',
             path: JSON.stringify({ updatedAt: Date.now() }),
             originalOpType: 'delegatorReward',
 
@@ -160,7 +160,7 @@ class ORBS extends ETHToken {
             date: Date.now(),
             value: data.guardianReward,
             fee: 0,
-            type: 'payment',
+            type: 'approved_payment',
             path: JSON.stringify({ updatedAt: Date.now() }),
             originalOpType: 'guardianReward',
 
@@ -172,7 +172,7 @@ class ORBS extends ETHToken {
             date: Date.now(),
             value: data.validatorReward,
             fee: 0,
-            type: 'payment',
+            type: 'approved_payment',
             path: JSON.stringify({ updatedAt: Date.now() }),
             originalOpType: 'validatorReward',
 

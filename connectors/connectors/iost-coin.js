@@ -3,6 +3,7 @@ const BaseConnector = require('./baseConnector');
 const config = require('../../config');
 const IOST = require('iost');
 const log = require('../../utils/log');
+const { ValidationError } = require('../../utils/errors');
 
 const QUERY_COUNT = 50;
 const OP_TYPES = [
@@ -142,16 +143,57 @@ class IOSTCoin extends BaseConnector {
         }
     }
 
+    async getVoting() {
+        let total = (await axios.get(`${this.apiUrl}/producers`, {
+            params: {
+                size: 1
+            }
+        })).data.total;
+        let data = (await axios.get(`${this.apiUrl}/producers`, {
+            params: {
+                size: total
+            }
+        })).data.producers;
+
+        return {
+            originalId: 0,
+            title: 'Vote for validator',
+            net: 'iost',
+            start_datetime: 1072915200000,
+            end_datetime: null,
+            answers: data.map(producer => ({
+                id: producer.account,
+                title: producer.alias_en || producer.alias || producer.account,
+                vote_count: producer.votes
+            }))
+        }
+    }
+
     async prepareTransfer(fromAddress, toAddress, amount) {
         return this.iost.transfer('iost', fromAddress, toAddress, amount, 'transfer via citadel_core');
     }
 
     async sendTransaction(address, signedTransaction) {
-        let accountInfo = await axios.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getAccount/${address}/true`);
-        accountInfo = accountInfo.data;
-        const sendResult = await this.rpc.transaction.sendTx(signedTransaction);
+        try {
+            let accountInfo = await axios.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getAccount/${address}/true`);
+            accountInfo = accountInfo.data;
+            const sendResult = await this.rpc.transaction.sendTx(signedTransaction);
 
-        return sendResult && sendResult.hash;
+            return sendResult && sendResult.hash;
+        }
+        catch (err) {
+            if (err && err.response && err.response.data) {
+                err = err.response.data;
+            }
+
+            if (err && err && err.message) {
+                if (err.message.match(/id invalid/)) {
+                    throw new ValidationError('Invalid address');
+                }
+                throw new Error(err.message);
+            }
+            throw err;
+        }
     }
 }
 
