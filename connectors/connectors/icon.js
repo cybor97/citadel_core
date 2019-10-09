@@ -112,12 +112,14 @@ class ICON extends BaseConnector {
 
     async sendTransaction(address, signedTransaction) {
         try {
-            return (await axios.post(`http://${config.icon.ip}:${config.icon.port}/api/v3`, {
-                jsonrpc: "2.0",
-                method: "icx_sendTransaction",
-                id: 1234,
-                params: signedTransaction,
-            })).data;
+            return {
+                hash: (await axios.post(`http://${config.icon.ip}:${config.icon.port}/api/v3`, {
+                    jsonrpc: "2.0",
+                    method: "icx_sendTransaction",
+                    id: 1234,
+                    params: signedTransaction,
+                })).data.result
+            };
         }
         catch (err) {
             if (err && err.response && err.response.data) {
