@@ -24,12 +24,12 @@ const NetInfo = connection.define('netInfo', {
     marketCap: sequelize.FLOAT,
     circulatingSupply: sequelize.FLOAT,
     stakingRate: sequelize.FLOAT,
-    unbondingPeriod: sequelize.FLOAT,
-    
+    unbondingPeriod: sequelize.STRING,
+
     updatedAt: sequelize.BIGINT
-}, { 
+}, {
     timestamps: false,
- });
- NetInfo.sync();
+});
+NetInfo.sync();
 
 module.exports = NetInfo;
