@@ -257,7 +257,10 @@ class TEZ extends BaseConnector {
             circulatingSupply: marketCapData.total_supply,
             stakingRate: 0,
             unbondingPeriod: 0
-        }, await StakedYields.getInfo('XTZ'));
+        }, await StakedYields.getInfo('XTZ'), {
+            yield: 6.59,
+            unbondingPeriod: 'instant'
+        });
     }
 
     async getVoting() {

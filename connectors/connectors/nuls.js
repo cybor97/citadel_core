@@ -120,7 +120,10 @@ class NULS extends BaseConnector {
     }
 
     async getInfo() {
-        return await CoinMarketCap.getInfo('NULS');
+        return Object.assign(await CoinMarketCap.getInfo('NULS'), {
+            yield: 13.36,
+            unbondingPeriod: '14 days'
+        });
     }
 
     // async getVoting(){

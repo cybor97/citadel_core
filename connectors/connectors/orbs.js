@@ -212,7 +212,10 @@ class ORBS extends ETHToken {
     }
 
     async getInfo() {
-        return await Bittrex.getInfo('ORBS', 'btc-orbs');
+        return Object.assign(await Bittrex.getInfo('ORBS', 'btc-orbs'), {
+            yield: 18,
+            unbondingPeriod: 'instant'
+        });
     }
 
     async getVoting() {
