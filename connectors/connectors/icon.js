@@ -10,11 +10,13 @@ const QUERY_COUNT = 50;
 //1 - mainnet, 2 - exchanges testnet, 3 - D-Apps testnet
 const NETWORK_ID = 1;
 const ICON_VERSION = 3;
+const ICON_MULTIPLIER = Math.pow(10, 18);
 
 class ICON extends BaseConnector {
     constructor() {
         super();
         this.apiUrl = 'https://tracker.icon.foundation/v3';
+        this.apiWalletUrl = 'https://wallet.icon.foundation/api/v3';
     }
 
     validateAddress(address) {
@@ -102,6 +104,44 @@ class ICON extends BaseConnector {
                 vote_count: prep.totalDelegated
             }))
         }
+    }
+
+    async getDelegationBalanceInfo(address) {
+        let iconService = new IconService(new IconService.HttpProvider(this.apiWalletUrl));
+        let balance = parseInt(await iconService.getBalance(address).execute());
+        let stakedBalance = await iconService.call(new IconService.IconBuilder.CallBuilder()
+            .to('cx0000000000000000000000000000000000000000')
+            .method('getStake')
+            .params({ address: address })
+            .build()
+        ).execute();
+        balance += parseInt(stakedBalance.stake) + parseInt(stakedBalance.unstake);
+        let delegation = await iconService.call(new IconService.IconBuilder.CallBuilder()
+            .to('cx0000000000000000000000000000000000000000')
+            .method('getDelegation')
+            .params({ address: address })
+            .build()
+        ).execute();
+
+        return {
+            mainBalance: balance / ICON_MULTIPLIER,
+            delegatedBalance: parseInt(delegation.totalDelegated) / ICON_MULTIPLIER,
+            originatedAddresses: delegation.delegations.map(c => c.address)
+        }
+    }
+
+    async prepareDelegation(fromAddress, toAddress, amount) {
+        return new IconService.IconBuilder.IcxTransactionBuilder()
+            .from(fromAddress)
+            .to(toAddress)
+            .value(IconService.IconAmount.of(amount, IconService.IconAmount.Unit.ICX).toLoop())
+            .stepLimit(IconService.IconConverter.toBigNumber(100000))
+            .nid(IconService.IconConverter.toBigNumber(NETWORK_ID))
+            .nonce(IconService.IconConverter.toBigNumber(Date.now()))
+            .version(IconService.IconConverter.toBigNumber(ICON_VERSION))
+            //ICON uses nanoseconds
+            .timestamp(Date.now() * 1000)
+            .build();
     }
 
     async prepareTransfer(fromAddress, toAddress, amount) {
