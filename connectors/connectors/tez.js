@@ -15,11 +15,21 @@ const OP_TYPES = [
     { type: 'delegation', sourceType: 'Delegation' },
 ];
 
+const OP_TYPES_RAW = [
+    { type: 'origination', sourceType: 'origination' },
+    { type: 'supplement', sourceType: 'transaction' },
+    { type: 'delegation', sourceType: 'delegation' },
+];
+const SUPPORTED_OP_TYPES_RAW = ['origination', 'transaction', 'delegation'];
+
 class TEZ extends BaseConnector {
     constructor() {
         super();
         this.apiUrl = `http://${config.tezos.apiIp || config.tezos.ip}:${config.tezos.apiPort || 8080}/v1`;
         this.rpcUrl = `http://${config.tezos.ip}:${config.tezos.port}`;
+        this.archiveRpcUrl = `http://${
+            config.tezos.archiveRpcIp || config.tezos.ip}:${
+            config.tezos.archiveRpcPort || config.tezos.port}`;
         this.bakingBadUrl = 'https://test.baking-bad.org/v1/bakers';
 
         eztz.eztz.node.setProvider(this.rpcUrl);
@@ -96,7 +106,7 @@ class TEZ extends BaseConnector {
                         fee: txData.fee / M_TEZ_MULTIPLIER,
                         originalOpType: opType.sourceType,
                         type: opType.type,
-                        path: JSON.stringify({ queryCount: QUERY_COUNT, offset: (++offset) }),
+                        path: { queryCount: QUERY_COUNT, offset: (++offset) },
                         isCancelled: txData.failed
                     };
                 }));
@@ -109,6 +119,60 @@ class TEZ extends BaseConnector {
         let resultTransactions = [].concat(...Object.values(result));
 
         return resultTransactions;
+    }
+
+    async getNextBlock(lastPathsNet, serviceAddresses) {
+        //TODO: TEST
+        let path = lastPathsNet && lastPathsNet.path;
+        path = path && JSON.parse(path);
+
+        let blockNumber = path.blockNumber != null ? path.blockNumber + 1 : 0;
+        let headHeader = await axios.get(`${this.archiveRpcUrl}/chains/main/blocks/head/header`);
+        let lastBlock = headHeader.data.level;
+        console.log(blockNumber)
+        let operations = null;
+        console.log('lastBlock', lastBlock)
+
+        while (!(operations && operations.length) && blockNumber < lastBlock) {
+            blockNumber++;
+            let data = await axios.get(`${this.archiveRpcUrl}/chains/main/blocks/${blockNumber}`);
+            operations = data.data.operations.reduce((prev, next) => prev.concat(next), []);
+            let blockTimestamp = Date.parse(data.data.header.timestamp);
+            operations = operations.filter(operation =>
+                operation.contents.find(content =>
+                    content && (SUPPORTED_OP_TYPES_RAW.includes(content.kind))))
+                .reduce((prev, next) =>
+                    prev.concat(next.contents.map(content =>
+                        Object.assign(content, { hash: next.hash, timestamp: blockTimestamp }))), [])
+                .filter(operation => SUPPORTED_OP_TYPES_RAW.includes(operation.kind));
+            console.log(blockNumber, !!(operations && operations.length));
+        }
+
+        operations = operations.map((tx, i, arr) => {
+            let toField = tx.destination || tx.delegate || tx.tz1;
+            let to = toField
+                ? typeof (toField) === 'string'
+                    ? toField
+                    : toField.tz
+                : null;
+            return {
+                currency: 'tez',
+                hash: tx.hash,
+                date: tx.timestamp,
+                value: ((tx.amount || tx.balance) / M_TEZ_MULTIPLIER) || 0,
+                from: tx.source,
+                fromAlias: null,
+                to: to,
+                fee: tx.fee / M_TEZ_MULTIPLIER,
+                originalOpType: tx.kind,
+                type: OP_TYPES_RAW.find(c => c.sourceType == tx.kind).type,
+                path: JSON.stringify({ blockNumber: blockNumber }),
+                isCancelled: tx.failed || false
+            }
+        });
+        await this.processPayment(operations, serviceAddresses);
+
+        return operations;
     }
 
     async isRevealed(address) {

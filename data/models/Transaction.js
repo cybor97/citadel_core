@@ -20,6 +20,10 @@ const Transaction = connection.define('transactions', {
     originalOpType: sequelize.TEXT,
     path: sequelize.TEXT,
 
+    currency: {
+        type: sequelize.STRING,
+        allowNull: true
+    },
     hash: sequelize.STRING,
     date: sequelize.BIGINT,
     value: sequelize.DOUBLE,
