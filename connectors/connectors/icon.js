@@ -4,6 +4,7 @@ const IconService = require('icon-sdk-js');
 const config = require('../../config');
 const log = require('../../utils/log');
 const { ValidationError } = require('../../utils/errors');
+const Messari = require('../messari');
 
 const QUERY_COUNT = 50;
 //1 - mainnet, 2 - exchanges testnet, 3 - D-Apps testnet
@@ -67,6 +68,13 @@ class ICON extends BaseConnector {
         }
 
         return result;
+    }
+
+    async getInfo() {
+        return Object.assign(await Messari.getInfo('icon'), {
+            yield: 22.84,
+            unbondingPeriod: '13 days'
+        });
     }
 
     async getVoting() {
