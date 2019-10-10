@@ -109,11 +109,11 @@ class IOSTCoin extends BaseConnector {
             priceBtc: binanceData[binanceData.length - 1]['p'],
             priceUsdDelta24: priceUsd * (marketCapData.percent_change_24h / 100),
             priceBtcDelta24: (binanceData[0]['p'] - binanceData[binanceData.length - 1]['p']).toFixed(10),
-            yield: 0,
+            yield: 5.5,
             marketCap: marketCapData.market_cap,
             circulatingSupply: marketCapData.circulating_supply,
             stakingRate: 0,
-            unbondingPeriod: 0
+            unbondingPeriod: '7 days'
         }
     }
 

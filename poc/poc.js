@@ -167,16 +167,27 @@ function signICONTx(opType) {
 
         let tx = JSON.parse(req.responseText);
 
-        const wallet = IconService.IconWallet.loadPrivateKey(privateKeyInput.value);
-        console.log(wallet);
-        const signedTransaction = new IconService.SignedTransaction(tx, wallet).getProperties();
-        console.log('signedTransaction', signedTransaction);
+        let signedTransactions = [];
+        if (!(tx instanceof Array)) {
+            tx = [tx];
+        }
+        for (let transaction of tx) {
+            const wallet = IconService.IconWallet.loadPrivateKey(privateKeyInput.value);
+            console.log(wallet);
+            const signedTransaction = new IconService.SignedTransaction(transaction, wallet).getProperties();
+            console.log('signedTransaction', signedTransaction);
+            signedTransactions.push(signedTransaction);
+        }
 
 
         // //Send signed transaction
         req.open('POST', `/net/${netInput.value}/address/${addressFromInput.value}/transactions/send`);
         req.setRequestHeader('Content-Type', 'application/json');
-        req.send(JSON.stringify({ signedTransaction: signedTransaction }));
+        req.send(JSON.stringify({
+            signedTransaction: signedTransactions.length == 1
+                ? signedTransactions.pop()
+                : signedTransactions
+        }));
         //On response display added transaction hash
         req.onloadend = () => alert('Sent! Hash: ' + req.responseText);
     }

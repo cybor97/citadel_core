@@ -178,11 +178,12 @@ class ETHToken extends BaseConnector {
         let web3 = new Web3(this.getParityUrl());
 
         try {
-            return await new Promise((resolve, reject) => {
+            let result = await new Promise((resolve, reject) => {
                 web3.eth.sendSignedTransaction(signedTransaction)
                     .on('transactionHash', resolve)
                     .on('error', reject);
             });
+            return { hash: result && result.message ? result.message : result };
         }
         catch (err) {
             if (err && err.message) {

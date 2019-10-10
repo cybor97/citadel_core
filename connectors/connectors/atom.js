@@ -163,7 +163,10 @@ class ATOM extends BaseConnector {
     }
 
     async getInfo() {
-        return Object.assign(await Bittrex.getInfo('ATOM', 'btc-atom'), await StakedYield.getInfo('ATOM'));
+        return Object.assign(await Bittrex.getInfo('ATOM', 'btc-atom'), await StakedYield.getInfo('ATOM'), {
+            yield: 9.85,
+            unbondingPeriod: '21 days'
+        });
     }
 
     async getVoting() {
