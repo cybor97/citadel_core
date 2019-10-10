@@ -4,6 +4,8 @@ const BaseConnector = require('./baseConnector');
 const config = require('../../config');
 const StakedYields = require('../stakedYields');
 const { ValidationError, TransactionError } = require('../../utils/errors');
+const http = require('http');
+const https = require('https');
 
 const log = require('../../utils/log');
 
@@ -31,6 +33,12 @@ class TEZ extends BaseConnector {
             config.tezos.archiveRpcIp || config.tezos.ip}:${
             config.tezos.archiveRpcPort || config.tezos.port}`;
         this.bakingBadUrl = 'https://test.baking-bad.org/v1/bakers';
+
+        this.axiosClient = axios.create({
+            timeout: 10000,
+            httpAgent: new http.Agent({ keepAlive: true }),
+            httpsAgent: new https.Agent({ keepAlive: true })
+        })
 
         eztz.eztz.node.setProvider(this.rpcUrl);
         this.eztzInstance = eztz.eztz;
@@ -126,16 +134,14 @@ class TEZ extends BaseConnector {
         let path = lastPathsNet && lastPathsNet.path;
         path = path && JSON.parse(path);
 
-        let blockNumber = path && path.blockNumber != null ? path.blockNumber + 1 : 0;
-        let headHeader = await axios.get(`${this.archiveRpcUrl}/chains/main/blocks/head/header`);
-        let lastBlock = headHeader.data.level;
-        console.log(blockNumber)
-        let operations = null;
-        console.log('lastBlock', lastBlock)
+        let blockNumber = path && path.blockNumber != null ? path.blockNumber + 1 : 1;
+        console.log('fromBlock', blockNumber)
 
-        while (!(operations && operations.length) && blockNumber < lastBlock) {
+        let operations = null;
+
+        while (operations === null || !operations.length) {
             blockNumber++;
-            let data = await axios.get(`${this.archiveRpcUrl}/chains/main/blocks/${blockNumber}`);
+            let data = await this.axiosClient.get(`${this.archiveRpcUrl}/chains/main/blocks/${blockNumber}`);
             operations = data.data.operations.reduce((prev, next) => prev.concat(next), []);
             let blockTimestamp = Date.parse(data.data.header.timestamp);
             operations = operations.filter(operation =>
@@ -171,7 +177,6 @@ class TEZ extends BaseConnector {
             }
         });
         await this.processPayment(operations, serviceAddresses);
-
         return operations;
     }
 

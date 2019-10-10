@@ -13,7 +13,13 @@ class DBConnection {
                 database: config.database,
                 username: config.username,
                 password: config.password,
-                logging: (process.argv.indexOf('-v') != -1) ? console.log : null
+                logging: (process.argv.indexOf('-v') != -1) ? console.log : null,
+                pool: {
+                    max: 5,
+                    min: 0,
+                    acquire: 30000,
+                    idle: 10000
+                }
             });
         }
 

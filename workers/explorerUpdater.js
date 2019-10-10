@@ -23,7 +23,8 @@ const LAST_PATH_QUERY_NET = `
     SELECT id, "originalOpType", path, type
     FROM transactions
     WHERE transactions.currency = :net
-    ORDER BY transactions.id DESC;
+    ORDER BY transactions.id DESC
+    LIMIT 1;
  `;
 
 
@@ -52,17 +53,20 @@ class ExplorerUpdater {
 
             if (connectors[net].getNextBlock) {
                 while (true) {
+                    let time = Date.now();
                     let lastPathsNet = await sequelizeConnection.query(LAST_PATH_QUERY_NET, {
                         replacements: { net: net },
                         type: sequelizeConnection.QueryTypes.SELECT
                     });
                     lastPathsNet = lastPathsNet && lastPathsNet.pop();
-                    console.log(lastPathsNet)
+                    let preparationTime = Date.now() - time;
+                    console.log('Preparation time', preparationTime);
 
                     let transactions = await connectors[net].getNextBlock(lastPathsNet, serviceAddresses);
+                    console.log('Fetching time', Date.now() - time - preparationTime);
 
                     await this.saveDbTransactions(net, transactions);
-                    await new Promise(resolve => setTimeout(resolve, config.updateInterval * 2))
+                    console.log('Iteration time', Date.now() - time);
                 }
             }
             else {
@@ -202,7 +206,7 @@ class ExplorerUpdater {
             await txSqlTransaction.commit();
         }
         catch (exc) {
-            log.err(`Update failed, rollback ${address.address} (${address.net})`);
+            log.err(`Update failed, rollback ${address.address} (${address.net})`, exc);
             await new Promise(resolve => setTimeout(resolve, config.updateInterval * 2))
             await txSqlTransaction.rollback();
         }
@@ -245,7 +249,7 @@ class ExplorerUpdater {
             await txSqlTransaction.commit();
         }
         catch (exc) {
-            log.err(`Update failed, rollback ${net}`);
+            log.err(`Update failed, rollback ${net}`, exc);
             await new Promise(resolve => setTimeout(resolve, config.updateInterval * 2))
             await txSqlTransaction.rollback();
         }

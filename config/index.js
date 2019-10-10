@@ -25,7 +25,8 @@ module.exports = Object.assign({
     bakingBadUpdateInterval: 86400000,
     //1h
     netInfoUpdateInterval: 3600000,
-    maxTransactionsTracked: 1500
+    maxTransactionsTracked: 1500,
+    dialect: 'postgres'
 },
     JSON.parse(fs.readFileSync(configFilename))
 );
