@@ -53,20 +53,26 @@ class ExplorerUpdater {
 
             if (connectors[net].getNextBlock) {
                 while (true) {
-                    let time = Date.now();
-                    let lastPathsNet = await sequelizeConnection.query(LAST_PATH_QUERY_NET, {
-                        replacements: { net: net },
-                        type: sequelizeConnection.QueryTypes.SELECT
-                    });
-                    lastPathsNet = lastPathsNet && lastPathsNet.pop();
-                    let preparationTime = Date.now() - time;
-                    console.log('Preparation time', preparationTime);
+                    try {
+                        let time = Date.now();
+                        let lastPathsNet = await sequelizeConnection.query(LAST_PATH_QUERY_NET, {
+                            replacements: { net: net },
+                            type: sequelizeConnection.QueryTypes.SELECT
+                        });
+                        lastPathsNet = lastPathsNet && lastPathsNet.pop();
+                        let preparationTime = Date.now() - time;
+                        console.log('Preparation time', preparationTime);
 
-                    let transactions = await connectors[net].getNextBlock(lastPathsNet, serviceAddresses);
-                    console.log('Fetching time', Date.now() - time - preparationTime);
+                        let transactions = await connectors[net].getNextBlock(lastPathsNet, serviceAddresses);
+                        console.log('Fetching time', Date.now() - time - preparationTime);
 
-                    await this.saveDbTransactions(net, transactions);
-                    console.log('Iteration time', Date.now() - time);
+                        await this.saveDbTransactions(net, transactions);
+                        console.log('Iteration time', Date.now() - time);
+                    }
+                    catch (err) {
+                        log.err('getNextBlock error', err);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
                 }
             }
             else {
