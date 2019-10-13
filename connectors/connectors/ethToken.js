@@ -178,7 +178,7 @@ class ETHToken extends BaseConnector {
             return await prepareOperation();
         }
         catch (err) {
-            console.log(typeof (err), err.message);
+            log.err(typeof (err), err.message);
             if (err && err.message) {
                 if (err.message.match(/(Provided address .* is invalid)|(invalid address)/)) {
                     throw new ValidationError('Invalid address');

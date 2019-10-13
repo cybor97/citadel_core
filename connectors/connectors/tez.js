@@ -135,12 +135,14 @@ class TEZ extends BaseConnector {
         path = path && JSON.parse(path);
 
         let blockNumber = path && path.blockNumber != null ? path.blockNumber + 1 : 1;
-        console.log('fromBlock', blockNumber)
+        log.info(`fromBlock ${blockNumber}`);
 
         let operations = null;
 
         while (operations === null || !operations.length) {
             blockNumber++;
+            log.info(`blockNumber ${blockNumber}`);
+
             let data = await this.axiosClient.get(`${this.archiveRpcUrl}/chains/main/blocks/${blockNumber}`);
             operations = data.data.operations.reduce((prev, next) => prev.concat(next), []);
             let blockTimestamp = Date.parse(data.data.header.timestamp);
@@ -151,7 +153,6 @@ class TEZ extends BaseConnector {
                     prev.concat(next.contents.map(content =>
                         Object.assign(content, { hash: next.hash, timestamp: blockTimestamp }))), [])
                 .filter(operation => SUPPORTED_OP_TYPES_RAW.includes(operation.kind));
-            console.log(blockNumber, !!(operations && operations.length));
         }
 
         operations = operations.map((tx, i, arr) => {

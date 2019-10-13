@@ -139,7 +139,7 @@ class ORBS extends ETHToken {
 
         let transactions = null;
         while (!transactions || !transactions.length) {
-            console.log('blockNumber', blockNumber)
+            log.info(`blockNumber ${blockNumber}`);
             try {
                 transactions = await this.getTransactionsForContractMethodAdvanced({
                     contractHash: TRANSFER_CONTRACT_HASH,
@@ -160,7 +160,6 @@ class ORBS extends ETHToken {
                 throw err;
             }
             blockNumber += BLOCKS_QUERY_COUNT;
-            console.log(transactions);
         }
         return transactions;
     }
