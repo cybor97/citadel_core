@@ -125,9 +125,11 @@ class ORBS extends ETHToken {
         );
     }
 
-    async getNextBlock(lastPathsNet) {
+    async getNextBlock(lastPathsNet, serviceAddresses, reCreateWeb3) {
         let path = lastPathsNet && lastPathsNet.path;
-        path = path && JSON.parse(path);
+        if (typeof (path) === 'string') {
+            path = JSON.parse(path);
+        }
         let web3 = new Web3(this.getParityUrl());
 
         let blockNumber = path && path.blockNumber != null ? path.blockNumber + 1 : 1;
@@ -138,15 +140,25 @@ class ORBS extends ETHToken {
         let transactions = null;
         while (!transactions || !transactions.length) {
             console.log('blockNumber', blockNumber)
-            transactions = await this.getTransactionsForContractMethodAdvanced({
-                contractHash: TRANSFER_CONTRACT_HASH,
-                methodTopic: TRANSFER_TOPIC,
-                type: 'supplement',
-                fromBlock: blockNumber,
-                toBlock: blockNumber + BLOCKS_QUERY_COUNT,
-                currency: 'orbs',
-                web3: web3
-            });
+            try {
+                transactions = await this.getTransactionsForContractMethodAdvanced({
+                    contractHash: TRANSFER_CONTRACT_HASH,
+                    methodTopic: TRANSFER_TOPIC,
+                    type: 'supplement',
+                    fromBlock: blockNumber,
+                    toBlock: blockNumber + BLOCKS_QUERY_COUNT,
+                    currency: 'orbs',
+                    web3: web3
+                });
+            }
+            catch (err) {
+                //web3 sometimes throws weird exception "connection refused if it actully doesn't. Re-creation(reset keep-alive?) helps"
+                if (!reCreateWeb3) {
+                    log.warn('Web3 error, re-creating', err);
+                    return await this.getNextBlock({ path: { blockNumber: blockNumber - 1 } }, serviceAddresses, true);
+                }
+                throw err;
+            }
             blockNumber += BLOCKS_QUERY_COUNT;
             console.log(transactions);
         }
