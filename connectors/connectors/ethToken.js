@@ -17,11 +17,24 @@ class ETHToken extends BaseConnector {
         return !!address.match(/^0x[a-zA-Z0-9]*$/);
     }
 
-    async getTransactionsForContractMethod(contractHash, methodTopic, type, address, topic, fromBlock = null) {
-        const web3 = new Web3(this.getParityUrl());
+    async getTransactionsForContractMethod(contractHash, methodTopic, type, address, topic) {
+        return await this.getTransactionsForContractMethodAdvanced({
+            contractHash: contractHash,
+            methodTopic: methodTopic,
+            type: type,
+            address: address,
+            topic: topic
+        });
+    }
+
+    async getTransactionsForContractMethodAdvanced(props) {
+        let { contractHash, methodTopic, type, address, topic, fromBlock, toBlock, currency, web3 } = props;
+        if (!web3) {
+            web3 = new Web3(this.getParityUrl());
+        }
         const resp = await web3.eth.getPastLogs({
             fromBlock: fromBlock || 'earliest',
-            toBlock: 'latest',
+            toBlock: toBlock || 'latest',
             address: contractHash,
             topics: [methodTopic, topic === 'topic1' ? address : null, topic === 'topic2' ? address : null]
         });
@@ -42,6 +55,7 @@ class ETHToken extends BaseConnector {
                     fromAlias: null,
                     fee: parseInt(txData.gas) * parseInt(txData.gasPrice) / VALUE_FEE_MULTIPLIER,
                     type: type,
+                    currency: currency,
                     path: JSON.stringify({
                         blockNumber: parseInt(tx.blockNumber),
                         transactionIndex: parseInt(tx.transactionIndex)

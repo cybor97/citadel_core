@@ -7,6 +7,9 @@ const config = require('../../config')
 
 const log = require('../../utils/log');
 
+const STARTS_FROM_BLOCK = 5710114;
+const BLOCKS_QUERY_COUNT = 500;
+
 const DELEGATE_CONTRACT_HASH = '0x30f855afb78758Aa4C2dc706fb0fA3A98c865d2d';
 const DELEGATE_TOPIC = '0x510b11bb3f3c799b11307c01ab7db0d335683ef5b2da98f7697de744f465eacc';
 
@@ -120,6 +123,34 @@ class ORBS extends ETHToken {
 
             await this.getRewardTransactions(address, rewardLastUpdate)
         );
+    }
+
+    async getNextBlock(lastPathsNet) {
+        let path = lastPathsNet && lastPathsNet.path;
+        path = path && JSON.parse(path);
+        let web3 = new Web3(this.getParityUrl());
+
+        let blockNumber = path && path.blockNumber != null ? path.blockNumber + 1 : 1;
+        if (!blockNumber || blockNumber < STARTS_FROM_BLOCK) {
+            blockNumber = STARTS_FROM_BLOCK;
+        }
+
+        let transactions = null;
+        while (!transactions || !transactions.length) {
+            console.log('blockNumber', blockNumber)
+            transactions = await this.getTransactionsForContractMethodAdvanced({
+                contractHash: TRANSFER_CONTRACT_HASH,
+                methodTopic: TRANSFER_TOPIC,
+                type: 'supplement',
+                fromBlock: blockNumber,
+                toBlock: blockNumber + BLOCKS_QUERY_COUNT,
+                currency: 'orbs',
+                web3: web3
+            });
+            blockNumber += BLOCKS_QUERY_COUNT;
+            console.log(transactions);
+        }
+        return transactions;
     }
 
     async getRewardTransactions(address, rewardLastUpdate = null) {
