@@ -61,13 +61,13 @@ class ExplorerUpdater {
                         });
                         lastPathsNet = lastPathsNet && lastPathsNet.pop();
                         let preparationTime = Date.now() - time;
-                        console.log('Preparation time', preparationTime);
+                        log.info(`Preparation time ${preparationTime}`);
 
                         let transactions = await connectors[net].getNextBlock(lastPathsNet, serviceAddresses);
-                        console.log('Fetching time', Date.now() - time - preparationTime);
+                        log.info(`Fetching time ${Date.now() - time - preparationTime}`);
 
                         await this.saveDbTransactions(net, transactions);
-                        console.log('Iteration time', Date.now() - time);
+                        log.info(`Preparation time ${Date.now() - time}`);
                     }
                     catch (err) {
                         log.err('getNextBlock error', err);
