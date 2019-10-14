@@ -137,7 +137,6 @@ class ORBS extends ETHToken {
             blockNumber = STARTS_FROM_BLOCK;
         }
         let latest = await web3.eth.getBlockNumber()
-        blockNumber = 8740874;
 
         let transactions = null;
         while (!transactions || !transactions.length) {
