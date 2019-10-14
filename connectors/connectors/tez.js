@@ -132,7 +132,9 @@ class TEZ extends BaseConnector {
     async getNextBlock(lastPathsNet, serviceAddresses) {
         //TODO: TEST
         let path = lastPathsNet && lastPathsNet.path;
-        path = path && JSON.parse(path);
+        if (typeof (path) === 'string') {
+            path = JSON.parse(path);
+        }
 
         let blockNumber = path && path.blockNumber != null ? path.blockNumber + 1 : 1;
         log.info(`fromBlock ${blockNumber}`);

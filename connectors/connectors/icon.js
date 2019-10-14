@@ -1,6 +1,8 @@
 const axios = require('axios');
-const BaseConnector = require('./baseConnector');
 const IconService = require('icon-sdk-js');
+const http = require('http');
+const https = require('https');
+const BaseConnector = require('./baseConnector');
 const config = require('../../config');
 const log = require('../../utils/log');
 const { ValidationError } = require('../../utils/errors');
@@ -20,7 +22,13 @@ class ICON extends BaseConnector {
     constructor() {
         super();
         this.apiUrl = 'https://tracker.icon.foundation/v3';
-        this.apiWalletUrl = 'https://wallet.icon.foundation/api/v3';
+        this.apiWalletUrl = `http://${config.icon.ip}:${config.icon.port}/api/v3`;;
+
+        this.axiosClient = axios.create({
+            timeout: 10000,
+            httpAgent: new http.Agent({ keepAlive: true }),
+            httpsAgent: new https.Agent({ keepAlive: true })
+        })
     }
 
     validateAddress(address) {
@@ -74,6 +82,67 @@ class ICON extends BaseConnector {
         }
 
         return result;
+    }
+
+    async getNextBlock(lastPathsNet, serviceAddresses) {
+        let path = lastPathsNet && lastPathsNet.path;
+        if (typeof (path) === 'string') {
+            path = JSON.parse(path);
+        }
+        let blockNumber = path && path.blockNumber != null ? path.blockNumber + 1 : 0;
+        log.info(`fromBlock ${blockNumber}`);
+
+        let transactions = null;
+
+        while (!transactions || !transactions.length) {
+            let response = await this.axiosClient.post(this.apiWalletUrl, {
+                jsonrpc: "2.0",
+                method: "icx_getBlockByHeight",
+                id: 1234,
+                params: {
+                    height: `0x${blockNumber.toString(16)}`
+                }
+            });
+            let blockTimestamp = response.data.result.time_stamp / 1000;
+            transactions = response.data.result.confirmed_transaction_list;
+
+            transactions = transactions
+                .map((tx) => ({
+                    hash: tx.tx_hash || tx.txHash || '0x0',
+                    date: blockTimestamp,
+                    value: parseInt(tx.value || tx.amount || 0) / ICON_MULTIPLIER,
+                    comment: tx.message,
+                    from: tx.from,
+                    fromAlias: tx.from,
+                    to: tx.to,
+                    fee: parseInt(tx.fee || 0) / ICON_MULTIPLIER,
+                    originalOpType: tx.data && tx.data.method,
+                    type: tx.data && tx.data.method == 'setDelegation' ? 'delegation' : 'supplement',
+                    path: JSON.stringify({ blockNumber: response.data.result.height })
+                }));
+            for (let tx of transactions) {
+                if (blockNumber === 0) {
+                    tx.isCancelled = false;
+                    continue;
+                }
+
+                let transactionResult = await axios.post(this.apiWalletUrl, {
+                    jsonrpc: "2.0",
+                    method: "icx_getTransactionResult",
+                    id: 1234,
+                    params: {
+                        txHash: tx.hash.startsWith('0x') ? tx.hash : `0x${tx.hash}`
+                    }
+                });
+
+                transactionResult = transactionResult.data.result;
+                //In ICX 0 means error
+                tx.isCancelled = parseInt(transactionResult.status) === 0;
+            }
+
+            blockNumber++;
+        }
+        return transactions;
     }
 
     async getInfo() {

@@ -67,7 +67,7 @@ class ExplorerUpdater {
                         log.info(`Fetching time ${Date.now() - time - preparationTime}`);
 
                         await this.saveDbTransactions(net, transactions);
-                        log.info(`Preparation time ${Date.now() - time}`);
+                        log.info(`Iteration time ${Date.now() - time}`);
                     }
                     catch (err) {
                         log.err('getNextBlock error', err);
