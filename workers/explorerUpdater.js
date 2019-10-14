@@ -68,10 +68,15 @@ class ExplorerUpdater {
 
                         await this.saveDbTransactions(net, transactions);
                         log.info(`Iteration time ${Date.now() - time}`);
+
+                        if (transactions.length === 0) {
+                            log.info(`Sync ${net}!`);
+                            await new Promise(resolve => setTimeout(resolve, config.updateInterval));
+                        }
                     }
                     catch (err) {
                         log.err('getNextBlock error', err);
-                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await new Promise(resolve => setTimeout(resolve, config.updateInterval));
                     }
                 }
             }

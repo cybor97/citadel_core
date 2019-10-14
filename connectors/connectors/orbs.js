@@ -137,10 +137,15 @@ class ORBS extends ETHToken {
             blockNumber = STARTS_FROM_BLOCK;
         }
         let latest = await web3.eth.getBlockNumber()
+        blockNumber = 8740874;
 
         let transactions = null;
         while (!transactions || !transactions.length) {
             log.info(`blockNumber ${blockNumber}`);
+            if (blockNumber > latest) {
+                log.info(`reached the end: ${blockNumber}/${latest}`);
+                break;
+            }
             try {
                 let toBlockNumber = blockNumber + BLOCKS_QUERY_COUNT;
                 transactions = await this.getTransactionsForContractMethodAdvanced({
