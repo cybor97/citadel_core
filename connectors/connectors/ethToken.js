@@ -41,7 +41,6 @@ class ETHToken extends BaseConnector {
 
         let result = await Promise.all(resp
             .map(async tx => {
-                let txData = await web3.eth.getTransaction(tx.transactionHash);
                 let blockData = await web3.eth.getBlock(tx.blockHash);
 
                 return ({
@@ -53,7 +52,8 @@ class ETHToken extends BaseConnector {
                     //always 0 for delegation
                     value: type === 'delegation' ? 0 : tx.data / VALUE_FEE_MULTIPLIER,
                     fromAlias: null,
-                    fee: parseInt(txData.gas) * parseInt(txData.gasPrice) / VALUE_FEE_MULTIPLIER,
+                    //fee is payed in ETH, token fee is always 0
+                    fee: 0,//parseInt(txData.gas) * parseInt(txData.gasPrice) / VALUE_FEE_MULTIPLIER,
                     type: type,
                     currency: currency,
                     path: JSON.stringify({
