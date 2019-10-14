@@ -174,7 +174,7 @@ class ICON extends BaseConnector {
             answers: data.map(prep => ({
                 id: prep.address,
                 title: prep.name || prep.address,
-                vote_count: prep.totalDelegated
+                vote_count: parseInt(prep.totalDelegated)
             }))
         }
     }

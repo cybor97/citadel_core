@@ -181,7 +181,7 @@ class ATOM extends BaseConnector {
             answers: Object.keys(voting.final_tally_result).map(key => ({
                 id: key,
                 title: key.split('_').map(c => c[0].toUpperCase() + c.substr(1, c.length)).join(' '),
-                vote_count: voting.final_tally_result[key]
+                vote_count: parseInt(voting.final_tally_result[key])
             }))
         }));
     }
