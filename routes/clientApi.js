@@ -209,8 +209,8 @@ router
                 }
             }))[0];
 
-            // let whereParams = {[sequelize.Op.or]: [{from: req.params.address}, {to: req.params.address}]};
-            let whereParams = {};
+            let whereParams = { [sequelize.Op.or]: [{ from: req.params.address }, { to: req.params.address }] };
+            // let whereParams = {};
             if (req.query.currency) {
                 whereParams.currency = req.query.currency;
             }
@@ -228,7 +228,6 @@ router
             let transactions = await Transaction.findAndCountAll(Object.assign({
                 attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                 where: whereParams,
-                include: [{ model: Address, where: { address: req.params.address } }]
             }, utils.preparePagination(req.query)));
 
             if (!transactions.length && req.query.forceUpdate) {
