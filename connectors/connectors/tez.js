@@ -281,7 +281,7 @@ class TEZ extends BaseConnector {
             net: 'tez',
             start_datetime: startTimestamp,
             end_datetime: endTimestamp,
-            answers: Object.keys(currentVotingBallots).map((key, i) => ({ id: i, title: key, vote_count: currentVotingBallots[key] }))
+            answers: Object.keys(currentVotingBallots).map((key, i) => ({ id: i, title: key, vote_count: parseInt(currentVotingBallots[key]) }))
         }
     }
 

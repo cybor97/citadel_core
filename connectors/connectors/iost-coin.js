@@ -164,7 +164,7 @@ class IOSTCoin extends BaseConnector {
             answers: data.map(producer => ({
                 id: producer.account,
                 title: producer.alias_en || producer.alias || producer.account,
-                vote_count: producer.votes
+                vote_count: parseInt(producer.votes)
             }))
         }
     }
