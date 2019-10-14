@@ -136,23 +136,25 @@ class ORBS extends ETHToken {
         if (!blockNumber || blockNumber < STARTS_FROM_BLOCK) {
             blockNumber = STARTS_FROM_BLOCK;
         }
+        let latest = await web3.eth.getBlockNumber()
 
         let transactions = null;
         while (!transactions || !transactions.length) {
             log.info(`blockNumber ${blockNumber}`);
             try {
+                let toBlockNumber = blockNumber + BLOCKS_QUERY_COUNT;
                 transactions = await this.getTransactionsForContractMethodAdvanced({
                     contractHash: TRANSFER_CONTRACT_HASH,
                     methodTopic: TRANSFER_TOPIC,
                     type: 'supplement',
                     fromBlock: blockNumber,
-                    toBlock: blockNumber + BLOCKS_QUERY_COUNT,
+                    toBlock: toBlockNumber > latest ? latest : toBlockNumber,
                     currency: 'orbs',
                     web3: web3
                 });
             }
             catch (err) {
-                //web3 sometimes throws weird exception "connection refused if it actully doesn't. Re-creation(reset keep-alive?) helps"
+                //web3 sometimes throws weird exception "connection refused if it actually doesn't. Re-creation(reset keep-alive?) helps"
                 if (!reCreateWeb3) {
                     log.warn('Web3 error, re-creating', err);
                     return await this.getNextBlock({ path: { blockNumber: blockNumber - 1 } }, serviceAddresses, true);
