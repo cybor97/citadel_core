@@ -28,7 +28,7 @@ class ICON extends BaseConnector {
             timeout: 10000,
             httpAgent: new http.Agent({ keepAlive: true }),
             httpsAgent: new https.Agent({ keepAlive: true })
-        })
+        });
     }
 
     validateAddress(address) {

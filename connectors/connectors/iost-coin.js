@@ -1,7 +1,10 @@
+const http = require('http');
+const https = require('https');
 const axios = require('axios');
+const IOST = require('iost');
+
 const BaseConnector = require('./baseConnector');
 const config = require('../../config');
-const IOST = require('iost');
 const log = require('../../utils/log');
 const { ValidationError } = require('../../utils/errors');
 
@@ -22,6 +25,11 @@ class IOSTCoin extends BaseConnector {
             gasRatio: 1,
             gasLimit: 100000,
             delay: 0
+        });
+        this.axiosClient = axios.create({
+            timeout: 10000,
+            httpAgent: new http.Agent({ keepAlive: true }),
+            httpsAgent: new https.Agent({ keepAlive: true })
         });
     }
 
@@ -95,6 +103,55 @@ class IOSTCoin extends BaseConnector {
 
         return result;
 
+    }
+
+    async getNextBlock(lastPathsNet, serviceAddresses) {
+        let path = lastPathsNet && lastPathsNet.path;
+        if (typeof (path) === 'string') {
+            path = JSON.parse(path);
+        }
+        let opTypes = OP_TYPES.reduce((prev, next) => {
+            prev[next.sourceType] = next.type;
+            return prev;
+        }, {});
+
+        let blockNumber = path && path.blockNumber != null ? path.blockNumber : 0;
+        log.info(`fromBlock ${blockNumber}`);
+        let transactions = null;
+
+        while (!transactions || !transactions.length) {
+            log.info(`blockNumber ${blockNumber}`);
+
+            let block = await this.axiosClient.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getBlockByNumber/${blockNumber}/true`);
+            transactions = block.data.block.transactions
+                .map(tx => (tx.actions || [])
+                    .map(txAction => {
+                        //0 - token, 1 - from, 2 - to, 3 - amount, 4 - message(optional)
+                        txAction.data = JSON.parse(txAction.data);
+                        return txAction;
+                    })
+                    .filter(txAction => txAction.data[0] === 'iost')
+                    .map(txAction => ({
+                        hash: tx.hash,
+                        //iost stores timestamp in ns
+                        date: parseInt(tx.time) / 1000000,
+                        value: txAction.data[3],
+                        comment: txAction.data[4] || '',
+                        from: txAction.data[1],
+                        fromAlias: txAction.data[1],
+                        to: txAction.data[2],
+                        //iost hasn't fee in token(even for base.iost)
+                        fee: 0,
+                        originalOpType: `${txAction.contract}/${txAction.action_name}`,
+                        type: opTypes[`${txAction.contract}/${txAction.action_name}`],
+                        path: JSON.stringify({ blockNumber: block.data.block.number }),
+                        isCancelled: (tx.tx_receipt.status_code != 'SUCCESS')
+                    })))
+                .reduce((prev, next) => prev.concat(next), []);
+            blockNumber++;
+        }
+
+        return transactions;
     }
 
     async getInfo() {
