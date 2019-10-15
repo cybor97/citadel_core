@@ -136,7 +136,7 @@ class TEZ extends BaseConnector {
             path = JSON.parse(path);
         }
 
-        let blockNumber = path && path.blockNumber != null ? path.blockNumber + 1 : 1;
+        let blockNumber = path && path.blockNumber != null ? path.blockNumber : 1;
         log.info(`fromBlock ${blockNumber}`);
         let lastBlockHeader = await this.axiosClient.get(`${this.archiveRpcUrl}/chains/main/blocks/head/header`);
         let latest = lastBlockHeader.data.level;
