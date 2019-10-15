@@ -145,6 +145,7 @@ class IOSTCoin extends BaseConnector {
                         originalOpType: `${txAction.contract}/${txAction.action_name}`,
                         type: opTypes[`${txAction.contract}/${txAction.action_name}`],
                         path: JSON.stringify({ blockNumber: block.data.block.number }),
+                        currency: 'iost-coin',
                         isCancelled: (tx.tx_receipt.status_code != 'SUCCESS')
                     })))
                 .reduce((prev, next) => prev.concat(next), []);
