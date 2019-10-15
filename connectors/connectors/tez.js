@@ -138,12 +138,20 @@ class TEZ extends BaseConnector {
 
         let blockNumber = path && path.blockNumber != null ? path.blockNumber + 1 : 1;
         log.info(`fromBlock ${blockNumber}`);
-
+        let lastBlockHeader = await this.axiosClient.get(`${this.archiveRpcUrl}/chains/main/blocks/head/header`);
+        let latest = lastBlockHeader.data.level;
+        log.info(`latest ${latest}`);
         let operations = null;
 
         while (operations === null || !operations.length) {
             blockNumber++;
             log.info(`blockNumber ${blockNumber}`);
+
+            if (blockNumber > latest) {
+                log.info(`reached the end: ${blockNumber}/${latest}`);
+                break;
+            }
+
 
             let data = await this.axiosClient.get(`${this.archiveRpcUrl}/chains/main/blocks/${blockNumber}`);
             operations = data.data.operations.reduce((prev, next) => prev.concat(next), []);
@@ -157,6 +165,9 @@ class TEZ extends BaseConnector {
                 .filter(operation => SUPPORTED_OP_TYPES_RAW.includes(operation.kind));
         }
 
+        if (operations === null) {
+            operations = [];
+        }
         operations = operations.map((tx, i, arr) => {
             let toField = tx.destination || tx.delegate || tx.tz1;
             let to = toField
