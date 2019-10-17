@@ -52,7 +52,7 @@ class ETHToken extends BaseConnector {
                     //always 0 for delegation
                     value: type === 'delegation' ? 0 : tx.data / VALUE_FEE_MULTIPLIER,
                     fromAlias: null,
-                    //fee is payed in ETH, token fee is always 0
+                    //Fee for eth tokens is always 0(in token)
                     fee: 0,//parseInt(txData.gas) * parseInt(txData.gasPrice) / VALUE_FEE_MULTIPLIER,
                     type: type,
                     currency: currency,
