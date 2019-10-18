@@ -9,17 +9,15 @@ const Connectors = require('../connectors');
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
 const NetInfo = require('../data/models/NetInfo');
+const Voting = require('../data/models/Voting');
 const utils = require('../utils');
 const explorerUpdater = require('../workers/explorerUpdater');
 const log = require('../utils/log');
+const sequelizeConnection = require('../data').getConnection();
 const { ValidationError } = require('../utils/errors');
 
 const NET_REGEX = /^[a-z-]*$/;
 const ADDRESS_REGEX = /^[0-9a-zA-Z_-]*$/;
-
-//net: voting
-//FIXME: Remove ASAP, reimplement with db and proper invalidation
-const votesCache = {};
 
 router
     /**
@@ -499,23 +497,37 @@ router
             if (!nets || nets.includes(net)) {
                 let connector = new connectors[net]();
                 if (connector.getVoting) {
-                    let votingItem = null;
+                    let lastUpdate = await Voting.max('updatedAt', { where: { net: net } });
+                    let votings = [];
+
                     try {
-                        votingItem = await connector.getVoting();
-                        votesCache[net] = votingItem;
+                        if (!lastUpdate || Date.now() - lastUpdate > config.votingUpdateInterval) {
+                            votings = await connector.getVoting();
+                        }
+                        if (!(votings instanceof Array)) {
+                            votings = [votings];
+                        }
+
+                        const sqlTransaction = await sequelizeConnection.transaction();
+                        for (let votingItem of votings) {
+                            await Voting.upsert(Object.assign(votingItem, { updatedAt: Date.now() }), {
+                                where: {
+                                    originalId: votingItem.originalId,
+                                    net: net
+                                },
+                                transaction: sqlTransaction
+                            })
+                        }
+                        await sqlTransaction.commit();
                     }
                     catch (err) {
                         log.err('Get all nets voting error', err);
-                        votingItem = votesCache[net];
                     }
 
-                    if (votingItem) {
-                        if (votingItem instanceof Array) {
-                            votingData = votingData.concat(votingItem);
-                        }
-                        else {
-                            votingData.push(votingItem);
-                        }
+                    votings = (await Voting.findAll({ where: { net: net } })).map(c => c.dataValues);
+
+                    if (votings && votings.length) {
+                        votingData = votingData.concat(votings);
                     }
                     else {
                         log.err(`Nothing get for voting(net: ${net})`);
@@ -545,16 +557,47 @@ router
      */
     .get('/:net/voting', async (req, res) => {
         let connectors = Connectors.getConnectors();
-        if (!connectors[req.params.net]) {
+        let net = req.params.net;
+
+        if (!connectors[net]) {
             return res.status(400).send({ message: 'Specified net is not supported!' });
         }
 
-        let connector = new connectors[req.params.net];
+        let connector = new connectors[net];
         if (!connector.getVoting) {
-            return res.status(400).send({ message: 'Info for specified net is not yet supported.' });
+            return res.status(400).send({ message: 'Voting for specified net is not yet supported.' });
         }
 
-        res.status(200).send(await connector.getVoting());
+        let lastUpdate = await Voting.max('updatedAt', { where: { net: net } });
+        let votings = [];
+
+        try {
+            if (!lastUpdate || Date.now() - lastUpdate > config.votingUpdateInterval) {
+                votings = await connector.getVoting();
+            }
+            if (!(votings instanceof Array)) {
+                votings = [votings];
+            }
+
+            const sqlTransaction = await sequelizeConnection.transaction();
+            for (let votingItem of votings) {
+                await Voting.upsert(Object.assign(votingItem, { updatedAt: Date.now() }), {
+                    where: {
+                        originalId: votingItem.originalId,
+                        net: net
+                    },
+                    transaction: sqlTransaction
+                })
+            }
+            await sqlTransaction.commit();
+        }
+        catch (err) {
+            log.err('Get all nets voting error', err);
+        }
+
+        votings = (await Voting.findAll({ where: { net: net } })).map(c => c.dataValues);
+
+        res.status(200).send(votings);
     })
 
     /**
