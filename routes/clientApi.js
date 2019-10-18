@@ -505,10 +505,7 @@ router
 
                     try {
                         if (!lastUpdate || Date.now() - lastUpdate > config.votingUpdateInterval) {
-                            console.log('getting', net)
                             votings = await connector.getVoting();
-                            console.log('votings', votings)
-
                         }
                         if (!(votings instanceof Array)) {
                             votings = [votings];
@@ -563,16 +560,47 @@ router
      */
     .get('/:net/voting', async (req, res) => {
         let connectors = Connectors.getConnectors();
-        if (!connectors[req.params.net]) {
+        let net = req.params.net;
+
+        if (!connectors[net]) {
             return res.status(400).send({ message: 'Specified net is not supported!' });
         }
 
-        let connector = new connectors[req.params.net];
+        let connector = new connectors[net];
         if (!connector.getVoting) {
-            return res.status(400).send({ message: 'Info for specified net is not yet supported.' });
+            return res.status(400).send({ message: 'Voting for specified net is not yet supported.' });
         }
 
-        res.status(200).send(await connector.getVoting());
+        let lastUpdate = await Voting.max('updatedAt', { where: { net: net } });
+        let votings = [];
+
+        try {
+            if (!lastUpdate || Date.now() - lastUpdate > config.votingUpdateInterval) {
+                votings = await connector.getVoting();
+            }
+            if (!(votings instanceof Array)) {
+                votings = [votings];
+            }
+
+            const sqlTransaction = await sequelizeConnection.transaction();
+            for (let votingItem of votings) {
+                await Voting.upsert(Object.assign(votingItem, { updatedAt: Date.now() }), {
+                    where: {
+                        originalId: votingItem.originalId,
+                        net: net
+                    },
+                    transaction: sqlTransaction
+                })
+            }
+            await sqlTransaction.commit();
+        }
+        catch (err) {
+            log.err('Get all nets voting error', err);
+        }
+
+        votings = (await Voting.findAll({ where: { net: net } })).map(c => c.dataValues);
+
+        res.status(200).send(votings);
     })
 
     /**
