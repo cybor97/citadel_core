@@ -158,7 +158,7 @@ class IOSTCoin extends BaseConnector {
         return {
             originalId: 0,
             title: 'Vote for validator',
-            net: 'iost',
+            net: 'iost-coin',
             start_datetime: 1072915200000,
             end_datetime: null,
             answers: data.map(producer => ({
