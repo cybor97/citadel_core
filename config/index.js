@@ -25,6 +25,8 @@ module.exports = Object.assign({
     bakingBadUpdateInterval: 86400000,
     //1h
     netInfoUpdateInterval: 3600000,
+    //1h
+    votingUpdateInterval: 3600000,
     maxTransactionsTracked: 1500
 },
     JSON.parse(fs.readFileSync(configFilename))
