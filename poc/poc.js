@@ -6,14 +6,28 @@ document.addEventListener('DOMContentLoaded', () => {
     addressFromInput.value = localStorage.getItem('from');
     addressToInput.value = localStorage.getItem('to');
     amountInput.value = localStorage.getItem('amount');
-    netInput.value = localStorage.getItem('net');
+    let net = localStorage.getItem('net');
+    netInput.value = net;
     privateKeyInput.value = localStorage.getItem('privateKey');
+    pubkeyInput.value = localStorage.getItem('pubKey');
+
+    netInput.onchange = event => onSwitchNet(event.target.value);
+    if (net) {
+        onSwitchNet(net);
+    }
 
     signAndTransferButton.onclick = signTx.bind(this, 'transfer');
     signAndDelegateButton.onclick = signTx.bind(this, 'delegation');
     signAndOriginateButton.onclick = signTx.bind(this, 'origination');
     signAndVoteButton.onclick = signTx.bind(this, 'ballot');
+    signAndSignUpButton.onclick = signTx.bind(this, 'sign-up');
 });
+
+function onSwitchNet(net) {
+    let displayIOSTSpecific = net === 'iost-coin' ? 'block' : 'none';
+    pubkeyInput.style.display = displayIOSTSpecific;
+    signAndSignUpButton.style.display = displayIOSTSpecific;
+}
 
 function signTx(opType) {
     localStorage.setItem('from', addressFromInput.value);
@@ -21,6 +35,7 @@ function signTx(opType) {
     localStorage.setItem('amount', amountInput.value);
     localStorage.setItem('net', netInput.value);
     localStorage.setItem('privateKey', privateKeyInput.value);
+    localStorage.setItem('pubKey', pubkeyInput.value);
 
     switch (netInput.value) {
         case 'tez':
@@ -122,9 +137,9 @@ function signETHTx(opType) {
 }
 
 function signIostCoinTx(opType) {
-    if (opType != 'transfer') {
-        return alert('Operation is not supported!');
-    }
+    // if (opType != 'transfer' ) {
+    //     return alert('Operation is not supported!');
+    // }
 
     //Send request to prepare operation of opType type from specified address
     const req = prepareTransaction(opType);
@@ -197,10 +212,16 @@ function prepareTransaction(opType) {
     let req = new XMLHttpRequest();
     req.open('POST', `/net/${netInput.value}/address/${addressFromInput.value}/transactions/prepare-${opType}`);
     req.setRequestHeader('Content-Type', 'application/json');
-    req.send(JSON.stringify({
+
+    let reqData = {
         toAddress: addressToInput.value,
         amount: amountInput.value
-    }));
+    };
+    if (opType === 'sign-up') {
+        reqData.pubKey = pubkeyInput.value;
+        reqData.name = addressToInput.value;
+    }
+    req.send(JSON.stringify(reqData));
     //On response...
     return req;
 }

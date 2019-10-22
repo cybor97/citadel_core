@@ -7,6 +7,7 @@ const BaseConnector = require('./baseConnector');
 const config = require('../../config');
 const log = require('../../utils/log');
 const { ValidationError } = require('../../utils/errors');
+const bs58 = require('bs58');
 
 const QUERY_COUNT = 50;
 const OP_TYPES = [
@@ -229,6 +230,17 @@ class IOSTCoin extends BaseConnector {
 
     async prepareTransfer(fromAddress, toAddress, amount) {
         return this.iost.transfer('iost', fromAddress, toAddress, amount, 'transfer via citadel_core');
+    }
+
+    async prepareSignUp(fromAddress, name, pubKey, gas, ram) {
+        let transaction = this.iost.newAccount(name, fromAddress, pubKey, pubKey, gas || 0, ram || 0);
+        transaction.amount_limit = [
+            {
+                token: "*",
+                value: "unlimited"
+            }
+        ];
+        return transaction;
     }
 
     async sendTransaction(address, signedTransaction) {

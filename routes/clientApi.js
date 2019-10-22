@@ -391,6 +391,44 @@ router
     })
 
     /**
+     * @api {post} /net/:net/address/:address/transactions/prepare-sign-up Prepare sign up
+     * @apiName prepareSignUp
+     * @apiGroup sendTransaction
+     * @apiDescription Prepare sign up transaction
+     * 
+     * @apiParam {String} name    Target account name 
+     * @apiParam {Number} pubKey  Target account public key
+     * @apiParam {Number} [gas]   Pledge gas for new account
+     * @apiParam {Number} [ram]   Pledge ram for new account
+     * 
+     * @apiSuccess transaction Prepared transaction, specific for each net({opbytes, opOb} for tezos, {to,data(abi),gas,nonce(tx count), gasPrice, chainId} for eth tokens)
+     */
+    .post('/:net/address/:address/transactions/prepare-sign-up', async (req, res) => {
+        let connectors = Connectors.getConnectors();
+        if (!connectors[req.params.net]) {
+            return res.status(400).send({ message: 'Specified net is not supported!' });
+        }
+
+        let connector = (new connectors[req.params.net]());
+        if (!connector.prepareSignUp) {
+            return res.status(400).send({ message: "Specified net doesn't support signing up new accounts or not yet implemented." });
+        }
+
+        if (!req.body.name) {
+            return res.status(400).send({ message: 'Name should be defined' });
+        }
+
+        if (!req.body.pubKey) {
+            return res.status(400).send({ message: 'Public key for new account should be defined' });
+        }
+
+        let transaction = await connector.prepareSignUp(req.params.address, req.body.name, req.body.pubKey, req.body.gas || 0, req.body.ram || 0);
+
+        res.status(200).send(transaction);
+    })
+
+
+    /**
      * @api {post} /net/:net/address/:address/transactions/prepare-delegation Prepare delegation
      * @apiName prepareDelegation
      * @apiGroup sendTransaction
@@ -688,6 +726,5 @@ router
 
         res.status(200).send(await connector.getDelegationBalanceInfo(req.params.address));
     });
-;
 
 module.exports = router;
