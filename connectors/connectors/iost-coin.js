@@ -174,7 +174,7 @@ class IOSTCoin extends BaseConnector {
         return this.iost.transfer('iost', fromAddress, toAddress, amount, 'transfer via citadel_core');
     }
 
-    async prepareSignUp(fromAddress, name, pubKey, balance, gas, ram) {
+    async prepareSignUp(fromAddress, name, pubKey, gas, ram) {
         let transaction = this.iost.newAccount(name, fromAddress, pubKey, pubKey, gas || 0, ram || 0);
         transaction.amount_limit = [
             {

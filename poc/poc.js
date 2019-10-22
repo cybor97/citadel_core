@@ -220,7 +220,6 @@ function prepareTransaction(opType) {
     if (opType === 'sign-up') {
         reqData.pubKey = pubkeyInput.value;
         reqData.name = addressToInput.value;
-        reqData.balance = amountInput.value;
     }
     req.send(JSON.stringify(reqData));
     //On response...

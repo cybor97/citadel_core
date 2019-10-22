@@ -401,7 +401,6 @@ router
      * 
      * @apiParam {String} name    Target account name 
      * @apiParam {Number} pubKey  Target account public key
-     * @apiParam {Number} balance Target account balance
      * @apiParam {Number} [gas]   Pledge gas for new account
      * @apiParam {Number} [ram]   Pledge ram for new account
      * 
@@ -426,11 +425,7 @@ router
             return res.status(400).send({ message: 'Public key for new account should be defined' });
         }
 
-        if (!req.body.balance) {
-            return res.status(400).send({ message: 'Cannot create empty account, balance should be provided' });
-        }
-
-        let transaction = await connector.prepareSignUp(req.params.address, req.body.name, req.body.pubKey, req.body.balance, req.body.gas || 0, req.body.ram || 0);
+        let transaction = await connector.prepareSignUp(req.params.address, req.body.name, req.body.pubKey, req.body.gas || 0, req.body.ram || 0);
 
         res.status(200).send(transaction);
     })
