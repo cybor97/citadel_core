@@ -115,7 +115,7 @@ class IOSTCoin extends BaseConnector {
             return prev;
         }, {});
 
-        let blockNumber = path && path.blockNumber != null ? path.blockNumber + 1 : 0;
+        let blockNumber = path && path.blockNumber != null ? parseInt(path.blockNumber) + 1 : 0;
         log.info(`fromBlock ${blockNumber}`);
         let transactions = null;
 
