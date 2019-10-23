@@ -430,6 +430,42 @@ router
         res.status(200).send(transaction);
     })
 
+    /**
+    * @api {post} /net/:net/faucet-sign-up Faucet sign up
+    * @apiName faucetSignUp
+    * @apiGroup sendTransaction
+    * @apiDescription Faucet sign up
+    * 
+    * @apiParam {String} name    Target account name 
+    * @apiParam {Number} pubKey  Target account public key
+    * 
+    * @apiSuccess transaction Faucet sign up
+    */
+    .post('/:net/faucet-sign-up', async (req, res) => {
+        let connectors = Connectors.getConnectors();
+        if (!connectors[req.params.net]) {
+            return res.status(400).send({ message: 'Specified net is not supported!' });
+        }
+
+        let connector = (new connectors[req.params.net]());
+        if (!connector.faucetSignUp) {
+            return res.status(400).send({ message: "Specified net doesn't support signing up new accounts or not yet implemented." });
+        }
+
+        if (!req.body.name) {
+            return res.status(400).send({ message: 'Name should be defined' });
+        }
+
+        if (!req.body.pubKey) {
+            return res.status(400).send({ message: 'Public key for new account should be defined' });
+        }
+
+        let hash = await connector.faucetSignUp(req.body.name, req.body.pubKey);
+
+        res.status(200).send(hash);
+    })
+
+
 
     /**
      * @api {post} /net/:net/address/:address/transactions/prepare-delegation Prepare delegation
