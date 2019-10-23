@@ -232,6 +232,25 @@ class IOSTCoin extends BaseConnector {
         return this.iost.transfer('iost', fromAddress, toAddress, amount, 'transfer via citadel_core');
     }
 
+    async faucetSignUp(name, pubKey) {
+        let fromAddress = config.iostCoin.faucetAddress;
+        let privateKey = config.iostCoin.faucetPrivateKey;
+
+        let transaction = this.iost.newAccount(name, fromAddress, pubKey, pubKey, 0, 0);
+        transaction.amount_limit = [
+            {
+                token: "*",
+                value: "unlimited"
+            }
+        ];
+
+        let kp = new IOST.KeyPair(bs58.decode(privateKey));
+
+        transaction.addPublishSign(fromAddress, kp);
+
+        return await this.sendTransaction(fromAddress, transaction);
+    }
+
     async prepareSignUp(fromAddress, name, pubKey, gas, ram) {
         let transaction = this.iost.newAccount(name, fromAddress, pubKey, pubKey, gas || 0, ram || 0);
         transaction.amount_limit = [
