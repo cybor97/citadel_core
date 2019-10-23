@@ -29,7 +29,7 @@ const Transaction = connection.define('transactions', {
     value: sequelize.DOUBLE,
     from: sequelize.STRING,
     fromAlias: sequelize.STRING,
-    to: sequelize.STRING,
+    to: sequelize.TEXT,
     fee: sequelize.DOUBLE,
     type: sequelize.STRING,
     comment: sequelize.TEXT,
