@@ -459,7 +459,7 @@ router
 
         let hash = await connector.faucetSignUp(req.body.name, req.body.pubKey);
 
-        res.status(200).send(hash);
+        res.status(200).send({ hash: hash });
     })
 
 
