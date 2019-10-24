@@ -21,12 +21,16 @@ document.addEventListener('DOMContentLoaded', () => {
     signAndOriginateButton.onclick = signTx.bind(this, 'origination');
     signAndVoteButton.onclick = signTx.bind(this, 'ballot');
     signAndSignUpButton.onclick = signTx.bind(this, 'sign-up');
+    signAndPledgeButton.onclick = signTx.bind(this, 'pledge');
+    signAndUnpledgeButton.onclick = signTx.bind(this, 'unpledge');
 });
 
 function onSwitchNet(net) {
     let displayIOSTSpecific = net === 'iost-coin' ? 'block' : 'none';
     pubkeyInput.style.display = displayIOSTSpecific;
     signAndSignUpButton.style.display = displayIOSTSpecific;
+    signAndPledgeButton.style.display = displayIOSTSpecific;
+    signAndUnpledgeButton.style.display = displayIOSTSpecific;
 }
 
 function signTx(opType) {
