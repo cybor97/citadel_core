@@ -518,14 +518,14 @@ router
     })
 
     /**
-     * @api {post} /net/:net/address/:address/transactions/prepare-delegation Prepare delegation
+     * @api {post} /net/:net/address/:address/transactions/prepare-delegation Prepare delegation. Warning: can be 100% balance for some networks!
      * @apiName prepareDelegation
      * @apiGroup sendTransaction
      * @apiDescription Prepare delegation transaction
      * 
      * @apiParam {String} toAddress Target address 
      * 
-     * @apiSuccess transaction Prepared transaction, specific for each net({opbytes, opOb} for tezos, {to,data(abi),gas,nonce(tx count), gasPrice, chainId} for eth tokens)
+     * @apiSuccess transaction Prepared transaction, specific for each net({opbytes, opOb} for tezos, {to,data(abi),gas,nonce(tx count), gasPrice, chainId} for eth tokens). 
      */
     .post('/:net/address/:address/transactions/prepare-delegation', async (req, res) => {
         let connectors = Connectors.getConnectors();
