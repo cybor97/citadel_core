@@ -284,6 +284,29 @@ class IOSTCoin extends BaseConnector {
         return transaction;
     }
 
+    async prepareDelegation(fromAddress, toAddress) {
+        let availableBalanceData = await axios.get(this.apiUrlAdditional, {
+            params: {
+                apikey: config.iostCoin.apikey,
+                module: 'account',
+                action: 'get-account-balance',
+                account: fromAddress
+            }
+        });
+        let amount = availableBalanceData.data.data.balance;
+        let transaction = this.iost.callABI('vote_producer.iost', 'vote', [fromAddress, toAddress, amount.toString()]);
+        //Recommended for vote
+        transaction.gasLimit = 300000;
+        transaction.amount_limit = [
+            {
+                token: "*",
+                value: "unlimited"
+            }
+        ];
+
+        return transaction;
+    }
+
     async sendTransaction(address, signedTransaction) {
         try {
             let accountInfo = await axios.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getAccount/${address}/true`);
