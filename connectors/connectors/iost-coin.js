@@ -251,6 +251,28 @@ class IOSTCoin extends BaseConnector {
         return await this.sendTransaction(fromAddress, transaction);
     }
 
+    async preparePledge(fromAddress, toAddress, amount) {
+        let transaction = this.iost.callABI('gas.iost', 'pledge', [fromAddress, toAddress, amount]);
+        transaction.amount_limit = [
+            {
+                token: "*",
+                value: "unlimited"
+            }
+        ];
+        return transaction;
+    }
+
+    async prepareUnpledge(fromAddress, toAddress, amount) {
+        let transaction = this.iost.callABI('gas.iost', 'unpledge', [fromAddress, toAddress, amount]);
+        transaction.amount_limit = [
+            {
+                token: "*",
+                value: "unlimited"
+            }
+        ];
+        return transaction;
+    }
+
     async prepareSignUp(fromAddress, name, pubKey, gas, ram) {
         let transaction = this.iost.newAccount(name, fromAddress, pubKey, pubKey, gas || 0, ram || 0);
         transaction.amount_limit = [

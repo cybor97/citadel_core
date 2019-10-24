@@ -462,7 +462,57 @@ router
         res.status(200).send({ hash: hash });
     })
 
+    /**
+     * @api {post} /net/:net/address/:address/transactions/prepare-pledge Prepare gas pledge
+     * @apiName preparePledge
+     * @apiGroup sendTransaction
+     * @apiDescription Prepare gas pledge transaction
+     * 
+     * @apiParam {String} toAddress Target address 
+     * @apiParam {Number} amount    Amount 
+     * 
+     * @apiSuccess transaction Prepared transaction, specific for each net({opbytes, opOb} for tezos, {to,data(abi),gas,nonce(tx count), gasPrice, chainId} for eth tokens)
+     */
+    .post('/:net/address/:address/transactions/prepare-pledge', async (req, res) => {
+        let connectors = Connectors.getConnectors();
+        if (!connectors[req.params.net]) {
+            return res.status(400).send({ message: 'Specified net is not supported!' });
+        }
 
+        let connector = (new connectors[req.params.net]());
+
+        if (req.body.direction === 'pledge' && !connector.preparePledge) {
+            return res.status(400).send({ message: "Specified net doesn't support gas pledge or not yet implemented." });
+        }
+
+        res.status(200).send(await connector.preparePledge(req.params.address, req.body.toAddress, req.body.amount));
+    })
+
+    /**
+     * @api {post} /net/:net/address/:address/transactions/prepare-unpledge Prepare gas unpledge
+     * @apiName prepareUnpledge
+     * @apiGroup sendTransaction
+     * @apiDescription Prepare gas unpledge transaction
+     * 
+     * @apiParam {String} toAddress Target address 
+     * @apiParam {Number} amount    Amount 
+     * 
+     * @apiSuccess transaction Prepared transaction, specific for each net({opbytes, opOb} for tezos, {to,data(abi),gas,nonce(tx count), gasPrice, chainId} for eth tokens)
+     */
+    .post('/:net/address/:address/transactions/prepare-unpledge', async (req, res) => {
+        let connectors = Connectors.getConnectors();
+        if (!connectors[req.params.net]) {
+            return res.status(400).send({ message: 'Specified net is not supported!' });
+        }
+
+        let connector = (new connectors[req.params.net]());
+
+        if (req.body.direction === 'unpledge' && !connector.prepareUnpledge) {
+            return res.status(400).send({ message: "Specified net doesn't support gas unpledge or not yet implemented." });
+        }
+
+        res.status(200).send(await connector.prepareUnpledge(req.params.address, req.body.toAddress, req.body.amount));
+    })
 
     /**
      * @api {post} /net/:net/address/:address/transactions/prepare-delegation Prepare delegation
