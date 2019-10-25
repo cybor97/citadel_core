@@ -601,6 +601,31 @@ router
     })
 
     /**
+     * @api {get} /net/:net/address/:address/transactions/:hash/check Check transaction
+     * @apiName checkTransaction
+     * @apiGroup checkTransaction
+     * @apiDescription Check transaction
+     * 
+     * @apiSuccess transaction {status: 'ok|failed|unexist', reason: '...'}
+     */
+    .get('/:net/address/:address/transactions/:hash/check', async (req, res) => {
+        let connectors = Connectors.getConnectors();
+        if (!connectors[req.params.net]) {
+            return res.status(400).send({ message: 'Specified net is not supported!' });
+        }
+
+        let connector = (new connectors[req.params.net]());
+        if (!connector.checkTransaction) {
+            return res.status(400).send({ message: "Check transaction is not yet implemented for specified net." });
+        }
+
+        let checkResult = await connector.checkTransaction(req.params.address, req.params.hash);
+
+        res.status(200).send(checkResult);
+    })
+
+
+    /**
      * @api {get} /net/voting Get all votings
      * @apiName getAllVoting
      * @apiGroup vote
