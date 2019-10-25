@@ -144,6 +144,28 @@ class IOSTCoin extends BaseConnector {
         }
     }
 
+    async checkTransaction(address, hash) {
+        try {
+            const data = await this.rpc.transaction.getTxByHash(hash);
+            let receipt = data.transaction.tx_receipt;
+
+            if (receipt.status_code === 'SUCCESS') {
+                return { status: 'ok', reason: receipt.message };
+            }
+            else {
+                return { status: 'failed', reason: receipt.message.match('\n') ? receipt.message.split('\n').map(c => c.trim()).filter(Boolean).pop() : receipt.message }
+            }
+        }
+        catch (err) {
+            if (err && err.message && err.message.match('tx not found')) {
+                return { status: 'unexist', reason: 'Transaction hash not found' };
+            }
+            else {
+                throw err;
+            }
+        }
+    }
+
     async getVoting() {
         let total = (await axios.get(`${this.apiUrl}/producers`, {
             params: {
