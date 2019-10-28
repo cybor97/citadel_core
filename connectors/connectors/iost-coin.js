@@ -193,7 +193,7 @@ class IOSTCoin extends BaseConnector {
     }
 
     async prepareTransfer(fromAddress, toAddress, amount) {
-        return this.iost.transfer('iost', fromAddress, toAddress, amount, 'transfer via citadel_core');
+        return this.iost.transfer('iost', fromAddress, toAddress, amount.toString(), 'transfer via citadel_core');
     }
 
     async faucetSignUp(name, pubKey) {
@@ -216,7 +216,7 @@ class IOSTCoin extends BaseConnector {
     }
 
     async preparePledge(fromAddress, toAddress, amount) {
-        let transaction = this.iost.callABI('gas.iost', 'pledge', [fromAddress, toAddress, amount]);
+        let transaction = this.iost.callABI('gas.iost', 'pledge', [fromAddress, toAddress, amount.toString()]);
         transaction.amount_limit = [
             {
                 token: "*",
@@ -227,7 +227,29 @@ class IOSTCoin extends BaseConnector {
     }
 
     async prepareUnpledge(fromAddress, toAddress, amount) {
-        let transaction = this.iost.callABI('gas.iost', 'unpledge', [fromAddress, toAddress, amount]);
+        let transaction = this.iost.callABI('gas.iost', 'unpledge', [fromAddress, toAddress, amount.toString()]);
+        transaction.amount_limit = [
+            {
+                token: "*",
+                value: "unlimited"
+            }
+        ];
+        return transaction;
+    }
+
+    async prepareBuyRam(fromAddress, toAddress, amount) {
+        let transaction = this.iost.callABI('ram.iost', 'buy', [fromAddress, toAddress, parseInt(amount)]);
+        transaction.amount_limit = [
+            {
+                token: "*",
+                value: "unlimited"
+            }
+        ];
+        return transaction;
+    }
+
+    async prepareSellRam(fromAddress, toAddress, amount) {
+        let transaction = this.iost.callABI('ram.iost', 'sell', [fromAddress, toAddress, parseInt(amount)]);
         transaction.amount_limit = [
             {
                 token: "*",
