@@ -91,7 +91,7 @@ class IOSTCoin extends BaseConnector {
                     to: tx.to,
                     fee: 0,
                     originalOpType: `${tx.contract}/${tx.action_name}`,
-                    type: this.rewardSources.includes(tx.from) ? 'reward' : opTypes[`${tx.contract}/${tx.action_name}`],
+                    type: this.rewardSources.includes(tx.from) ? 'payment' : opTypes[`${tx.contract}/${tx.action_name}`],
                     path: JSON.stringify({ queryCount: QUERY_COUNT, offset: offset }),
                     isCancelled: (tx.status_code != 'SUCCESS')
                 }))
