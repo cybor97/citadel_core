@@ -19,6 +19,7 @@ class IOSTCoin extends BaseConnector {
         this.apiUrlAdditional = `https://api.iostabc.com/api`;
         this.apiUrlBinance = 'https://www.binance.com/api';
         this.rpc = new IOST.RPC(new IOST.HTTPProvider(`http://${config.iostCoin.ip}:${config.iostCoin.port}`));
+        this.rewardSources = ['bonus.iost', 'vote_producer.iost'];
         this.iost = new IOST.IOST({
             gasRatio: 1,
             gasLimit: 100000,
@@ -82,7 +83,7 @@ class IOSTCoin extends BaseConnector {
                     to: tx.to,
                     fee: 0,
                     originalOpType: `${tx.contract}/${tx.action_name}`,
-                    type: opTypes[`${tx.contract}/${tx.action_name}`],
+                    type: this.rewardSources.includes(tx.from) ? 'reward' : opTypes[`${tx.contract}/${tx.action_name}`],
                     path: JSON.stringify({ queryCount: QUERY_COUNT, offset: offset }),
                     isCancelled: (tx.status_code != 'SUCCESS')
                 }))
