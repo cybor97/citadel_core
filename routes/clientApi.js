@@ -481,7 +481,7 @@ router
 
         let connector = (new connectors[req.params.net]());
 
-        if (req.body.direction === 'pledge' && !connector.preparePledge) {
+        if (!connector.preparePledge) {
             return res.status(400).send({ message: "Specified net doesn't support gas pledge or not yet implemented." });
         }
 
@@ -506,12 +506,62 @@ router
         }
 
         let connector = (new connectors[req.params.net]());
-
-        if (req.body.direction === 'unpledge' && !connector.prepareUnpledge) {
+        if (!connector.prepareUnpledge) {
             return res.status(400).send({ message: "Specified net doesn't support gas unpledge or not yet implemented." });
         }
 
+
         res.status(200).send(await connector.prepareUnpledge(req.params.address, req.body.toAddress, req.body.amount));
+    })
+
+    /**
+     * @api {post} /net/:net/address/:address/transactions/prepare-buy-ram Prepare buy ram
+     * @apiName prepareBuyRam
+     * @apiGroup sendTransaction
+     * @apiDescription Prepare buy ram transaction
+     * 
+     * @apiParam {String} toAddress Target address 
+     * @apiParam {Number} amount    Amount 
+     * 
+     * @apiSuccess transaction Prepared transaction, specific for each net({opbytes, opOb} for tezos, {to,data(abi),gas,nonce(tx count), gasPrice, chainId} for eth tokens)
+     */
+    .post('/:net/address/:address/transactions/prepare-buy-ram', async (req, res) => {
+        let connectors = Connectors.getConnectors();
+        if (!connectors[req.params.net]) {
+            return res.status(400).send({ message: 'Specified net is not supported!' });
+        }
+
+        let connector = (new connectors[req.params.net]());
+        if (!connector.prepareBuyRam) {
+            return res.status(400).send({ message: "Specified net doesn't support buy ram or not yet implemented." });
+        }
+
+        res.status(200).send(await connector.prepareBuyRam(req.params.address, req.body.toAddress, req.body.amount));
+    })
+
+    /**
+     * @api {post} /net/:net/address/:address/transactions/prepare-sell-ram Prepare sell ram
+     * @apiName prepareSellRam
+     * @apiGroup sendTransaction
+     * @apiDescription Prepare sell ram transaction
+     * 
+     * @apiParam {String} toAddress Target address 
+     * @apiParam {Number} amount    Amount 
+     * 
+     * @apiSuccess transaction Prepared transaction, specific for each net({opbytes, opOb} for tezos, {to,data(abi),gas,nonce(tx count), gasPrice, chainId} for eth tokens)
+     */
+    .post('/:net/address/:address/transactions/prepare-sell-ram', async (req, res) => {
+        let connectors = Connectors.getConnectors();
+        if (!connectors[req.params.net]) {
+            return res.status(400).send({ message: 'Specified net is not supported!' });
+        }
+
+        let connector = (new connectors[req.params.net]());
+        if (!connector.prepareSellRam) {
+            return res.status(400).send({ message: "Specified net doesn't support sell ram or not yet implemented." });
+        }
+
+        res.status(200).send(await connector.prepareSellRam(req.params.address, req.body.toAddress, req.body.amount));
     })
 
     /**

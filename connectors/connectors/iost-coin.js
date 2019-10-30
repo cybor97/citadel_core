@@ -22,6 +22,7 @@ class IOSTCoin extends BaseConnector {
         this.apiUrlAdditional = `https://api.iostabc.com/api`;
         this.apiUrlBinance = 'https://www.binance.com/api';
         this.rpc = new IOST.RPC(new IOST.HTTPProvider(`http://${config.iostCoin.ip}:${config.iostCoin.port}`));
+        this.rewardSources = ['bonus.iost', 'vote_producer.iost'];
         this.iost = new IOST.IOST({
             gasRatio: 1,
             gasLimit: 100000,
@@ -90,7 +91,7 @@ class IOSTCoin extends BaseConnector {
                     to: tx.to,
                     fee: 0,
                     originalOpType: `${tx.contract}/${tx.action_name}`,
-                    type: opTypes[`${tx.contract}/${tx.action_name}`],
+                    type: this.rewardSources.includes(tx.from) ? 'reward' : opTypes[`${tx.contract}/${tx.action_name}`],
                     path: JSON.stringify({ queryCount: QUERY_COUNT, offset: offset }),
                     isCancelled: (tx.status_code != 'SUCCESS')
                 }))
@@ -177,15 +178,30 @@ class IOSTCoin extends BaseConnector {
     }
 
     async getDelegationBalanceInfo(address) {
-        let availableBalanceData = await axios.get(this.apiUrlAdditional, {
-            params: {
-                apikey: config.iostCoin.apikey,
-                module: 'account',
-                action: 'get-account-balance',
-                account: address
+        try {
+            let availableBalanceData = await axios.get(this.apiUrlAdditional, {
+                params: {
+                    apikey: config.iostCoin.apikey,
+                    module: 'account',
+                    action: 'get-account-balance',
+                    account: address
+                }
+            });
+            availableBalanceData = availableBalanceData.data.data;
+        }
+        catch (err) {
+            if (err.response && err.response.status === 500) {
+                log.err('Failed to get delegatedData(get-account-balance) from iostabc', err.response.data);
+                return {
+                    mainBalance: 0,
+                    delegatedBalance: 0,
+                    originatedAddresses: []
+                }
             }
-        });
-        availableBalanceData = availableBalanceData.data.data;
+            else {
+                throw err;
+            }
+        }
 
 
         let delegatedData = null;
@@ -194,7 +210,7 @@ class IOSTCoin extends BaseConnector {
         }
         catch (err) {
             if (err.response && err.response.status === 500) {
-                log.err('Failed to get delegatedData from iostabc', err.response.data);
+                log.err('Failed to get delegatedData(voters) from iostabc', err.response.data);
                 return {
                     mainBalance: parseFloat(availableBalanceData.balance),
                     delegatedBalance: 0,
@@ -211,7 +227,6 @@ class IOSTCoin extends BaseConnector {
 
         let createdAccounts = await axios.get(`${this.apiUrl}/account/${address}/created`);
         createdAccounts = createdAccounts.data.accounts;
-
 
         return {
             mainBalance: parseFloat(availableBalanceData.balance),
@@ -269,7 +284,7 @@ class IOSTCoin extends BaseConnector {
     }
 
     async prepareTransfer(fromAddress, toAddress, amount) {
-        return this.iost.transfer('iost', fromAddress, toAddress, amount, 'transfer via citadel_core');
+        return this.iost.transfer('iost', fromAddress, toAddress, amount.toString(), 'transfer via citadel_core');
     }
 
     async faucetSignUp(name, pubKey) {
@@ -292,7 +307,7 @@ class IOSTCoin extends BaseConnector {
     }
 
     async preparePledge(fromAddress, toAddress, amount) {
-        let transaction = this.iost.callABI('gas.iost', 'pledge', [fromAddress, toAddress, amount]);
+        let transaction = this.iost.callABI('gas.iost', 'pledge', [fromAddress, toAddress, amount.toString()]);
         transaction.amount_limit = [
             {
                 token: "*",
@@ -303,7 +318,29 @@ class IOSTCoin extends BaseConnector {
     }
 
     async prepareUnpledge(fromAddress, toAddress, amount) {
-        let transaction = this.iost.callABI('gas.iost', 'unpledge', [fromAddress, toAddress, amount]);
+        let transaction = this.iost.callABI('gas.iost', 'unpledge', [fromAddress, toAddress, amount.toString()]);
+        transaction.amount_limit = [
+            {
+                token: "*",
+                value: "unlimited"
+            }
+        ];
+        return transaction;
+    }
+
+    async prepareBuyRam(fromAddress, toAddress, amount) {
+        let transaction = this.iost.callABI('ram.iost', 'buy', [fromAddress, toAddress, parseInt(amount)]);
+        transaction.amount_limit = [
+            {
+                token: "*",
+                value: "unlimited"
+            }
+        ];
+        return transaction;
+    }
+
+    async prepareSellRam(fromAddress, toAddress, amount) {
+        let transaction = this.iost.callABI('ram.iost', 'sell', [fromAddress, toAddress, parseInt(amount)]);
         transaction.amount_limit = [
             {
                 token: "*",
