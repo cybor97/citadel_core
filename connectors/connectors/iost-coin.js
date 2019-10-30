@@ -119,15 +119,30 @@ class IOSTCoin extends BaseConnector {
     }
 
     async getDelegationBalanceInfo(address) {
-        let availableBalanceData = await axios.get(this.apiUrlAdditional, {
-            params: {
-                apikey: config.iostCoin.apikey,
-                module: 'account',
-                action: 'get-account-balance',
-                account: address
+        try {
+            let availableBalanceData = await axios.get(this.apiUrlAdditional, {
+                params: {
+                    apikey: config.iostCoin.apikey,
+                    module: 'account',
+                    action: 'get-account-balance',
+                    account: address
+                }
+            });
+            availableBalanceData = availableBalanceData.data.data;
+        }
+        catch (err) {
+            if (err.response && err.response.status === 500) {
+                log.err('Failed to get delegatedData(get-account-balance) from iostabc', err.response.data);
+                return {
+                    mainBalance: 0,
+                    delegatedBalance: 0,
+                    originatedAddresses: []
+                }
             }
-        });
-        availableBalanceData = availableBalanceData.data.data;
+            else {
+                throw err;
+            }
+        }
 
 
         let delegatedData = null;
@@ -136,7 +151,7 @@ class IOSTCoin extends BaseConnector {
         }
         catch (err) {
             if (err.response && err.response.status === 500) {
-                log.err('Failed to get delegatedData from iostabc', err.response.data);
+                log.err('Failed to get delegatedData(voters) from iostabc', err.response.data);
                 return {
                     mainBalance: parseFloat(availableBalanceData.balance),
                     delegatedBalance: 0,
