@@ -145,7 +145,7 @@ class IOSTCoin extends BaseConnector {
                         //iost hasn't fee in token(even for base.iost)
                         fee: 0,
                         originalOpType: `${txAction.contract}/${txAction.action_name}`,
-                        type: opTypes[`${txAction.contract}/${txAction.action_name}`],
+                        type: this.rewardSources.includes(tx.from) ? 'reward' : opTypes[`${tx.contract}/${tx.action_name}`],
                         path: JSON.stringify({ blockNumber: parseInt(block.data.block.number) }),
                         currency: 'iost-coin',
                         isCancelled: (tx.tx_receipt.status_code != 'SUCCESS')
