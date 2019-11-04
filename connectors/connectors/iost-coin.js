@@ -137,7 +137,7 @@ class IOSTCoin extends BaseConnector {
                         hash: tx.hash,
                         //iost stores timestamp in ns
                         date: parseInt(tx.time) / 1000000,
-                        value: txAction.data[3],
+                        value: txAction.data[3] || 0,
                         comment: txAction.data[4] || '',
                         from: txAction.data[1],
                         fromAlias: txAction.data[1],
