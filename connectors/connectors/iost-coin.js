@@ -137,11 +137,11 @@ class IOSTCoin extends BaseConnector {
                         hash: tx.hash,
                         //iost stores timestamp in ns
                         date: parseInt(tx.time) / 1000000,
-                        value: txAction.data[3] || 0,
+                        value: typeof (txAction.data[3]) !== 'object' ? txAction.data[3] || 0 : 0,
                         comment: txAction.data[4] || '',
-                        from: txAction.data[1],
-                        fromAlias: txAction.data[1],
-                        to: txAction.data[2],
+                        from: typeof (txAction.data[1]) === 'string' ? txAction.data[1] : JSON.stringify(txAction.data[1]) || null,
+                        fromAlias: typeof (txAction.data[1]) === 'string' ? txAction.data[1] : JSON.stringify(txAction.data[1]) || null,
+                        to: typeof (txAction.data[2]) === 'string' ? txAction.data[2] : JSON.stringify(txAction.data[2]) || null,
                         //iost hasn't fee in token(even for base.iost)
                         fee: 0,
                         originalOpType: `${txAction.contract}/${txAction.action_name}`,
