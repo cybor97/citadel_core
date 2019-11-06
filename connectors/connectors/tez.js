@@ -201,7 +201,7 @@ class TEZ extends BaseConnector {
             await this.sendZabbix({
                 prevBlockNumber: path ? path.blockNumber : 0,
                 blockNumber: blockNumber,
-                blockTransactions: transactions ? transactions.length : 0
+                blockTransactions: operations ? operations.length : 0
             });
         }
         catch (err) {
