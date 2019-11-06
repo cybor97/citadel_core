@@ -2,6 +2,7 @@ const http = require('http');
 const https = require('https');
 const axios = require('axios');
 const IOST = require('iost');
+const ZabbixSender = require('node-zabbix-sender');
 
 const BaseConnector = require('./baseConnector');
 const config = require('../../config');
@@ -32,6 +33,11 @@ class IOSTCoin extends BaseConnector {
             timeout: 10000,
             httpAgent: new http.Agent({ keepAlive: true }),
             httpsAgent: new https.Agent({ keepAlive: true })
+        });
+        this.zabbixSender = new ZabbixSender({
+            host: config.zabbix.ip,
+            port: config.zabbix.port,
+            items_host: 'CitadelConnectorIOST'
         });
     }
 
@@ -151,7 +157,19 @@ class IOSTCoin extends BaseConnector {
                         isCancelled: (tx.tx_receipt.status_code != 'SUCCESS')
                     })))
                 .reduce((prev, next) => prev.concat(next), []);
+
             blockNumber++;
+        }
+
+        try {
+            await this.sendZabbix({
+                prevBlockNumber: path.blockNumber,
+                blockNumber: blockNumber,
+                blockTransactions: transactions ? transactions.length : 0
+            });
+        }
+        catch (err) {
+            log.err('sendZabbix', err);
         }
 
         return transactions;
