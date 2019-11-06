@@ -29,6 +29,11 @@ class ICON extends BaseConnector {
             httpAgent: new http.Agent({ keepAlive: true }),
             httpsAgent: new https.Agent({ keepAlive: true })
         });
+        this.zabbixSender = new ZabbixSender({
+            host: config.zabbix.ip,
+            port: config.zabbix.port,
+            items_host: 'CitadelConnectorICON'
+        });
     }
 
     validateAddress(address) {
@@ -142,6 +147,19 @@ class ICON extends BaseConnector {
 
             blockNumber++;
         }
+
+        try {
+            await this.sendZabbix({
+                prevBlockNumber: path ? path.blockNumber : 0,
+                blockNumber: blockNumber,
+                blockTransactions: transactions ? transactions.length : 0
+            });
+        }
+        catch (err) {
+            log.err('sendZabbix', err);
+        }
+
+
         return transactions;
     }
 
