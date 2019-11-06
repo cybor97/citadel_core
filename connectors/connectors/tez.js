@@ -6,6 +6,7 @@ const StakedYields = require('../stakedYields');
 const { ValidationError, TransactionError } = require('../../utils/errors');
 const http = require('http');
 const https = require('https');
+const ZabbixSender = require('node-zabbix-sender');
 
 const log = require('../../utils/log');
 

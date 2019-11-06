@@ -2,6 +2,8 @@ const axios = require('axios');
 const IconService = require('icon-sdk-js');
 const http = require('http');
 const https = require('https');
+const ZabbixSender = require('node-zabbix-sender');
+
 const BaseConnector = require('./baseConnector');
 const config = require('../../config');
 const log = require('../../utils/log');

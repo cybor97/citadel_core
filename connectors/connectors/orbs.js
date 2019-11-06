@@ -1,6 +1,8 @@
 const axios = require('axios');
 const Web3 = require('web3');
 const EventEmitter = require('events');
+const ZabbixSender = require('node-zabbix-sender');
+
 const ETHToken = require('./ethToken');
 const Bittrex = require('../bittrex');
 const config = require('../../config')
