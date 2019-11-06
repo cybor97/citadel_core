@@ -163,7 +163,7 @@ class IOSTCoin extends BaseConnector {
 
         try {
             await this.sendZabbix({
-                prevBlockNumber: path.blockNumber,
+                prevBlockNumber: path ? path.blockNumber : 0,
                 blockNumber: blockNumber,
                 blockTransactions: transactions ? transactions.length : 0
             });
