@@ -2,6 +2,8 @@ const axios = require('axios');
 const IconService = require('icon-sdk-js');
 const http = require('http');
 const https = require('https');
+const ZabbixSender = require('node-zabbix-sender');
+
 const BaseConnector = require('./baseConnector');
 const config = require('../../config');
 const log = require('../../utils/log');
@@ -28,6 +30,11 @@ class ICON extends BaseConnector {
             timeout: 10000,
             httpAgent: new http.Agent({ keepAlive: true }),
             httpsAgent: new https.Agent({ keepAlive: true })
+        });
+        this.zabbixSender = new ZabbixSender({
+            host: config.zabbix.ip,
+            port: config.zabbix.port,
+            items_host: 'CitadelConnectorICON'
         });
     }
 
@@ -142,6 +149,19 @@ class ICON extends BaseConnector {
 
             blockNumber++;
         }
+
+        try {
+            await this.sendZabbix({
+                prevBlockNumber: path ? path.blockNumber : 0,
+                blockNumber: blockNumber,
+                blockTransactions: transactions ? transactions.length : 0
+            });
+        }
+        catch (err) {
+            log.err('sendZabbix', err);
+        }
+
+
         return transactions;
     }
 

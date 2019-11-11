@@ -2,6 +2,7 @@ const http = require('http');
 const https = require('https');
 const axios = require('axios');
 const IOST = require('iost');
+const ZabbixSender = require('node-zabbix-sender');
 
 const BaseConnector = require('./baseConnector');
 const config = require('../../config');
@@ -32,6 +33,11 @@ class IOSTCoin extends BaseConnector {
             timeout: 10000,
             httpAgent: new http.Agent({ keepAlive: true }),
             httpsAgent: new https.Agent({ keepAlive: true })
+        });
+        this.zabbixSender = new ZabbixSender({
+            host: config.zabbix.ip,
+            port: config.zabbix.port,
+            items_host: 'CitadelConnectorIOST'
         });
     }
 
@@ -146,11 +152,11 @@ class IOSTCoin extends BaseConnector {
                         hash: tx.hash,
                         //iost stores timestamp in ns
                         date: parseInt(tx.time) / 1000000,
-                        value: txAction.data[3] || 0,
+                        value: typeof (txAction.data[3]) !== 'object' ? txAction.data[3] || 0 : 0,
                         comment: txAction.data[4] || '',
-                        from: txAction.data[1],
-                        fromAlias: txAction.data[1],
-                        to: txAction.data[2],
+                        from: typeof (txAction.data[1]) === 'string' ? txAction.data[1] : JSON.stringify(txAction.data[1]) || null,
+                        fromAlias: typeof (txAction.data[1]) === 'string' ? txAction.data[1] : JSON.stringify(txAction.data[1]) || null,
+                        to: typeof (txAction.data[2]) === 'string' ? txAction.data[2] : JSON.stringify(txAction.data[2]) || null,
                         //iost hasn't fee in token(even for base.iost)
                         fee: 0,
                         originalOpType: `${txAction.contract}/${txAction.action_name}`,
@@ -160,7 +166,19 @@ class IOSTCoin extends BaseConnector {
                         isCancelled: (tx.tx_receipt.status_code != 'SUCCESS')
                     })))
                 .reduce((prev, next) => prev.concat(next), []);
+
             blockNumber++;
+        }
+
+        try {
+            await this.sendZabbix({
+                prevBlockNumber: path ? path.blockNumber : 0,
+                blockNumber: blockNumber,
+                blockTransactions: transactions ? transactions.length : 0
+            });
+        }
+        catch (err) {
+            log.err('sendZabbix', err);
         }
 
         return transactions;

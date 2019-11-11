@@ -1,6 +1,8 @@
 const axios = require('axios');
 const Web3 = require('web3');
 const EventEmitter = require('events');
+const ZabbixSender = require('node-zabbix-sender');
+
 const ETHToken = require('./ethToken');
 const Bittrex = require('../bittrex');
 const config = require('../../config')
@@ -26,6 +28,11 @@ class ORBS extends ETHToken {
         super();
         this.subscriptions = new Map();
         this.apiUrlVotingProxy = 'https://orbs-voting-proxy-server.herokuapp.com/api';
+        this.zabbixSender = new ZabbixSender({
+            host: config.zabbix.ip,
+            port: config.zabbix.port,
+            items_host: 'CitadelConnectorORBS'
+        });
     }
 
     subscribe(address, lastPaths) {
@@ -167,6 +174,19 @@ class ORBS extends ETHToken {
             }
             blockNumber += BLOCKS_QUERY_COUNT;
         }
+
+        try {
+            await this.sendZabbix({
+                prevBlockNumber: path ? path.blockNumber : 0,
+                blockNumber: blockNumber,
+                blockTransactions: transactions ? transactions.length : 0
+            });
+        }
+        catch (err) {
+            log.err('sendZabbix', err);
+        }
+
+
         return transactions;
     }
 

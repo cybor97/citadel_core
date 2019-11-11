@@ -6,6 +6,7 @@ const StakedYields = require('../stakedYields');
 const { ValidationError, TransactionError } = require('../../utils/errors');
 const http = require('http');
 const https = require('https');
+const ZabbixSender = require('node-zabbix-sender');
 
 const log = require('../../utils/log');
 
@@ -38,7 +39,12 @@ class TEZ extends BaseConnector {
             timeout: 10000,
             httpAgent: new http.Agent({ keepAlive: true }),
             httpsAgent: new https.Agent({ keepAlive: true })
-        })
+        });
+        this.zabbixSender = new ZabbixSender({
+            host: config.zabbix.ip,
+            port: config.zabbix.port,
+            items_host: 'CitadelConnectorTezos'
+        });
 
         eztz.eztz.node.setProvider(this.rpcUrl);
         this.eztzInstance = eztz.eztz;
@@ -130,7 +136,6 @@ class TEZ extends BaseConnector {
     }
 
     async getNextBlock(lastPathsNet, serviceAddresses) {
-        //TODO: TEST
         let path = lastPathsNet && lastPathsNet.path;
         if (typeof (path) === 'string') {
             path = JSON.parse(path);
@@ -191,6 +196,19 @@ class TEZ extends BaseConnector {
             }
         });
         await this.processPayment(operations, serviceAddresses);
+
+        try {
+            await this.sendZabbix({
+                prevBlockNumber: path ? path.blockNumber : 0,
+                blockNumber: blockNumber,
+                blockTransactions: operations ? operations.length : 0
+            });
+        }
+        catch (err) {
+            log.err('sendZabbix', err);
+        }
+
+
         return operations;
     }
 
