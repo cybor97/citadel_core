@@ -34,6 +34,13 @@ class IOSTCoin extends BaseConnector {
             httpAgent: new http.Agent({ keepAlive: true }),
             httpsAgent: new https.Agent({ keepAlive: true })
         });
+        if (config.iostCoin.additionalIp && config.iostCoin.additionalPort) {
+            this.additionalAxiosClient = axios.create({
+                timeout: 10000,
+                httpAgent: new http.Agent({ keepAlive: true }),
+                httpsAgent: new https.Agent({ keepAlive: true })
+            });
+        }
         this.zabbixSender = new ZabbixSender({
             host: config.zabbix.ip,
             port: config.zabbix.port,
@@ -134,7 +141,7 @@ class IOSTCoin extends BaseConnector {
             if (config.iostCoin.additionalIp && config.iostCoin.additionalPort) {
                 block = await Promise.race([
                     this.axiosClient.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getBlockByNumber/${blockNumber}/true`),
-                    this.axiosClient.get(`http://${config.iostCoin.additionalIp}:${config.iostCoin.additionalPort}/getBlockByNumber/${blockNumber}/true`)
+                    this.additionalAxiosClient.get(`http://${config.iostCoin.additionalIp}:${config.iostCoin.additionalPort}/getBlockByNumber/${blockNumber}/true`)
                 ]);
             }
             else {
