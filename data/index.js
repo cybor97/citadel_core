@@ -19,7 +19,8 @@ class DBConnection {
                     min: 0,
                     acquire: 10000,
                     idle: 5000
-                }
+                },
+                native: true
             });
         }
 

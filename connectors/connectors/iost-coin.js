@@ -124,7 +124,16 @@ class IOSTCoin extends BaseConnector {
         while (!transactions || !transactions.length) {
             log.info(`blockNumber ${blockNumber}`);
 
-            let block = await this.axiosClient.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getBlockByNumber/${blockNumber}/true`);
+            let block = null;
+            if (config.iostCoin.additionalIp && config.iostCoin.additionalPort) {
+                block = await Promise.race([
+                    this.axiosClient.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getBlockByNumber/${blockNumber}/true`),
+                    this.axiosClient.get(`http://${config.iostCoin.additionalIp}:${config.iostCoin.additionalPort}/getBlockByNumber/${blockNumber}/true`)
+                ]);
+            }
+            else {
+                block = await this.axiosClient.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getBlockByNumber/${blockNumber}/true`);
+            }
             transactions = block.data.block.transactions
                 .map(tx => (tx.actions || [])
                     .map(txAction => {
