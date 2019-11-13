@@ -173,7 +173,7 @@ class ExplorerUpdater {
             await txSqlTransaction.commit();
         }
         catch (exc) {
-            log.err(`Update failed, rollback ${address.address} (${address.net})`);
+            log.err(`Update failed, rollback ${address.address} (${address.net})`, exc);
             await new Promise(resolve => setTimeout(resolve, config.updateInterval * 2))
             await txSqlTransaction.rollback();
         }
