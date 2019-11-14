@@ -83,6 +83,16 @@ class IOSTCoin extends BaseConnector {
                 }
             });
             newTransactionsData = resp.data.data.transactions;
+            for (let tx of newTransactionsData) {
+                const data = await this.rpc.transaction.getTxByHash(tx.tx_hash);
+                let receipt = data.transaction.tx_receipt;
+
+                tx.gasUsed = receipt.gas_usage;
+                if (receipt.ram_usage['token.iost']) {
+                    tx.ramUsed = parseInt(receipt.ram_usage['token.iost']);
+                }
+            }
+
             log.info('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactionsData.length}`);
 
             result = result.concat(newTransactionsData
@@ -103,6 +113,10 @@ class IOSTCoin extends BaseConnector {
                     fromAlias: tx.from,
                     to: tx.to,
                     fee: 0,
+
+                    gasUsed: tx.gasUsed,
+                    ramUsed: tx.ramUsed,
+
                     originalOpType: `${tx.contract}/${tx.action_name}`,
                     type: this.rewardSources.includes(tx.from) ? 'payment' : opTypes[`${tx.contract}/${tx.action_name}`],
                     path: JSON.stringify({ queryCount: QUERY_COUNT, offset: offset }),

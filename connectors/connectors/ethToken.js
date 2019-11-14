@@ -43,6 +43,8 @@ class ETHToken extends BaseConnector {
             .map(async tx => {
                 let blockData = await web3.eth.getBlock(tx.blockHash);
 
+                let txData = await web3.eth.getTransaction(tx.transactionHash);
+
                 return ({
                     //0 is methodId
                     from: tx.topics[1].replace(`0x${PRECENDING_ZEROES}`, '0x'),
@@ -54,6 +56,9 @@ class ETHToken extends BaseConnector {
                     fromAlias: null,
                     //Fee for eth tokens is always 0(in token)
                     fee: 0,//parseInt(txData.gas) * parseInt(txData.gasPrice) / VALUE_FEE_MULTIPLIER,
+                    feeBlockchain: parseInt(txData.gas) * parseInt(txData.gasPrice) / VALUE_FEE_MULTIPLIER,
+                    gasUsed: parseInt(txData.gas) / VALUE_FEE_MULTIPLIER,
+
                     type: type,
                     currency: currency,
                     path: JSON.stringify({
