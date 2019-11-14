@@ -245,7 +245,6 @@ router
                 transactions = await Transaction.findAndCountAll(Object.assign({
                     attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                     where: whereParams,
-                    include: [{ model: Address, where: { address: req.params.address } }]
                 }, utils.preparePagination(req.query)));
             }
 
