@@ -180,6 +180,10 @@ class IOSTCoin extends BaseConnector {
                         to: typeof (txAction.data[2]) === 'string' ? txAction.data[2] : JSON.stringify(txAction.data[2]) || null,
                         //iost hasn't fee in token(even for base.iost)
                         fee: 0,
+
+                        gasUsed: tx.tx_receipt.gas_usage,
+                        ramUsed: tx.tx_receipt.ram_usage && parseInt(receipt.ram_usage['token.iost']),
+
                         originalOpType: `${txAction.contract}/${txAction.action_name}`,
                         type: this.rewardSources.includes(tx.from) ? 'payment' : opTypes[`${tx.contract}/${tx.action_name}`],
                         path: JSON.stringify({ blockNumber: parseInt(block.data.block.number) }),
