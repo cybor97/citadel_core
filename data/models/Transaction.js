@@ -53,6 +53,7 @@ const Transaction = connection.define('transactions', {
 Address.hasMany(Transaction);
 Transaction.belongsTo(Address);
 
+//TODO: Find out&remove
 // Transaction.sync(true);
 
 module.exports = Transaction;
