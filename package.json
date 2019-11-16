@@ -10,7 +10,7 @@
     "bs58": "^4.0.1",
     "cheerio": "^1.0.0-rc.3",
     "express": "^4.17.1",
-    "eztz.js": "git+https://github.com/TezTech/eztz.git",
+    "eztz.js": "git+https://github.com/TezTech/eztz.git#22a6b25bf000fc4e25e6a5278f352fc40adefdb6",
     "icon-sdk-js": "0.0.16",
     "iost": "^0.1.19",
     "mocha": "^6.2.0",
