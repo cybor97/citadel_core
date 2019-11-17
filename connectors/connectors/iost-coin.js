@@ -166,7 +166,7 @@ class IOSTCoin extends BaseConnector {
         }
         delegatedData = delegatedData.data;
         let delegatedTotal = 0;
-        if (delegatedData) {
+        if (delegatedData && delegatedData.voters) {
             let delegation = delegatedData.voters.find(c => c.account === address);
             delegatedTotal = parseInt(delegation.votes);
         }
