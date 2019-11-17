@@ -182,7 +182,7 @@ class IOSTCoin extends BaseConnector {
                         fee: 0,
 
                         gasUsed: tx.tx_receipt.gas_usage,
-                        ramUsed: tx.tx_receipt.ram_usage && parseInt(receipt.ram_usage['token.iost']),
+                        ramUsed: tx.tx_receipt.ram_usage && parseInt(tx.tx_receipt.ram_usage['token.iost']),
 
                         originalOpType: `${txAction.contract}/${txAction.action_name}`,
                         type: this.rewardSources.includes(tx.from) ? 'payment' : opTypes[`${tx.contract}/${tx.action_name}`],

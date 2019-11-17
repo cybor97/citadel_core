@@ -1,7 +1,7 @@
 /**
  * @author cybor97
  */
-
+const fs = require('fs');
 const express = require('express');
 const browserify = require('browserify-middleware');
 const path = require('path');
@@ -10,7 +10,6 @@ const log = require('./utils/log');
 const config = require('./config');
 require('./utils/expressAsyncErrors');
 
-const fs = require('fs');
 const clientApi = require('./routes/clientApi');
 const { ValidationError } = require('./utils/errors');
 
@@ -58,6 +57,6 @@ Promise.resolve()
         .use((req, res, next) => {
           return res.status(404).send({ message: 'Method not found' });
         });
-      app.listen(8080);
+      app.listen(config && config.app && config.app.port || 8080);
     }
   });
