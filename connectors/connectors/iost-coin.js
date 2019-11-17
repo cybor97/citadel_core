@@ -165,8 +165,11 @@ class IOSTCoin extends BaseConnector {
             }
         }
         delegatedData = delegatedData.data;
-        let delegation = delegatedData.voters.find(c => c.account === address);
-        let delegatedTotal = parseInt(delegation.votes);
+        let delegatedTotal = 0;
+        if (delegatedData) {
+            let delegation = delegatedData.voters.find(c => c.account === address);
+            delegatedTotal = parseInt(delegation.votes);
+        }
 
         let createdAccounts = await axios.get(`${this.apiUrl}/account/${address}/created`);
         createdAccounts = createdAccounts.data.accounts;
