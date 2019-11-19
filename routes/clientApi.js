@@ -335,6 +335,161 @@ router
     })
 
     /**
+     * @api {get} /net/:net/user/:userId/transactions Get specific user transactions
+     * @apiName getTransactionsByUserId
+     * @apiGroup user
+     * 
+     * @apiDescription Get specific user transactions
+     */
+    .get('/:net/user/:userId/transactions', async (req, res) => {
+        if (!NET_REGEX.test(req.params.net)) {
+            return res.status(400).send({ message: 'Invalid net format!' });
+        }
+
+        let connectors = Connectors.getConnectors();
+        if (!connectors[req.params.net]) {
+            return res.status(400).send({ message: 'Specified net is not supported!' });
+        }
+
+        if (!req.params.userId.match(/\d/)) {
+            return res.status(400).send({ message: 'userId has invalid format.' });
+        }
+
+        let addresses = (await Address.findAll({
+            where: {
+                [sequelize.Op.or]: [
+                    { userIds: { [sequelize.Op.like]: `${req.params.userId},%` } },
+                    { userIds: { [sequelize.Op.like]: `%,${req.params.userId},%` } },
+                    { userIds: { [sequelize.Op.like]: `%,${req.params.userId}` } }
+                ]
+            },
+        }));
+
+        let result = {};
+        for (let address of addresses) {
+            try {
+                let whereParams = { [sequelize.Op.or]: [{ from: address.address }, { to: address.address }] };
+
+                if (req.query.currency) {
+                    whereParams.currency = req.query.currency;
+                }
+                if (req.query.date_from) {
+                    whereParams.date = { [sequelize.Op.gte]: req.query.date_from };
+                }
+                if (req.query.date_to) {
+                    whereParams.date = { [sequelize.Op.lte]: req.query.date_to };
+                }
+
+                if (req.params.net === 'orbs') {
+                    whereParams.value = { [sequelize.Op.ne]: 0 };
+                }
+
+                let transactions = await Transaction.findAndCountAll(Object.assign({
+                    attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
+                    where: whereParams,
+                }, utils.preparePagination(req.query)));
+
+                if (!transactions.length && req.query.forceUpdate) {
+                    let serviceAddresses = await Address.findAll({
+                        order: [['created', 'desc']],
+                        where: {
+                            isService: true,
+                            net: req.params.net
+                        }
+                    });
+
+                    await explorerUpdater.doWork(req.params.net, connector, address, serviceAddresses);
+
+                    transactions = await Transaction.findAndCountAll(Object.assign({
+                        attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
+                        where: whereParams
+                    }, utils.preparePagination(req.query)));
+                }
+
+                address = address.dataValues;
+
+                result[address.address] = transactions;
+            }
+            catch (err) {
+                log.err(err);
+                res.status(500).send({ err: err.message, stack: err.stack });
+            }
+        }
+
+        res.status(200).send(result);
+    })
+
+
+    /**
+     * @api {post} /net/:net/address/:address/assign-user-id Assign address with userId
+     * @apiName assignAddressUserId
+     * @apiGroup user
+     * 
+     * @apiParam {Number} userId     User ID
+     * 
+     * @apiDescription Assign address with userId
+     */
+    .post('/:net/address/:address/assign-user-id', async (req, res) => {
+        let address = (await Address.findOne({
+            where: { net: req.params.net, address: req.params.address },
+        }));
+
+        if (typeof (req.body.userId) !== 'number') {
+            return res.status(400).send({ message: 'userId is not provided or has invalid format.' });
+        }
+
+        if (address === null) {
+            return res.status(404).send({ message: 'Address not found' });
+        }
+        else {
+            if (!address.userIds) {
+                address.userIds = req.body.userId.toString();
+            }
+
+            address.userIds = Array.from(new Set([...address.userIds.split(',').map(c => parseInt(c)), req.body.userId])).join(',');
+            await address.save();
+            return res.status(200).send(address.dataValues);
+        }
+    })
+
+    /**
+     * @api {post} /net/:net/address/:address/remove-user-id Unassign address from userId
+     * @apiName removeAddressUserId
+     * @apiGroup user
+     * 
+     * @apiParam {Number} userId     User ID
+     * 
+     * @apiDescription Unassign address with userId
+     */
+    .post('/:net/address/:address/remove-user-id', async (req, res) => {
+        let address = (await Address.findOne({
+            where: { net: req.params.net, address: req.params.address },
+        }));
+
+        if (typeof (req.body.userId) !== 'number') {
+            return res.status(400).send({ message: 'userId is not provided or has invalid format.' });
+        }
+
+        if (address === null) {
+            return res.status(404).send({ message: 'Address not found' });
+        }
+        else {
+            let userIds = address.userIds;
+            if (userIds) {
+                userIds = userIds.split(',').map(c => parseInt(c));
+                if (userIds.includes(req.body.userId)) {
+                    userIds.splice(userIds.indexOf(req.body.userId), 1);
+
+                    address.userIds = userIds.join(',');
+                    await address.save();
+                }
+            }
+
+            return res.status(200).send(address.dataValues);
+        }
+    })
+
+    /**
      * @api {post} /net/:net/address/:address/transactions/prepare-reveal Prepare reveal
      * @apiName prepareReveal
      * @apiGroup sendTransaction
