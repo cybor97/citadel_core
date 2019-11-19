@@ -8,6 +8,10 @@ const Address = connection.define('address', {
         primaryKey: true,
         autoIncrement: true
     },
+    userIds: {
+        type: sequelize.TEXT,
+        allowNull: true
+    },
     address: {
         type: sequelize.STRING,
         allowNull: false,
@@ -48,6 +52,7 @@ const Address = connection.define('address', {
     }
 }, {
     timestamps: false,
+    alter: true
 });
 
 module.exports = Address;

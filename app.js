@@ -16,7 +16,7 @@ const { ValidationError } = require('./utils/errors');
 Promise.resolve()
   .then(() => Promise.all(fs
     .readdirSync(path.join(__dirname, 'data/models'))
-    .map(model => require(`./data/models/${model}`).sync())
+    .map(model => require(`./data/models/${model}`).sync(true))
   ))
   .then(() => {
     if (!process.argv.includes('--api-server')) {
