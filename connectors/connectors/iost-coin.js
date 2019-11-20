@@ -41,11 +41,14 @@ class IOSTCoin extends BaseConnector {
                 httpsAgent: new https.Agent({ keepAlive: true })
             });
         }
-        this.zabbixSender = new ZabbixSender({
-            host: config.zabbix.ip,
-            port: config.zabbix.port,
-            items_host: 'CitadelConnectorIOST'
-        });
+
+        if (config.zabbix) {
+            this.zabbixSender = new ZabbixSender({
+                host: config.zabbix.ip,
+                port: config.zabbix.port,
+                items_host: 'CitadelConnectorIOST'
+            });
+        }
     }
 
     validateAddress(address) {

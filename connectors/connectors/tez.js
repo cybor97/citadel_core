@@ -40,11 +40,13 @@ class TEZ extends BaseConnector {
             httpAgent: new http.Agent({ keepAlive: true }),
             httpsAgent: new https.Agent({ keepAlive: true })
         });
-        this.zabbixSender = new ZabbixSender({
-            host: config.zabbix.ip,
-            port: config.zabbix.port,
-            items_host: 'CitadelConnectorTezos'
-        });
+        if (config.zabbix) {
+            this.zabbixSender = new ZabbixSender({
+                host: config.zabbix.ip,
+                port: config.zabbix.port,
+                items_host: 'CitadelConnectorTezos'
+            });
+        }
 
         eztz.eztz.node.setProvider(this.rpcUrl);
         this.eztzInstance = eztz.eztz;
@@ -256,7 +258,7 @@ class TEZ extends BaseConnector {
             fee: '1420',
             gas_limit: '10100',
             storage_limit: '0',
-            delegate: toAddress
+            ...(toAddress ? { delegate: toAddress } : {})
         }, false);
     }
 
