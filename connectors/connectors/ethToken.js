@@ -152,6 +152,7 @@ class ETHToken extends BaseConnector {
         });
     }
 
+    //TODO: Implement undelegate(on adding supported token)
     async prepareDelegation(fromAddress, toAddress) {
         if (!this.getDelegationContractAddress) {
             throw new ValidationError(`Specified net doesn't support delegation or not yet implemented.`);

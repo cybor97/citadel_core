@@ -278,8 +278,11 @@ class IOSTCoin extends BaseConnector {
             }
         }
         delegatedData = delegatedData.data;
-        let delegation = delegatedData.voters.find(c => c.account === address);
-        let delegatedTotal = parseInt(delegation.votes);
+        let delegatedTotal = 0;
+        if (delegatedData.voters) {
+            let delegation = delegatedData.voters.find(c => c.account === address);
+            delegatedTotal = parseInt(delegation.votes);
+        }
 
         let createdAccounts = await axios.get(`${this.apiUrl}/account/${address}/created`);
         createdAccounts = createdAccounts.data.accounts;
@@ -418,24 +421,29 @@ class IOSTCoin extends BaseConnector {
     }
 
     async prepareDelegation(fromAddress, toAddress) {
-        let availableBalanceData = await axios.get(this.apiUrlAdditional, {
-            params: {
-                apikey: config.iostCoin.apikey,
-                module: 'account',
-                action: 'get-account-balance',
-                account: fromAddress
-            }
-        });
-        let amount = availableBalanceData.data.data.balance;
-        let transaction = this.iost.callABI('vote_producer.iost', 'vote', [fromAddress, toAddress, amount.toString()]);
-        //Recommended for vote
-        transaction.gasLimit = 300000;
-        transaction.amount_limit = [
-            {
-                token: "*",
-                value: "unlimited"
-            }
-        ];
+        if (toAddress) {
+            let availableBalanceData = await axios.get(this.apiUrlAdditional, {
+                params: {
+                    apikey: config.iostCoin.apikey,
+                    module: 'account',
+                    action: 'get-account-balance',
+                    account: fromAddress
+                }
+            });
+            let amount = availableBalanceData.data.data.balance;
+            let transaction = this.iost.callABI('vote_producer.iost', 'vote', [fromAddress, toAddress, amount.toString()]);
+            //Recommended for vote
+            transaction.gasLimit = 300000;
+            transaction.amount_limit = [
+                {
+                    token: "*",
+                    value: "unlimited"
+                }
+            ];
+        }
+        else {
+            //TODO: Implement
+        }
 
         return transaction;
     }
