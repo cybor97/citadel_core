@@ -440,12 +440,77 @@ class IOSTCoin extends BaseConnector {
                     value: "unlimited"
                 }
             ];
+            return transaction;
         }
         else {
-            //TODO: Implement
+            let availableBalanceData = await axios.get(this.apiUrlAdditional, {
+                params: {
+                    apikey: config.iostCoin.apikey,
+                    module: 'account',
+                    action: 'get-account-balance',
+                    account: fromAddress
+                }
+            });
+            availableBalanceData = availableBalanceData.data;
+            let operations = [];
+            let queryCount = 50;
+
+            let newOperations = null;
+            let page = 1;
+            while (newOperations === null || newOperations.length == queryCount) {
+                newOperations = await axios.get(`${this.apiUrl}/account/${fromAddress}/actions`, {
+                    params: {
+                        status: 'SUCCESS',
+                        type: 'vote',
+                        size: queryCount,
+                        page: page
+                    }
+                });
+
+                newOperations = newOperations.data.actions.map(c => {
+                    let [from, to, value] = JSON.parse(c.data);
+                    return {
+                        from: from,
+                        to: to,
+                        value: parseFloat(value),
+                        type: c.action_name
+                    };
+                });
+
+                operations = operations.concat(newOperations);
+
+                page++;
+            }
+            let addressesData = {};
+            for (let operation of operations) {
+                if (operation.from == fromAddress) {
+                    if (!addressesData[operation.to]) {
+                        addressesData[operation.to] = 0;
+                    }
+                    addressesData[operation.to] += operation.type == 'vote' ? operation.value : -operation.value;
+                }
+            }
+            let transaction = null;
+            for (let address in addressesData) {
+                if (transaction == null) {
+                    transaction = this.iost.callABI('vote_producer.iost', 'unvote', [fromAddress, address, addressesData[address].toString()]);
+                    //Recommended for vote
+                    transaction.gasLimit = 300000;
+                    transaction.amount_limit = [
+                        {
+                            token: "*",
+                            value: "unlimited"
+                        }
+                    ];
+                }
+                else {
+                    transaction.addAction('vote_producer.iost', 'unvote', JSON.stringify([fromAddress, address, addressesData[address].toString()]));
+                }
+            }
+
+            return transaction;
         }
 
-        return transaction;
     }
 
     async sendTransaction(address, signedTransaction) {
