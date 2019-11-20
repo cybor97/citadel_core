@@ -28,11 +28,13 @@ class ORBS extends ETHToken {
         super();
         this.subscriptions = new Map();
         this.apiUrlVotingProxy = 'https://orbs-voting-proxy-server.herokuapp.com/api';
-        this.zabbixSender = new ZabbixSender({
-            host: config.zabbix.ip,
-            port: config.zabbix.port,
-            items_host: 'CitadelConnectorORBS'
-        });
+        if (config.zabbix) {
+            this.zabbixSender = new ZabbixSender({
+                host: config.zabbix.ip,
+                port: config.zabbix.port,
+                items_host: 'CitadelConnectorORBS'
+            });
+        }
     }
 
     subscribe(address, lastPaths) {

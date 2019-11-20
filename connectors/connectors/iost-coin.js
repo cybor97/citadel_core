@@ -288,7 +288,7 @@ class IOSTCoin extends BaseConnector {
         createdAccounts = createdAccounts.data.accounts;
 
         return {
-            mainBalance: availableBalanceData ? parseFloat(availableBalanceData.balance),
+            mainBalance: availableBalanceData ? parseFloat(availableBalanceData.balance) : 0,
             delegatedBalance: delegatedTotal,
             originatedAddresses: createdAccounts
         }

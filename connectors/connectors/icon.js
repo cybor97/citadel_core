@@ -31,11 +31,13 @@ class ICON extends BaseConnector {
             httpAgent: new http.Agent({ keepAlive: true }),
             httpsAgent: new https.Agent({ keepAlive: true })
         });
-        this.zabbixSender = new ZabbixSender({
-            host: config.zabbix.ip,
-            port: config.zabbix.port,
-            items_host: 'CitadelConnectorICON'
-        });
+        if (config.zabbix) {
+            this.zabbixSender = new ZabbixSender({
+                host: config.zabbix.ip,
+                port: config.zabbix.port,
+                items_host: 'CitadelConnectorICON'
+            });
+        }
     }
 
     validateAddress(address) {
