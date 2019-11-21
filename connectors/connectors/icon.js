@@ -229,49 +229,97 @@ class ICON extends BaseConnector {
     async prepareDelegation(fromAddress, toAddress) {
         let { IconBuilder, HttpProvider } = IconService;
         let iconService = new IconService(new HttpProvider(this.apiWalletUrl));
-        let claimIScoreTransaction = null;
-        let setStakeTransaction = null;
-        let setDelegationTransaction = null;
 
-        //STEP 1: SHOULD BE LARGER THAN 1
-        let claimableICX = await iconService.call(new IconBuilder.CallBuilder()
-            .to('cx0000000000000000000000000000000000000000')
-            .method('queryIScore')
-            .params({ address: fromAddress })
-            .build()
-        ).execute();
+        if (toAddress) {
+            let claimIScoreTransaction = null;
+            let setStakeTransaction = null;
+            let setDelegationTransaction = null;
 
-        if (parseInt(claimableICX.estimatedICX) >= 1) {
-            //STEP 2: CLAIM AVAILABLE ISCORE
-            claimIScoreTransaction = new IconBuilder.CallTransactionBuilder()
+            //STEP 1: SHOULD BE LARGER THAN 1
+            let claimableICX = await iconService.call(new IconBuilder.CallBuilder()
+                .to('cx0000000000000000000000000000000000000000')
+                .method('queryIScore')
+                .params({ address: fromAddress })
+                .build()
+            ).execute();
+
+            if (parseInt(claimableICX.estimatedICX) >= 1) {
+                //STEP 2: CLAIM AVAILABLE ISCORE
+                claimIScoreTransaction = new IconBuilder.CallTransactionBuilder()
+                    .from(fromAddress)
+                    .to('cx0000000000000000000000000000000000000000')
+                    .version('0x3')
+                    .nid('0x1')
+                    .nonce('0x0')
+                    .value('0x0')
+                    .stepLimit(IconService.IconConverter.toBigNumber(108000))
+                    .timestamp(Date.now() * 1000)
+                    .method('claimIScore')
+                    .build();
+            }
+
+            //STEP 3: GET AVAILABLE BALANCE FOR STAKING
+            let balance = await iconService.getBalance(fromAddress).execute();
+
+            //STEP 4: GET ALREADY STAKED BALANCE
+            let stakedBalance = await iconService.call(new IconBuilder.CallBuilder()
+                .to('cx0000000000000000000000000000000000000000')
+                .method('getStake')
+                .params({ address: fromAddress })
+                .build()
+            ).execute();
+
+            let valueToStake = balance.toNumber() - ICX_PRESERVE + parseInt(stakedBalance.stake);
+
+            if (valueToStake > ICX_PRESERVE) {
+                //STEP 5: STAKE ALL AVAILABLE BALANCE
+                setStakeTransaction = new IconBuilder.CallTransactionBuilder()
+                    .from(fromAddress)
+                    .to('cx0000000000000000000000000000000000000000')
+                    .version('0x3')
+                    .nid('0x1')
+                    .nonce('0x0')
+                    .value('0x0')
+                    .method('setStake')
+                    //TODO: Review
+                    .stepLimit(IconService.IconConverter.toBigNumber(125000))
+                    .timestamp(Date.now() * 1000 + ICX_TX_DELAY)
+                    .params({ value: `0x${valueToStake.toString(16)}` })
+                    .build();
+            }
+
+            //STEP 6: CHECK VOTING POWER
+            let votingPowerTotal = await iconService.call(new IconBuilder.CallBuilder()
+                .to('cx0000000000000000000000000000000000000000')
+                .method('getStake')
+                .params({ address: fromAddress })
+                .build()
+            ).execute();
+
+
+            //STEP 7: VOTE FOR ADDRESS
+            setDelegationTransaction = new IconBuilder.CallTransactionBuilder()
                 .from(fromAddress)
                 .to('cx0000000000000000000000000000000000000000')
                 .version('0x3')
                 .nid('0x1')
                 .nonce('0x0')
                 .value('0x0')
-                .stepLimit(IconService.IconConverter.toBigNumber(108000))
-                .timestamp(Date.now() * 1000)
-                .method('claimIScore')
+                .stepLimit(IconService.IconConverter.toBigNumber(125000 + 25000/**single delegation*/))
+                .timestamp(Date.now() * 1000 + ICX_TX_DELAY * 2)
+                .method('setDelegation')
+                .params({
+                    delegations: [{
+                        address: toAddress,
+                        value: votingPowerTotal.stake.toString(16)
+                    }]
+                })
                 .build();
+
+            return [claimIScoreTransaction, setStakeTransaction, setDelegationTransaction].filter(Boolean);
         }
-
-        //STEP 3: GET AVAILABLE BALANCE FOR STAKING
-        let balance = await iconService.getBalance(fromAddress).execute();
-
-        //STEP 4: GET ALREADY STAKED BALANCE
-        let stakedBalance = await iconService.call(new IconBuilder.CallBuilder()
-            .to('cx0000000000000000000000000000000000000000')
-            .method('getStake')
-            .params({ address: fromAddress })
-            .build()
-        ).execute();
-
-        let valueToStake = balance.toNumber() - ICX_PRESERVE + parseInt(stakedBalance.stake);
-
-        if (valueToStake > ICX_PRESERVE) {
-            //STEP 5: STAKE ALL AVAILABLE BALANCE
-            setStakeTransaction = new IconBuilder.CallTransactionBuilder()
+        else {
+            let setStakeTransaction = new IconBuilder.CallTransactionBuilder()
                 .from(fromAddress)
                 .to('cx0000000000000000000000000000000000000000')
                 .version('0x3')
@@ -282,39 +330,26 @@ class ICON extends BaseConnector {
                 //TODO: Review
                 .stepLimit(IconService.IconConverter.toBigNumber(125000))
                 .timestamp(Date.now() * 1000 + ICX_TX_DELAY)
-                .params({ value: `0x${valueToStake.toString(16)}` })
+                //Stake nothing
+                .params({ value: "0x0" })
                 .build();
+
+            let setDelegationTransaction = new IconBuilder.CallTransactionBuilder()
+                .from(fromAddress)
+                .to('cx0000000000000000000000000000000000000000')
+                .version('0x3')
+                .nid('0x1')
+                .nonce('0x0')
+                .value('0x0')
+                .stepLimit(IconService.IconConverter.toBigNumber(125000 /**delegation*/))
+                .timestamp(Date.now() * 1000 + ICX_TX_DELAY * 2)
+                .method('setDelegation')
+                //Delegate to nobody
+                .params({})
+                .build();
+
+            return [/*setStakeTransaction,*/ setDelegationTransaction];
         }
-
-        //STEP 6: CHECK VOTING POWER
-        let votingPowerTotal = await iconService.call(new IconBuilder.CallBuilder()
-            .to('cx0000000000000000000000000000000000000000')
-            .method('getStake')
-            .params({ address: fromAddress })
-            .build()
-        ).execute();
-
-
-        //STEP 7: VOTE FOR ADDRESS
-        setDelegationTransaction = new IconBuilder.CallTransactionBuilder()
-            .from(fromAddress)
-            .to('cx0000000000000000000000000000000000000000')
-            .version('0x3')
-            .nid('0x1')
-            .nonce('0x0')
-            .value('0x0')
-            .stepLimit(IconService.IconConverter.toBigNumber(125000 + 25000/**single delegation*/))
-            .timestamp(Date.now() * 1000 + ICX_TX_DELAY * 2)
-            .method('setDelegation')
-            .params({
-                delegations: [{
-                    address: toAddress,
-                    value: votingPowerTotal.stake.toString(16)
-                }]
-            })
-            .build();
-
-        return [claimIScoreTransaction, setStakeTransaction, setDelegationTransaction].filter(Boolean);
     }
 
     async prepareTransfer(fromAddress, toAddress, amount) {
