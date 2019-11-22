@@ -272,8 +272,8 @@ class IOSTCoin extends BaseConnector {
             gasRamData = gasRamData.data.data;
 
             gasRamData = {
-                gas: gasRamData.gas_info ? gasRamData.gas_info.current_total : null,
-                ram: gasRamData.ram_info ? gasRamData.ram_info.available : null
+                gas: gasRamData.gas_info ? gasRamData.gas_info.current_total && parseInt(gasRamData.gas_info.current_total) : null,
+                ram: gasRamData.ram_info ? gasRamData.ram_info.available && parseInt(gasRamData.ram_info.available) : null
             }
         }
         catch (err) {
