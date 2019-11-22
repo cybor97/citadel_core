@@ -259,6 +259,26 @@ class IOSTCoin extends BaseConnector {
             }
         }
 
+        let gasRamData = null;
+        try {
+            gasRamData = await axios.get(this.apiUrlAdditional, {
+                params: {
+                    apikey: config.iostCoin.apikey,
+                    module: 'account',
+                    action: 'get-account-detail',
+                    account: address
+                }
+            });
+            gasRamData = gasRamData.data.data;
+
+            gasRamData = {
+                gas: gasRamData.gas_info ? gasRamData.gas_info.current_total : null,
+                ram: gasRamData.ram_info ? gasRamData.ram_info.available : null
+            }
+        }
+        catch (err) {
+            log.err('Failed to get delegatedData(get-account-detail) from iostabc', err.response && err.response.data ? err.response.data : err);
+        }
 
         let delegatedData = null;
         try {
@@ -277,6 +297,7 @@ class IOSTCoin extends BaseConnector {
                 throw err;
             }
         }
+
         delegatedData = delegatedData.data;
         let delegatedTotal = 0;
         if (delegatedData.voters) {
@@ -290,7 +311,8 @@ class IOSTCoin extends BaseConnector {
         return {
             mainBalance: availableBalanceData ? parseFloat(availableBalanceData.balance) : 0,
             delegatedBalance: delegatedTotal,
-            originatedAddresses: createdAccounts
+            originatedAddresses: createdAccounts,
+            gasRamData: gasRamData
         }
     }
 
