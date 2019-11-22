@@ -221,7 +221,8 @@ class ICON extends BaseConnector {
         return {
             mainBalance: balance / ICON_MULTIPLIER,
             delegatedBalance: parseInt(delegation.totalDelegated) / ICON_MULTIPLIER,
-            originatedAddresses: delegation.delegations.map(c => c.address)
+            originatedAddresses: delegation.delegations.map(c => c.address),
+            gasRamData: { gas: null, ram: null }
         }
     }
 

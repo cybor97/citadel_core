@@ -427,7 +427,8 @@ class TEZ extends BaseConnector {
         return {
             mainBalance: mainBalance,
             delegatedBalance: delegatedBalance,
-            originatedAddresses: addresses
+            originatedAddresses: addresses,
+            gasRamData: { gas: null, ram: null }
         }
     }
 
