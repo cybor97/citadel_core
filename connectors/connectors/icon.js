@@ -348,7 +348,7 @@ class ICON extends BaseConnector {
                 .params({})
                 .build();
 
-            return [/*setStakeTransaction,*/ setDelegationTransaction];
+            return [setStakeTransaction, setDelegationTransaction];
         }
     }
 
