@@ -216,6 +216,12 @@ class ETHToken extends BaseConnector {
         }
     }
 
+    async getEthBalance(address) {
+        let web3 = new Web3(this.getParityUrl());
+        let balanceData = await web3.eth.getBalance(address, 'latest');
+        return parseInt(balanceData);
+    }
+
     getParityUrl() {
         return `${
             config.parity.protocol || 'http'}://${

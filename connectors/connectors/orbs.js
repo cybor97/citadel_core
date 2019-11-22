@@ -288,6 +288,16 @@ class ORBS extends ETHToken {
         });
     }
 
+    async getDelegationBalanceInfo(address) {
+        return {
+            mainBalance: null,
+            delegatedBalance: null,
+            originatedAddresses: null,
+            gasRamData: { gas: await this.getEthBalance(address), ram: null }
+        }
+
+    }
+
     async getVoting() {
         let validators = (await axios.get(`${this.apiUrlVotingProxy}/validators`)).data;
 
