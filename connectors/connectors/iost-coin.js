@@ -1,7 +1,11 @@
+const http = require('http');
+const https = require('https');
 const axios = require('axios');
+const IOST = require('iost');
+const ZabbixSender = require('node-zabbix-sender');
+
 const BaseConnector = require('./baseConnector');
 const config = require('../../config');
-const IOST = require('iost');
 const log = require('../../utils/log');
 const { ValidationError } = require('../../utils/errors');
 const bs58 = require('bs58');
@@ -25,6 +29,26 @@ class IOSTCoin extends BaseConnector {
             gasLimit: 100000,
             delay: 0
         });
+        this.axiosClient = axios.create({
+            timeout: 10000,
+            httpAgent: new http.Agent({ keepAlive: true }),
+            httpsAgent: new https.Agent({ keepAlive: true })
+        });
+        if (config.iostCoin.additionalIp && config.iostCoin.additionalPort) {
+            this.additionalAxiosClient = axios.create({
+                timeout: 10000,
+                httpAgent: new http.Agent({ keepAlive: true }),
+                httpsAgent: new https.Agent({ keepAlive: true })
+            });
+        }
+
+        if (config.zabbix) {
+            this.zabbixSender = new ZabbixSender({
+                host: config.zabbix.ip,
+                port: config.zabbix.port,
+                items_host: 'CitadelConnectorIOST'
+            });
+        }
     }
 
     validateAddress(address) {
@@ -62,6 +86,16 @@ class IOSTCoin extends BaseConnector {
                 }
             });
             newTransactionsData = resp.data.data.transactions;
+            for (let tx of newTransactionsData) {
+                const data = await this.rpc.transaction.getTxByHash(tx.tx_hash);
+                let receipt = data.transaction.tx_receipt;
+
+                tx.gasUsed = receipt.gas_usage;
+                if (receipt.ram_usage['token.iost']) {
+                    tx.ramUsed = parseInt(receipt.ram_usage['token.iost']);
+                }
+            }
+
             log.info('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactionsData.length}`);
 
             result = result.concat(newTransactionsData
@@ -82,6 +116,10 @@ class IOSTCoin extends BaseConnector {
                     fromAlias: tx.from,
                     to: tx.to,
                     fee: 0,
+
+                    gasUsed: tx.gasUsed,
+                    ramUsed: tx.ramUsed,
+
                     originalOpType: `${tx.contract}/${tx.action_name}`,
                     type: this.rewardSources.includes(tx.from) ? 'payment' : opTypes[`${tx.contract}/${tx.action_name}`],
                     path: JSON.stringify({ queryCount: QUERY_COUNT, offset: offset }),
@@ -97,6 +135,81 @@ class IOSTCoin extends BaseConnector {
 
         return result;
 
+    }
+
+    async getNextBlock(lastPathsNet, serviceAddresses) {
+        let path = lastPathsNet && lastPathsNet.path;
+        if (typeof (path) === 'string') {
+            path = JSON.parse(path);
+        }
+        let opTypes = OP_TYPES.reduce((prev, next) => {
+            prev[next.sourceType] = next.type;
+            return prev;
+        }, {});
+
+        let blockNumber = path && path.blockNumber != null ? parseInt(path.blockNumber) + 1 : 0;
+        log.info(`fromBlock ${blockNumber}`);
+        let transactions = null;
+
+        while (!transactions || !transactions.length) {
+            log.info(`blockNumber ${blockNumber}`);
+
+            let block = null;
+            if (config.iostCoin.additionalIp && config.iostCoin.additionalPort) {
+                block = await Promise.race([
+                    this.axiosClient.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getBlockByNumber/${blockNumber}/true`),
+                    this.additionalAxiosClient.get(`http://${config.iostCoin.additionalIp}:${config.iostCoin.additionalPort}/getBlockByNumber/${blockNumber}/true`)
+                ]);
+            }
+            else {
+                block = await this.axiosClient.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getBlockByNumber/${blockNumber}/true`);
+            }
+            transactions = block.data.block.transactions
+                .map(tx => (tx.actions || [])
+                    .map(txAction => {
+                        //0 - token, 1 - from, 2 - to, 3 - amount, 4 - message(optional)
+                        txAction.data = JSON.parse(txAction.data);
+                        return txAction;
+                    })
+                    .filter(txAction => txAction.data[0] === 'iost')
+                    .map(txAction => ({
+                        hash: tx.hash,
+                        //iost stores timestamp in ns
+                        date: parseInt(tx.time) / 1000000,
+                        value: typeof (txAction.data[3]) !== 'object' ? txAction.data[3] || 0 : 0,
+                        comment: txAction.data[4] || '',
+                        from: typeof (txAction.data[1]) === 'string' ? txAction.data[1] : JSON.stringify(txAction.data[1]) || null,
+                        fromAlias: typeof (txAction.data[1]) === 'string' ? txAction.data[1] : JSON.stringify(txAction.data[1]) || null,
+                        to: typeof (txAction.data[2]) === 'string' ? txAction.data[2] : JSON.stringify(txAction.data[2]) || null,
+                        //iost hasn't fee in token(even for base.iost)
+                        fee: 0,
+
+                        gasUsed: tx.tx_receipt.gas_usage,
+                        ramUsed: tx.tx_receipt.ram_usage && parseInt(tx.tx_receipt.ram_usage['token.iost']),
+
+                        originalOpType: `${txAction.contract}/${txAction.action_name}`,
+                        type: this.rewardSources.includes(tx.from) ? 'payment' : opTypes[`${tx.contract}/${tx.action_name}`],
+                        path: JSON.stringify({ blockNumber: parseInt(block.data.block.number) }),
+                        currency: 'iost-coin',
+                        isCancelled: (tx.tx_receipt.status_code != 'SUCCESS')
+                    })))
+                .reduce((prev, next) => prev.concat(next), []);
+
+            blockNumber++;
+        }
+
+        try {
+            await this.sendZabbix({
+                prevBlockNumber: path ? path.blockNumber : 0,
+                blockNumber: blockNumber,
+                blockTransactions: transactions ? transactions.length : 0
+            });
+        }
+        catch (err) {
+            log.err('sendZabbix', err);
+        }
+
+        return transactions;
     }
 
     async getInfo() {
@@ -146,6 +259,26 @@ class IOSTCoin extends BaseConnector {
             }
         }
 
+        let gasRamData = null;
+        try {
+            gasRamData = await axios.get(this.apiUrlAdditional, {
+                params: {
+                    apikey: config.iostCoin.apikey,
+                    module: 'account',
+                    action: 'get-account-detail',
+                    account: address
+                }
+            });
+            gasRamData = gasRamData.data.data;
+
+            gasRamData = {
+                gas: gasRamData.gas_info ? gasRamData.gas_info.current_total && parseInt(gasRamData.gas_info.current_total) : null,
+                ram: gasRamData.ram_info ? gasRamData.ram_info.available && parseInt(gasRamData.ram_info.available) : null
+            }
+        }
+        catch (err) {
+            log.err('Failed to get delegatedData(get-account-detail) from iostabc', err.response && err.response.data ? err.response.data : err);
+        }
 
         let delegatedData = null;
         try {
@@ -164,6 +297,7 @@ class IOSTCoin extends BaseConnector {
                 throw err;
             }
         }
+
         delegatedData = delegatedData.data;
         let delegatedTotal = 0;
         if (delegatedData && delegatedData.voters) {
@@ -175,9 +309,10 @@ class IOSTCoin extends BaseConnector {
         createdAccounts = createdAccounts.data.accounts;
 
         return {
-            mainBalance: parseFloat(availableBalanceData.balance),
+            mainBalance: availableBalanceData ? parseFloat(availableBalanceData.balance) : 0,
             delegatedBalance: delegatedTotal,
-            originatedAddresses: createdAccounts
+            originatedAddresses: createdAccounts,
+            gasRamData: gasRamData
         }
     }
 
@@ -308,26 +443,96 @@ class IOSTCoin extends BaseConnector {
     }
 
     async prepareDelegation(fromAddress, toAddress) {
-        let availableBalanceData = await axios.get(this.apiUrlAdditional, {
-            params: {
-                apikey: config.iostCoin.apikey,
-                module: 'account',
-                action: 'get-account-balance',
-                account: fromAddress
-            }
-        });
-        let amount = availableBalanceData.data.data.balance;
-        let transaction = this.iost.callABI('vote_producer.iost', 'vote', [fromAddress, toAddress, amount.toString()]);
-        //Recommended for vote
-        transaction.gasLimit = 300000;
-        transaction.amount_limit = [
-            {
-                token: "*",
-                value: "unlimited"
-            }
-        ];
+        if (toAddress) {
+            let availableBalanceData = await axios.get(this.apiUrlAdditional, {
+                params: {
+                    apikey: config.iostCoin.apikey,
+                    module: 'account',
+                    action: 'get-account-balance',
+                    account: fromAddress
+                }
+            });
+            let amount = availableBalanceData.data.data.balance;
+            let transaction = this.iost.callABI('vote_producer.iost', 'vote', [fromAddress, toAddress, amount.toString()]);
+            //Recommended for vote
+            transaction.gasLimit = 300000;
+            transaction.amount_limit = [
+                {
+                    token: "*",
+                    value: "unlimited"
+                }
+            ];
+            return transaction;
+        }
+        else {
+            let availableBalanceData = await axios.get(this.apiUrlAdditional, {
+                params: {
+                    apikey: config.iostCoin.apikey,
+                    module: 'account',
+                    action: 'get-account-balance',
+                    account: fromAddress
+                }
+            });
+            availableBalanceData = availableBalanceData.data;
+            let operations = [];
+            let queryCount = 50;
 
-        return transaction;
+            let newOperations = null;
+            let page = 1;
+            while (newOperations === null || newOperations.length == queryCount) {
+                newOperations = await axios.get(`${this.apiUrl}/account/${fromAddress}/actions`, {
+                    params: {
+                        status: 'SUCCESS',
+                        type: 'vote',
+                        size: queryCount,
+                        page: page
+                    }
+                });
+
+                newOperations = newOperations.data.actions.map(c => {
+                    let [from, to, value] = JSON.parse(c.data);
+                    return {
+                        from: from,
+                        to: to,
+                        value: parseFloat(value),
+                        type: c.action_name
+                    };
+                });
+
+                operations = operations.concat(newOperations);
+
+                page++;
+            }
+            let addressesData = {};
+            for (let operation of operations) {
+                if (operation.from == fromAddress) {
+                    if (!addressesData[operation.to]) {
+                        addressesData[operation.to] = 0;
+                    }
+                    addressesData[operation.to] += operation.type == 'vote' ? operation.value : -operation.value;
+                }
+            }
+            let transaction = null;
+            for (let address in addressesData) {
+                if (transaction == null) {
+                    transaction = this.iost.callABI('vote_producer.iost', 'unvote', [fromAddress, address, addressesData[address].toString()]);
+                    //Recommended for vote
+                    transaction.gasLimit = 300000;
+                    transaction.amount_limit = [
+                        {
+                            token: "*",
+                            value: "unlimited"
+                        }
+                    ];
+                }
+                else {
+                    transaction.addAction('vote_producer.iost', 'unvote', JSON.stringify([fromAddress, address, addressesData[address].toString()]));
+                }
+            }
+
+            return transaction;
+        }
+
     }
 
     async sendTransaction(address, signedTransaction) {

@@ -1,11 +1,16 @@
 const axios = require('axios');
 const Web3 = require('web3');
 const EventEmitter = require('events');
+const ZabbixSender = require('node-zabbix-sender');
+
 const ETHToken = require('./ethToken');
 const Bittrex = require('../bittrex');
 const config = require('../../config')
 
 const log = require('../../utils/log');
+
+const STARTS_FROM_BLOCK = 5710114;
+const BLOCKS_QUERY_COUNT = 10;
 
 const DELEGATE_CONTRACT_HASH = '0x30f855afb78758Aa4C2dc706fb0fA3A98c865d2d';
 const DELEGATE_TOPIC = '0x510b11bb3f3c799b11307c01ab7db0d335683ef5b2da98f7697de744f465eacc';
@@ -23,6 +28,13 @@ class ORBS extends ETHToken {
         super();
         this.subscriptions = new Map();
         this.apiUrlVotingProxy = 'https://orbs-voting-proxy-server.herokuapp.com/api';
+        if (config.zabbix) {
+            this.zabbixSender = new ZabbixSender({
+                host: config.zabbix.ip,
+                port: config.zabbix.port,
+                items_host: 'CitadelConnectorORBS'
+            });
+        }
     }
 
     subscribe(address, lastPaths) {
@@ -122,6 +134,64 @@ class ORBS extends ETHToken {
         );
     }
 
+    async getNextBlock(lastPathsNet, serviceAddresses, reCreateWeb3) {
+        let path = lastPathsNet && lastPathsNet.path;
+        if (typeof (path) === 'string') {
+            path = JSON.parse(path);
+        }
+        let web3 = new Web3(this.getParityUrl());
+
+        let blockNumber = path && path.blockNumber != null ? path.blockNumber + 1 : 1;
+        if (!blockNumber || blockNumber < STARTS_FROM_BLOCK) {
+            blockNumber = STARTS_FROM_BLOCK;
+        }
+        let latest = await web3.eth.getBlockNumber()
+
+        let transactions = null;
+        while (!transactions || !transactions.length) {
+            log.info(`blockNumber ${blockNumber}`);
+            if (blockNumber > latest) {
+                log.info(`reached the end: ${blockNumber}/${latest}`);
+                break;
+            }
+            try {
+                let toBlockNumber = blockNumber + BLOCKS_QUERY_COUNT;
+                transactions = await this.getTransactionsForContractMethodAdvanced({
+                    contractHash: TRANSFER_CONTRACT_HASH,
+                    methodTopic: TRANSFER_TOPIC,
+                    type: 'supplement',
+                    fromBlock: blockNumber,
+                    toBlock: toBlockNumber > latest ? latest : toBlockNumber,
+                    currency: 'orbs',
+                    web3: web3
+                });
+            }
+            catch (err) {
+                //web3 sometimes throws weird exception "connection refused if it actually doesn't. Re-creation(reset keep-alive?) helps"
+                if (!reCreateWeb3) {
+                    log.warn('Web3 error, re-creating', err);
+                    return await this.getNextBlock({ path: { blockNumber: blockNumber - 1 } }, serviceAddresses, true);
+                }
+                throw err;
+            }
+            blockNumber += BLOCKS_QUERY_COUNT;
+        }
+
+        try {
+            await this.sendZabbix({
+                prevBlockNumber: path ? path.blockNumber : 0,
+                blockNumber: blockNumber,
+                blockTransactions: transactions ? transactions.length : 0
+            });
+        }
+        catch (err) {
+            log.err('sendZabbix', err);
+        }
+
+
+        return transactions;
+    }
+
     async getRewardTransactions(address, rewardLastUpdate = null) {
         let addressClean = address.replace(`0x${PRECENDING_ZEROES}`, '0x');
         let data = null;
@@ -216,6 +286,16 @@ class ORBS extends ETHToken {
             yield: 18,
             unbondingPeriod: 'instant'
         });
+    }
+
+    async getDelegationBalanceInfo(address) {
+        return {
+            mainBalance: null,
+            delegatedBalance: null,
+            originatedAddresses: null,
+            gasRamData: { gas: await this.getEthBalance(address), ram: null }
+        }
+
     }
 
     async getVoting() {

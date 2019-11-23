@@ -36,7 +36,7 @@ const Address = connection.define('address', {
     isService: {
         type: sequelize.BOOLEAN,
         allowNull: false,
-        defaultValue: 0
+        defaultValue: false
     },
     created: {
         type: sequelize.BIGINT,
@@ -54,6 +54,5 @@ const Address = connection.define('address', {
     timestamps: false,
     alter: true
 });
-Address.sync();
 
 module.exports = Address;

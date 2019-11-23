@@ -9,15 +9,24 @@ const log = require('../utils/log');
 
 const config = require('../config');
 const LAST_PATHS_QUERY = `
-    SELECT id, originalOpType, path, type
-    FROM citadel_core.transactions 
+    SELECT id, "originalOpType", path, type
+    FROM transactions 
     WHERE id IN (
         SELECT max(id)
         FROM transactions
-        WHERE addressId = :addressId
-        GROUP BY originalOpType
+        WHERE "addressId" = :addressId
+        GROUP BY "originalOpType"
     );
- `
+ `;
+
+const LAST_PATH_QUERY_NET = `
+    SELECT id, "originalOpType", path, type
+    FROM transactions
+    WHERE transactions.currency = :net
+    ORDER BY transactions.id DESC
+    LIMIT 1;
+ `;
+
 
 class ExplorerUpdater {
     static async init() {
@@ -29,57 +38,89 @@ class ExplorerUpdater {
         this.initConnectors();
         let connectors = this.connectors;
         //TODO: Re-implement: should run as different instances(best: 1-app, 1-updater, N-workers)
-        Object.keys(connectors).forEach(net => {
+        Object.keys(connectors).forEach(async net => {
             if (specificNet && net !== specificNet) {
                 return;
             }
-            Promise.resolve().then(async () => {
-                const subscribedAddresses = new Set();
+
+            let serviceAddresses = await Address.findAll({
+                order: [['created', 'desc']],
+                where: {
+                    isService: true,
+                    net: net
+                }
+            });
+
+            if (connectors[net].getNextBlock) {
                 while (true) {
                     try {
-                        let addresses = await Address.findAll({
-                            limit: 1,
-                            order: [['updated', 'asc']],
-                            where: { net: net }
+                        let time = Date.now();
+                        let lastPathsNet = await sequelizeConnection.query(LAST_PATH_QUERY_NET, {
+                            replacements: { net: net },
+                            type: sequelizeConnection.QueryTypes.SELECT
                         });
-                        let serviceAddresses = await Address.findAll({
-                            order: [['created', 'desc']],
-                            where: {
-                                isService: true,
-                                net: net
-                            }
-                        });
+                        lastPathsNet = lastPathsNet && lastPathsNet.pop();
+                        let preparationTime = Date.now() - time;
+                        log.info(`Preparation time ${preparationTime}`);
 
-                        if (addresses.length > 0) {
-                            let address = addresses[0];
-                            address.updated = Date.now();
-                            await address.save();
+                        let transactions = await connectors[net].getNextBlock(lastPathsNet, serviceAddresses);
+                        log.info(`Fetching time ${Date.now() - time - preparationTime}`);
 
-                            if (connectors[address.net].subscribe) {
-                                if (!subscribedAddresses.has(address.address)) {
-                                    let lastPaths = await sequelizeConnection.query(LAST_PATHS_QUERY, {
-                                        replacements: { addressId: address.id },
-                                        type: sequelizeConnection.QueryTypes.SELECT
-                                    });
+                        await this.saveDbTransactions(net, transactions);
+                        log.info(`Iteration time ${Date.now() - time}`);
 
-                                    connectors[address.net]
-                                        .subscribe(address.address, lastPaths)
-                                        .on('data', data => this.saveDb(address, data));
-                                    subscribedAddresses.add(address.address);
-                                }
-                            }
-                            else {
-                                await this.doWork(net, connectors[address.net], address, serviceAddresses);
-                            }
+                        if (transactions.length === 0) {
+                            log.info(`Sync ${net}!`);
                             await new Promise(resolve => setTimeout(resolve, config.updateInterval));
                         }
                     }
                     catch (err) {
-                        log.err(err);
-                        await new Promise(resolve => setTimeout(resolve, config.updateInterval * 2))
+                        log.err('getNextBlock error', err);
+                        await new Promise(resolve => setTimeout(resolve, config.updateInterval));
                     }
                 }
-            })
+            }
+            else {
+                Promise.resolve().then(async () => {
+                    const subscribedAddresses = new Set();
+                    while (true) {
+                        try {
+                            let addresses = await Address.findAll({
+                                limit: 1,
+                                order: [['updated', 'asc']],
+                                where: { net: net }
+                            });
+                            if (addresses.length > 0) {
+                                let address = addresses[0];
+                                address.updated = Date.now();
+                                await address.save();
+
+                                if (connectors[address.net].subscribe) {
+                                    if (!subscribedAddresses.has(address.address)) {
+                                        let lastPaths = await sequelizeConnection.query(LAST_PATHS_QUERY, {
+                                            replacements: { addressId: address.id },
+                                            type: sequelizeConnection.QueryTypes.SELECT
+                                        });
+                                        connectors[address.net]
+                                            .subscribe(address.address, lastPaths)
+                                            .on('data', data => this.saveDb(address, data));
+                                        subscribedAddresses.add(address.address);
+                                    }
+                                }
+                                else {
+                                    await this.doWork(net, connectors[address.net], address, serviceAddresses);
+                                }
+                            }
+                            await new Promise(resolve => setTimeout(resolve, config.updateInterval));
+
+                        }
+                        catch (err) {
+                            log.err(err);
+                            await new Promise(resolve => setTimeout(resolve, config.updateInterval * 2))
+                        }
+                    }
+                });
+            }
         });
     }
 
@@ -135,6 +176,9 @@ class ExplorerUpdater {
                 address.isExchange = true;
                 await address.save();
             }
+            else {
+                log.err(err);
+            }
         }
     }
 
@@ -173,12 +217,53 @@ class ExplorerUpdater {
             await txSqlTransaction.commit();
         }
         catch (exc) {
-            log.err(`Update failed, rollback ${address.address} (${address.net})`);
+            log.err(`Update failed, rollback ${address.address} (${address.net})`, exc);
             await new Promise(resolve => setTimeout(resolve, config.updateInterval * 2))
             await txSqlTransaction.rollback();
         }
         address.updated = Date.now();
         await address.save();
+    }
+
+    static async saveDbTransactions(net, transactions) {
+        log.info(`Pushing DB (${net}, ${transactions && transactions.length || 0} txes)`);
+
+        const txSqlTransaction = await sequelizeConnection.transaction();
+        try {
+            await Promise.all(transactions.map(async tx => {
+                if (process.argv.includes('-vTX')) {
+                    log.info(`>tx: ${tx.hash} (${tx.type})`);
+                }
+                let forceUpdate = tx.forceUpdate;
+                delete tx.forceUpdate;
+                if (config.trustedAddresses && tx.type == 'payment' && config.trustedAddresses.includes(tx.from)) {
+                    tx.type = 'approved_payment';
+                }
+
+                let created = (await Transaction.findOrCreate({
+                    where: { hash: tx.hash, currency: net },
+                    defaults: Object.assign({ currency: net }, tx),
+                    transaction: txSqlTransaction
+                }))[1];
+
+                if (forceUpdate && !created) {
+                    let transaction = await Transaction.findOne({
+                        where: { hash: tx.hash, currency: net }
+                    });
+
+                    let newTxData = Object.assign({ currency: net }, tx);
+                    for (let key in Object.keys(newTxData)) {
+                        transaction.key = newTxData[key];
+                    }
+                }
+            }));
+            await txSqlTransaction.commit();
+        }
+        catch (exc) {
+            log.err(`Update failed, rollback ${net}`, exc);
+            await new Promise(resolve => setTimeout(resolve, config.updateInterval * 2))
+            await txSqlTransaction.rollback();
+        }
     }
 
     static initConnectors() {

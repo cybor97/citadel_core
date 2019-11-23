@@ -20,21 +20,39 @@ const Transaction = connection.define('transactions', {
     originalOpType: sequelize.TEXT,
     path: sequelize.TEXT,
 
+    currency: {
+        type: sequelize.STRING,
+        allowNull: true
+    },
     hash: sequelize.STRING,
     date: sequelize.BIGINT,
     value: sequelize.DOUBLE,
-    from: sequelize.STRING,
-    fromAlias: sequelize.STRING,
-    to: sequelize.STRING,
+
+    feeBlockchain: {
+        type: sequelize.DOUBLE,
+        allowNull: true
+    },
+    gasUsed: {
+        type: sequelize.DOUBLE,
+        allowNull: true
+    },
+    ramUsed: {
+        type: sequelize.DOUBLE,
+        allowNull: true
+    },
+
+    from: sequelize.TEXT,
+    fromAlias: sequelize.TEXT,
+    to: sequelize.TEXT,
     fee: sequelize.DOUBLE,
     type: sequelize.STRING,
     comment: sequelize.TEXT,
     isCancelled: sequelize.BOOLEAN
-}, { timestamps: false });
+}, { timestamps: false, alter: false });
 
 Address.hasMany(Transaction);
 Transaction.belongsTo(Address);
 
-Transaction.sync();
+Transaction.sync(true);
 
 module.exports = Transaction;

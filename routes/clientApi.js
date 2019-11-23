@@ -224,14 +224,11 @@ router
             }
 
             let transactions = await Transaction.findAndCountAll(Object.assign({
-                attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
+                attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                 where: whereParams,
-                include: [{ model: Address, where: { address: req.params.address } }]
             }, utils.preparePagination(req.query)));
 
-            if (!transactions.length && req.query.forceUpdate
-                //FIXME: Remove ASAP(as subscriptions brought to work)
-                || req.params.net === 'orbs' || req.params.net === 'iost') {
+            if (!transactions.length && req.query.forceUpdate) {
                 let serviceAddresses = await Address.findAll({
                     order: [['created', 'desc']],
                     where: {
@@ -241,10 +238,10 @@ router
                 });
 
                 await explorerUpdater.doWork(req.params.net, connector, address, serviceAddresses);
-                //FIXME: Review duplicate
+
                 transactions = await Transaction.findAndCountAll(Object.assign({
                     attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
-                    where: whereParams,
+                    where: whereParams
                 }, utils.preparePagination(req.query)));
             }
 
@@ -255,6 +252,9 @@ router
                 if (tx.type === 'supplement' && txData.from && txData.from.toLowerCase() === req.params.address.toLowerCase()) {
                     txData.type = 'conclusion';
                 }
+
+                delete txData.address;
+
                 return txData;
             });
             address.transactionsCount = transactions.count;

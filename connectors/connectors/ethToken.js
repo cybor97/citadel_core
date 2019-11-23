@@ -17,11 +17,24 @@ class ETHToken extends BaseConnector {
         return !!address.match(/^0x[a-zA-Z0-9]*$/);
     }
 
-    async getTransactionsForContractMethod(contractHash, methodTopic, type, address, topic, fromBlock = null) {
-        const web3 = new Web3(this.getParityUrl());
+    async getTransactionsForContractMethod(contractHash, methodTopic, type, address, topic) {
+        return await this.getTransactionsForContractMethodAdvanced({
+            contractHash: contractHash,
+            methodTopic: methodTopic,
+            type: type,
+            address: address,
+            topic: topic
+        });
+    }
+
+    async getTransactionsForContractMethodAdvanced(props) {
+        let { contractHash, methodTopic, type, address, topic, fromBlock, toBlock, currency, web3 } = props;
+        if (!web3) {
+            web3 = new Web3(this.getParityUrl());
+        }
         const resp = await web3.eth.getPastLogs({
             fromBlock: fromBlock || 'earliest',
-            toBlock: 'latest',
+            toBlock: toBlock || 'latest',
             address: contractHash,
             topics: [methodTopic, topic === 'topic1' ? address : null, topic === 'topic2' ? address : null]
         });
@@ -29,6 +42,8 @@ class ETHToken extends BaseConnector {
         let result = await Promise.all(resp
             .map(async tx => {
                 let blockData = await web3.eth.getBlock(tx.blockHash);
+
+                let txData = await web3.eth.getTransaction(tx.transactionHash);
 
                 return ({
                     //0 is methodId
@@ -41,7 +56,11 @@ class ETHToken extends BaseConnector {
                     fromAlias: null,
                     //Fee for eth tokens is always 0(in token)
                     fee: 0,//parseInt(txData.gas) * parseInt(txData.gasPrice) / VALUE_FEE_MULTIPLIER,
+                    feeBlockchain: parseInt(txData.gas) * parseInt(txData.gasPrice) / VALUE_FEE_MULTIPLIER,
+                    gasUsed: parseInt(txData.gas) / VALUE_FEE_MULTIPLIER,
+
                     type: type,
+                    currency: currency,
                     path: JSON.stringify({
                         blockNumber: parseInt(tx.blockNumber),
                         transactionIndex: parseInt(tx.transactionIndex)
@@ -133,6 +152,7 @@ class ETHToken extends BaseConnector {
         });
     }
 
+    //TODO: Implement undelegate(on adding supported token)
     async prepareDelegation(fromAddress, toAddress) {
         if (!this.getDelegationContractAddress) {
             throw new ValidationError(`Specified net doesn't support delegation or not yet implemented.`);
@@ -164,7 +184,7 @@ class ETHToken extends BaseConnector {
             return await prepareOperation();
         }
         catch (err) {
-            console.log(typeof (err), err.message);
+            log.err(typeof (err), err.message);
             if (err && err.message) {
                 if (err.message.match(/(Provided address .* is invalid)|(invalid address)/)) {
                     throw new ValidationError('Invalid address');
@@ -194,6 +214,12 @@ class ETHToken extends BaseConnector {
 
             throw err;
         }
+    }
+
+    async getEthBalance(address) {
+        let web3 = new Web3(this.getParityUrl());
+        let balanceData = await web3.eth.getBalance(address, 'latest');
+        return parseInt(balanceData) / VALUE_FEE_MULTIPLIER;
     }
 
     getParityUrl() {
