@@ -779,6 +779,8 @@ router
      * @apiGroup sendTransaction
      * @apiDescription Prepare claim reward
      * 
+     * @apiParam {Boolean} [isProducer] Is producer(miner/baker/etc) 
+     * 
      * @apiSuccess transaction Prepared transaction, specific for each net({opbytes, opOb} for tezos)
      */
     .post('/:net/address/:address/transactions/prepare-claim-reward', async (req, res) => {
