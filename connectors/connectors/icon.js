@@ -367,6 +367,20 @@ class ICON extends BaseConnector {
             .build();
     }
 
+    async prepareClaimReward(fromAddress, isProducer) {
+        return new IconService.IconBuilder.CallTransactionBuilder()
+            .from(fromAddress)
+            .to('cx0000000000000000000000000000000000000000')
+            .version('0x3')
+            .nid('0x1')
+            .nonce('0x0')
+            .value('0x0')
+            .stepLimit(IconService.IconConverter.toBigNumber(108000))
+            .timestamp(Date.now() * 1000)
+            .method('claimIScore')
+            .build();
+    }
+
     async sendTransaction(address, signedTransaction) {
         try {
             if (signedTransaction instanceof Array) {

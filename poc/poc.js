@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     signAndUnpledgeButton.onclick = signTx.bind(this, 'unpledge');
     signAndBuyRamButton.onclick = signTx.bind(this, 'buy-ram');
     signAndSellRamButton.onclick = signTx.bind(this, 'sell-ram');
-
+    signAndClaimRewardButton.onclick = signTx.bind(this, 'claim-reward');
 });
 
 function onSwitchNet(net) {
@@ -35,7 +35,8 @@ function onSwitchNet(net) {
     signAndPledgeButton.style.display = displayIOSTSpecific;
     signAndUnpledgeButton.style.display = displayIOSTSpecific;
     signAndBuyRamButton.style.display = displayIOSTSpecific;
-    signAndSellRamButton.style.display = displayIOSTSpecific;
+
+    signAndClaimRewardButton.style.display = ['iost-coin', 'icon'].includes(net) ? 'block' : 'none';
 }
 
 function signTx(opType) {

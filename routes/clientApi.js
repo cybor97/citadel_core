@@ -773,6 +773,29 @@ router
         res.status(200).send(transaction);
     })
 
+    /**
+     * @api {post} /net/:net/address/:address/transactions/prepare-claim-reward Prepare claim reward
+     * @apiName prepareClaimReward
+     * @apiGroup sendTransaction
+     * @apiDescription Prepare claim reward
+     * 
+     * @apiSuccess transaction Prepared transaction, specific for each net({opbytes, opOb} for tezos)
+     */
+    .post('/:net/address/:address/transactions/prepare-claim-reward', async (req, res) => {
+        let connectors = Connectors.getConnectors();
+        if (!connectors[req.params.net]) {
+            return res.status(400).send({ message: 'Specified net is not supported!' });
+        }
+
+        let connector = (new connectors[req.params.net]());
+        if (!connector.prepareClaimReward) {
+            return res.status(400).send({ message: "Specified net doesn't support claiming rewards or not yet implemented." });
+        }
+
+        let transaction = await connector.prepareClaimReward(req.params.address, req.body.isProducer);
+
+        res.status(200).send(transaction);
+    })
 
     /**
      * @api {post} /net/:net/address/:address/transactions/send Send signed transaction
