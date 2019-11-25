@@ -535,6 +535,14 @@ class IOSTCoin extends BaseConnector {
 
     }
 
+    async prepareClaimReward(fromAddress, isProducer) {
+        let transaction = this.iost.callABI('vote_producer.iost', 'voterWithdraw', [fromAddress]);
+        if (isProducer) {
+            transaction.addAction('vote_producer.iost', 'candidateWithdraw', JSON.stringify([fromAddress]));
+        }
+        return transaction;
+    }
+
     async sendTransaction(address, signedTransaction) {
         try {
             let accountInfo = await axios.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getAccount/${address}/true`);
