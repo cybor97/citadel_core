@@ -1073,9 +1073,9 @@ router
 
     /**
      * @api {post} /net/address/delegation-balance-info/get-batch Delegation balance info(batch)
-     * @apiName delegationBalanceInfo
+     * @apiName delegationBalanceInfoBatch
      * @apiGroup delegationBalanceInfo
-     * @apiDescription Get delegation balance info
+     * @apiDescription Get delegation balance info(batch)
      *
      * @apiParam {Object} nets{[net]:[...]}
      * 
