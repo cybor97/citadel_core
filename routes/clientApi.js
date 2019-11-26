@@ -1037,7 +1037,7 @@ router
     })
 
     /**
-     * @api {post} /net/:net/address/:address/delegation-balance-info Delegation balance info
+     * @api {get} /net/:net/address/:address/delegation-balance-info Delegation balance info
      * @apiName delegationBalanceInfo
      * @apiGroup delegationBalanceInfo
      * @apiDescription Get delegation balance info
@@ -1068,6 +1068,55 @@ router
         }
 
         res.status(200).send(await connector.getDelegationBalanceInfo(req.params.address));
+    })
+
+
+    /**
+     * @api {post} /net/address/delegation-balance-info/get-batch Delegation balance info(batch)
+     * @apiName delegationBalanceInfo
+     * @apiGroup delegationBalanceInfo
+     * @apiDescription Get delegation balance info
+     *
+     * @apiParam {Object} nets{[net]:[...]}
+     * 
+     * @apiSuccess {Object} delegationBalancesInfo{[net]:{[address]:{...}}}
+     */
+    .post('/delegation-balance-info/get-batch', async (req, res) => {
+        let connectors = Connectors.getConnectors();
+
+        let nets = req.body.nets;
+        if (typeof (nets) !== 'object') {
+            return res.status(400).send({ message: 'Parameter nets should exist and be of type object' });
+        }
+
+        let result = {};
+        for (let net in nets) {
+            if (!connectors[net]) {
+                return res.status(400).send({ message: `Specified net(${net}) is not supported!` });
+            }
+
+            let connector = (new connectors[net]());
+            if (!connector.getDelegationBalanceInfo) {
+                return res.status(400).send({ message: `Delegation balance info for specified net(${net}) is not yet supported.` });
+            }
+
+            if (connector.validateDelegationAddress) {
+                let addressValidation = await connector.validateDelegationAddress(req.params.address);
+                if (!addressValidation.valid) {
+                    return res.status(400).send({ message: `${addressValidation.message}(${req.params.net})` });
+                }
+            }
+
+            if (nets[net] && nets[net].length) {
+                let data = {};
+                for (let address of nets[net]) {
+                    data[address] = await connector.getDelegationBalanceInfo(address);
+                }
+                result[net] = data;
+            }
+        }
+        return res.status(200).send(result);
+
     });
 
 module.exports = router;
