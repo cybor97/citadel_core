@@ -57,7 +57,7 @@ class ETHToken extends BaseConnector {
                     //Fee for eth tokens is always 0(in token)
                     fee: 0,//parseInt(txData.gas) * parseInt(txData.gasPrice) / VALUE_FEE_MULTIPLIER,
                     feeBlockchain: parseInt(txData.gas) * parseInt(txData.gasPrice) / VALUE_FEE_MULTIPLIER,
-                    gasUsed: parseInt(txData.gas) / VALUE_FEE_MULTIPLIER,
+                    gasUsed: parseInt(txData.gas || 0) / VALUE_FEE_MULTIPLIER,
 
                     type: type,
                     currency: currency,
@@ -70,6 +70,16 @@ class ETHToken extends BaseConnector {
             }));
 
         return result;
+    }
+
+    async fixTransactionGasRam(txHash) {
+        let web3 = new Web3(this.getParityUrl());
+        let txData = await web3.eth.getTransaction(txHash);
+        return {
+            fee: 0,//parseInt(txData.gas) * parseInt(txData.gasPrice) / VALUE_FEE_MULTIPLIER,
+            feeBlockchain: parseInt(txData.gas) * parseInt(txData.gasPrice) / VALUE_FEE_MULTIPLIER,
+            gasUsed: parseInt(txData.gas || 0) / VALUE_FEE_MULTIPLIER,
+        };
     }
 
     /**

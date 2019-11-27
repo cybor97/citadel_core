@@ -212,6 +212,15 @@ class IOSTCoin extends BaseConnector {
         return transactions;
     }
 
+    async fixTransactionGasRam(txHash) {
+        let txReceipt = await this.axiosClient.get(`http://${config.iostCoin.ip}:${config.iostCoin.port}/getTxReceiptByTxHash/${txHash}`);
+        return {
+            gasUsed: txReceipt.gas_usage || 0,
+            ramUsed: txReceipt.ram_usage && parseInt(txReceipt.ram_usage['token.iost']),
+        }
+    }
+
+
     async getInfo() {
         let marketCapData = await axios.get(`${this.apiUrl}/general/market`);
         let binanceData = await axios.get(`${this.apiUrlBinance}/v1/aggTrades?limit=80&symbol=IOSTBTC`);
