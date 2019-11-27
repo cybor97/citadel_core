@@ -28,4 +28,4 @@ Run `git checkout from_blocks` if you're going to collect data from blocks(not f
 
 # API Documentation
 
-http://api.paradigmcitadel.io:8080/doc
+http://api.paradigmcitadel.io:8081/doc
