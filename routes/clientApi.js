@@ -342,6 +342,10 @@ router
      * @apiDescription Get specific user transactions
      */
     .get('/:net/user/:userId/transactions', async (req, res) => {
+        if (!req.headers.authorization || !utils.checkToken(config.jwtPublicKey, req.headers.authorization)) {
+            return res.status(403).send({ message: 'Unauthorized!' });
+        }
+
         if (!NET_REGEX.test(req.params.net)) {
             return res.status(400).send({ message: 'Invalid net format!' });
         }
@@ -430,6 +434,10 @@ router
      * @apiDescription Assign address with userId
      */
     .post('/:net/address/:address/assign-user-id', async (req, res) => {
+        if (!req.headers.authorization || !utils.checkToken(config.jwtPublicKey, req.headers.authorization)) {
+            return res.status(403).send({ message: 'Unauthorized!' });
+        }
+
         let address = (await Address.findOne({
             where: { net: req.params.net, address: req.params.address },
         }));
@@ -462,6 +470,10 @@ router
      * @apiDescription Unassign address with userId
      */
     .post('/:net/address/:address/remove-user-id', async (req, res) => {
+        if (!req.headers.authorization || !utils.checkToken(config.jwtPublicKey, req.headers.authorization)) {
+            return res.status(403).send({ message: 'Unauthorized!' });
+        }
+
         let address = (await Address.findOne({
             where: { net: req.params.net, address: req.params.address },
         }));

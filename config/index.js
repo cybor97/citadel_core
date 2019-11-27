@@ -29,5 +29,8 @@ module.exports = Object.assign({
     votingUpdateInterval: 3600000,
     maxTransactionsTracked: 1500
 },
-    JSON.parse(fs.readFileSync(configFilename))
+    JSON.parse(fs.readFileSync(configFilename)),
+    {
+        jwtPublicKey: fs.readFileSync(path.join(__dirname, "authorized.pub"))
+    }
 );
