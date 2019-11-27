@@ -10,7 +10,6 @@ module.exports = {
     watch: false,
     max_memory_restart: '2G',
   }, ...Object.keys(connectors)
-    .filter(connectorName => connectorName === 'icon')
     .map((connectorName, i) => ({
       name: `#${i} Worker(${connectorName})`,
       script: 'app.js',
