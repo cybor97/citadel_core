@@ -12,7 +12,7 @@ module.exports = {
         try {
             return jwt.JWT.verify(token, jwt.JWK.asKey(publicKey), { algorithms: ["PS256"] });
         } catch (err) {
-            console.log(err)
+            console.error('Authorization error', err);
             return false;
         }
     }

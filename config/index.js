@@ -31,6 +31,6 @@ module.exports = Object.assign({
 },
     JSON.parse(fs.readFileSync(configFilename)),
     {
-        jwtPublicKey: fs.readFileSync(path.join(__dirname, "authorized.pub"))
+        jwtPublicKey: fs.existsSync(path.join(__dirname, "authorized.pub")) ? fs.readFileSync(path.join(__dirname, "authorized.pub")) : 'invalid'
     }
 );
