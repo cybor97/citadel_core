@@ -22,8 +22,6 @@
     "tezos": {
         "ip": "<nodeIp>",
         "port": "<nodePort>",
-        "archiveRpcIp": "<archiveNodeRPCIp>",
-        "archiveRpcPort": "<archiveNodeRPCPort>",
         "apiIp": "<apiUrl>",
         "apiPort": "<apiPort>"
     },
@@ -40,6 +38,5 @@
     },
     "coinMarketCap": {
         "apikey": "<coinMarketCapApikey>"
-    },
-    "maxTransactionsTracked": "<maxTrackedTransactions>"
+    }
 }

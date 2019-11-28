@@ -15,16 +15,20 @@ Paradigm Citadel blockchain interaction backend
 
 # Before run
 
+Create user and db in postgres:
+- `sudo -u postgres psql`
+- `createuser --interactive --pwprompt`
+- Fill required data
+- `createdb -O USER_NAME DB_NAME` where USER_NAME - username, created at previous step and DB_NAME - desired database name
+
 Create config.json according to configTemplate.json and specify required params.
 
 These params are optional:
 * "app" section can be skipped, :8080 will be used by default
-* archiveRpcIp&archiveRpcPort for tezos can be skipped if *from_blocks* branch is used
 * faucetAddress&faucetPrivateKey should be specified only if you're going to provide service to create new addresses for IOST network
 * coinMarketCap apikey is required for getting info about networks
-* maxTransactionsTracked is required for limiting maximum transactions, fetched for address(does nothing for *from_blocks*)
 
-Run `git checkout from_blocks` if you're going to collect data from blocks(not for address from explorers). Will take huge amount of time to collect data, cause starts from genesis.
+For "user" section and registering addresses `authorized.pub` file should exist in config directory. `authorized.pub` - public key for JWT, algo PS256, key RSA, length 2048.
 
 # API Documentation
 
