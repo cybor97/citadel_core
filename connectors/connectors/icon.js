@@ -154,7 +154,7 @@ class ICON extends BaseConnector {
             }
             catch (err) {
                 //Unexistant block
-                if (err && err.status && err.status === 400 && err.data.error.message == 'fail wrong block height') {
+                if (err && err.status && err.status === 400 && err.response.data.error.message == 'fail wrong block height') {
                     if (!transactions) {
                         transactions = [];
                     }
