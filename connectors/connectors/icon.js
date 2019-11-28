@@ -104,52 +104,64 @@ class ICON extends BaseConnector {
         let transactions = null;
 
         while (!transactions || !transactions.length) {
-            let response = await this.axiosClient.post(this.apiWalletUrl, {
-                jsonrpc: "2.0",
-                method: "icx_getBlockByHeight",
-                id: 1234,
-                params: {
-                    height: `0x${blockNumber.toString(16)}`
-                }
-            });
-            let blockTimestamp = response.data.result.time_stamp / 1000;
-            transactions = response.data.result.confirmed_transaction_list;
-
-            transactions = transactions
-                .map((tx) => ({
-                    hash: tx.tx_hash || tx.txHash || '0x0',
-                    date: blockTimestamp,
-                    value: parseInt(tx.value || tx.amount || 0) / ICON_MULTIPLIER,
-                    comment: tx.message,
-                    from: tx.from,
-                    fromAlias: tx.from,
-                    to: tx.to,
-                    fee: parseInt(tx.fee || 0) / ICON_MULTIPLIER,
-                    originalOpType: tx.data && tx.data.method,
-                    type: tx.data && tx.data.method == 'setDelegation' ? 'delegation' : 'supplement',
-                    path: JSON.stringify({ blockNumber: response.data.result.height })
-                }));
-            for (let tx of transactions) {
-                if (blockNumber === 0) {
-                    tx.isCancelled = false;
-                    continue;
-                }
-
-                let transactionResult = await axios.post(this.apiWalletUrl, {
+            try {
+                let response = await this.axiosClient.post(this.apiWalletUrl, {
                     jsonrpc: "2.0",
-                    method: "icx_getTransactionResult",
+                    method: "icx_getBlockByHeight",
                     id: 1234,
                     params: {
-                        txHash: tx.hash.startsWith('0x') ? tx.hash : `0x${tx.hash}`
+                        height: `0x${blockNumber.toString(16)}`
                     }
                 });
+                let blockTimestamp = response.data.result.time_stamp / 1000;
+                transactions = response.data.result.confirmed_transaction_list;
 
-                transactionResult = transactionResult.data.result;
-                //In ICX 0 means error
-                tx.isCancelled = parseInt(transactionResult.status) === 0;
+                transactions = transactions
+                    .map((tx) => ({
+                        hash: tx.tx_hash || tx.txHash || '0x0',
+                        date: blockTimestamp,
+                        value: parseInt(tx.value || tx.amount || 0) / ICON_MULTIPLIER,
+                        comment: tx.message,
+                        from: tx.from,
+                        fromAlias: tx.from,
+                        to: tx.to,
+                        fee: parseInt(tx.fee || 0) / ICON_MULTIPLIER,
+                        originalOpType: tx.data && tx.data.method,
+                        type: tx.data && tx.data.method == 'setDelegation' ? 'delegation' : 'supplement',
+                        path: JSON.stringify({ blockNumber: response.data.result.height })
+                    }));
+                for (let tx of transactions) {
+                    if (blockNumber === 0) {
+                        tx.isCancelled = false;
+                        continue;
+                    }
+
+                    let transactionResult = await axios.post(this.apiWalletUrl, {
+                        jsonrpc: "2.0",
+                        method: "icx_getTransactionResult",
+                        id: 1234,
+                        params: {
+                            txHash: tx.hash.startsWith('0x') ? tx.hash : `0x${tx.hash}`
+                        }
+                    });
+
+                    transactionResult = transactionResult.data.result;
+                    //In ICX 0 means error
+                    tx.isCancelled = parseInt(transactionResult.status) === 0;
+                }
+
+                blockNumber++;
             }
-
-            blockNumber++;
+            catch (err) {
+                //Unexistant block
+                if (err && err.status && err.status === 400 && err.data.error.message == 'fail wrong block height') {
+                    if (!transactions) {
+                        transactions = [];
+                    }
+                    break;
+                }
+                else throw err;
+            }
         }
 
         try {
