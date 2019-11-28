@@ -154,7 +154,7 @@ class ICON extends BaseConnector {
             }
             catch (err) {
                 //Unexistant block
-                if (err && err.status && err.status === 400 && err.response.data.error.message.match(/(fail wrong block height)|(Invalid params txHash)/)) {
+                if (err && err.response && err.response.status === 400 && err.response.data.error.message.match(/(fail wrong block height)|(Invalid params txHash)/)) {
                     transactions = [];
                     break;
                 }
