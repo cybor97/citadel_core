@@ -362,6 +362,7 @@ router
         let addresses = (await Address.findAll({
             where: {
                 [sequelize.Op.or]: [
+                    { userIds: { [sequelize.Op.like]: `${req.params.userId}` } },
                     { userIds: { [sequelize.Op.like]: `${req.params.userId},%` } },
                     { userIds: { [sequelize.Op.like]: `%,${req.params.userId},%` } },
                     { userIds: { [sequelize.Op.like]: `%,${req.params.userId}` } }
