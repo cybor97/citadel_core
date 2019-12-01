@@ -73,16 +73,14 @@ class TEZ extends BaseConnector {
      */
     async getAllTransactions(address, lastPaths, serviceAddresses) {
         let result = {};
-
-        for (let opType of OP_TYPES) {
+        //skip Origination and Delegation(unsupported)
+        for (let opType of OP_TYPES.slice(1, 2)) {
             let total = (await axios.get(`${this.apiUrl}/number_operations/${address}`, {
                 params: {
                     type: opType.sourceType
                 }
             })).data[0];
 
-            let transactions = [];
-            let newTransactions = null;
             let offset = 0;
             for (let tx of lastPaths) {
                 if (tx.originalOpType === opType.sourceType && tx.path) {
@@ -93,22 +91,13 @@ class TEZ extends BaseConnector {
                 throw new Error("TX_LIMIT_OVERFLOW");
             }
 
-            while (newTransactions == null || newTransactions.length == QUERY_COUNT) {
-                if (total > config.maxTransactionsTracked || offset > config.maxTransactionsTracked) {
-                    throw new Error("TX_LIMIT_OVERFLOW");
+            log.info('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|total:${total}`);
+            let transactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
+                params: {
+                    type: opType.sourceType
                 }
-
-                const page = ~~(offset / QUERY_COUNT);
-                newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
-                    params: {
-                        type: opType.sourceType,
-                        number: QUERY_COUNT,
-                        p: page
-                    }
-                })).data;
-                log.info('Downloading', address, `query_count:${QUERY_COUNT}|offset:${offset}|length:${newTransactions.length}|total:${total}`);
-
-                transactions = transactions.concat(newTransactions.map((tx, i, arr) => {
+            })).data
+                .map((tx, i, arr) => {
                     let txData = tx.type.operations[0];
                     let toField = txData.destination || txData.delegate || txData.tz1;
                     let to = toField ? toField.tz : null;
@@ -125,13 +114,12 @@ class TEZ extends BaseConnector {
                         path: { queryCount: QUERY_COUNT, offset: (++offset) },
                         isCancelled: txData.failed
                     };
-                }));
-            }
+                });
+
             result[opType.type] = transactions;
         }
-
         //Unprocessed payments/conclusions are supplements by default
-        this.processPayment([].concat(result.supplement, result.origination || []), serviceAddresses);
+        this.processPayment([].concat(result.supplement || [], result.origination || []), serviceAddresses);
         let resultTransactions = [].concat(...Object.values(result));
 
         return resultTransactions;
