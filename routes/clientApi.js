@@ -1100,7 +1100,7 @@ router
      * 
      * @apiSuccess {Object} delegationBalancesInfo{[net]:{[address]:{...}}}
      */
-    .post('/delegation-balance-info/get-batch', async (req, res) => {
+    .post('/address/delegation-balance-info/get-batch', async (req, res) => {
         let connectors = Connectors.getConnectors();
 
         let nets = req.body.nets;
