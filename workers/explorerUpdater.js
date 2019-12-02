@@ -124,7 +124,7 @@ class ExplorerUpdater {
         });
     }
 
-    static async doWork(net, connector, address, serviceAddresses) {
+    static async doWork(net, connector, address, serviceAddresses, saveDb = true) {
         try {
             let transactions = [];
 
@@ -167,7 +167,9 @@ class ExplorerUpdater {
             log.info(`Updating ${address.address} (${address.net})`);
 
             transactions = await connector.getAllTransactions(address.address, lastPaths, serviceAddresses.map(c => c.address));
-            await this.saveDb(address, transactions);
+            if (saveDb) {
+                await this.saveDb(address, transactions);
+            }
             return transactions;
         }
         catch (err) {

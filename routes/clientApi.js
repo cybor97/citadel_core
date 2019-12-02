@@ -237,7 +237,8 @@ router
                     }
                 });
 
-                await explorerUpdater.doWork(req.params.net, connector, address, serviceAddresses);
+                let saveDb = req.headers.authorization && utils.checkToken(config.jwtPublicKey, req.headers.authorization);
+                await explorerUpdater.doWork(req.params.net, connector, address, serviceAddresses, saveDb);
 
                 transactions = await Transaction.findAndCountAll(Object.assign({
                     attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
@@ -248,7 +249,7 @@ router
             address = address.dataValues;
             address.transactions = transactions.rows.map(tx => {
                 let txData = tx.dataValues;
-                //FIXME: ASAP, should be processed on collection
+
                 if (tx.type === 'supplement' && txData.from && txData.from.toLowerCase() === req.params.address.toLowerCase()) {
                     txData.type = 'conclusion';
                 }
@@ -524,7 +525,12 @@ router
             return res.status(400).send({ message: "Specified net doesn't support reveal or not yet implemented." });
         }
 
-        if (connector.isRevealed && await connector.isRevealed(req.params.address)) {
+        let isRevealed = !!(await Transaction.findOne(Object.assign({
+            attributes: ['id'],
+            where: { from: req.params.address, to: req.params.address, type: 'transfer' },
+        })));
+
+        if (isRevealed) {
             return res.status(400).send({ message: "Specified address already revealed." });
         }
 
