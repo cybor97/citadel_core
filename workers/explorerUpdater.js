@@ -30,13 +30,13 @@ const LAST_PATH_QUERY_NET = `
 const BALANCE_QUERY = `
     SELECT SUM(CASE WHEN transactions.from = :address THEN -transactions.value ELSE transactions.value END) as balance
     FROM transactions
-    WHERE transactions.currency = :net AND (transactions.from = :address OR transactions.to = :address);
+    WHERE transactions.currency = :net AND (transactions.from = :address OR transactions.to = :address) AND NOT transactions."isCancelled";
  `;
 
 const REWARD_QUERY = `
     SELECT SUM(CASE WHEN transactions.from = :address THEN -transactions.value ELSE transactions.value END) as reward
     FROM transactions
-    WHERE transactions.currency = :net AND transactions.type IN ('payment', 'approved_payment') AND (transactions.from = :address OR transactions.to = :address);
+    WHERE transactions.currency = :net AND transactions.type IN ('payment', 'approved_payment') AND (transactions.from = :address OR transactions.to = :address) AND NOT transactions."isCancelled";
 `;
 
 const CHART_DATES_QUERY = `
