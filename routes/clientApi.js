@@ -340,6 +340,13 @@ router
      * @apiName getTransactionsByUserId
      * @apiGroup user
      * 
+     * @apiParam {Array}  [addresses]    addresses (addresses[0]=123&addresses[1]=456&...)
+     * @apiParam {String} [currency]     currency, same as net by default
+     * @apiParam {Number} [date_from]    transactions from(timestamp)
+     * @apiParam {Number} [date_to]      transactions to(timestamp)
+     * @apiParam {Number} [limit]        limit to specific count
+     * @apiParam {Number} [offset]       start from position
+
      * @apiDescription Get specific user transactions
      */
     .get('/:net/user/:userId/transactions', async (req, res) => {
@@ -347,13 +354,15 @@ router
             return res.status(403).send({ message: 'Unauthorized!' });
         }
 
-        if (!NET_REGEX.test(req.params.net)) {
-            return res.status(400).send({ message: 'Invalid net format!' });
-        }
-
         let connectors = Connectors.getConnectors();
-        if (!connectors[req.params.net]) {
-            return res.status(400).send({ message: 'Specified net is not supported!' });
+        if (req.params.net !== '*') {
+            if (!NET_REGEX.test(req.params.net)) {
+                return res.status(400).send({ message: 'Invalid net format!' });
+            }
+
+            if (!connectors[req.params.net]) {
+                return res.status(400).send({ message: 'Specified net is not supported!' });
+            }
         }
 
         if (!req.params.userId.match(/\d/)) {
@@ -372,49 +381,58 @@ router
         }));
 
         let result = {};
+        let addressesRequested = req.query.addresses;
+
         for (let address of addresses) {
             try {
-                let whereParams = { [sequelize.Op.or]: [{ from: address.address }, { to: address.address }] };
+                if (!addressesRequested || addressesRequested.includes(address)) {
+                    let whereParams = { [sequelize.Op.or]: [{ from: address.address }, { to: address.address }] };
 
-                if (req.query.currency) {
-                    whereParams.currency = req.query.currency;
-                }
-                if (req.query.date_from) {
-                    whereParams.date = { [sequelize.Op.gte]: req.query.date_from };
-                }
-                if (req.query.date_to) {
-                    whereParams.date = { [sequelize.Op.lte]: req.query.date_to };
-                }
+                    if (req.params.net !== '*') {
+                        whereParams.currency = req.params.net;
+                    }
 
-                if (req.params.net === 'orbs') {
-                    whereParams.value = { [sequelize.Op.ne]: 0 };
-                }
+                    if (req.query.currency) {
+                        whereParams.currency = req.query.currency;
+                    }
 
-                let transactions = await Transaction.findAndCountAll(Object.assign({
-                    attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
-                    where: whereParams,
-                }, utils.preparePagination(req.query)));
+                    if (req.query.date_from) {
+                        whereParams.date = { [sequelize.Op.gte]: req.query.date_from };
+                    }
+                    if (req.query.date_to) {
+                        whereParams.date = { [sequelize.Op.lte]: req.query.date_to };
+                    }
 
-                if (!transactions.length && req.query.forceUpdate) {
-                    let serviceAddresses = await Address.findAll({
-                        order: [['created', 'desc']],
-                        where: {
-                            isService: true,
-                            net: req.params.net
-                        }
-                    });
+                    if (req.params.net === 'orbs') {
+                        whereParams.value = { [sequelize.Op.ne]: 0 };
+                    }
 
-                    await explorerUpdater.doWork(req.params.net, connector, address, serviceAddresses);
-
-                    transactions = await Transaction.findAndCountAll(Object.assign({
-                        attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
-                        where: whereParams
+                    let transactions = await Transaction.findAndCountAll(Object.assign({
+                        attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
+                        where: whereParams,
                     }, utils.preparePagination(req.query)));
+
+                    if (!transactions.length && req.query.forceUpdate) {
+                        let serviceAddresses = await Address.findAll({
+                            order: [['created', 'desc']],
+                            where: {
+                                isService: true,
+                                net: req.params.net
+                            }
+                        });
+
+                        await explorerUpdater.doWork(req.params.net, connector, address, serviceAddresses);
+
+                        transactions = await Transaction.findAndCountAll(Object.assign({
+                            attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
+                            where: whereParams
+                        }, utils.preparePagination(req.query)));
+                    }
+
+                    address = address.dataValues;
+
+                    result[address.address] = transactions;
                 }
-
-                address = address.dataValues;
-
-                result[address.address] = transactions;
             }
             catch (err) {
                 log.err(err);
