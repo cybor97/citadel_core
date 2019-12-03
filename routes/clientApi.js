@@ -299,6 +299,8 @@ router
                 created: Date.now()
             }
         }));
+
+        let result = address.dataValues;
         if (created) {
             try {
                 await explorerUpdater.doWork(req.params.net, connector, address, []);
@@ -307,11 +309,24 @@ router
                 if (err.message && err.message.match('TX_LIMIT_OVERFLOW')) {
                     log.warn(`Detected ${address.address} tx limit overflow, should be exchange.`);
                     address.isExchange = true;
-                    address = await address.save();
+
+                    if (req.headers.authorization && utils.checkToken(config.jwtPublicKey, req.headers.authorization)) {
+                        address = await address.save();
+                    }
                 }
             }
         }
-        return res.status(200).send(address.dataValues);
+
+        let balanceData = await explorerUpdater.getBalance(req.params.net, req.params.address);
+        let rewardData = await explorerUpdater.getReward(req.params.net, req.params.address);
+        let chartDates = await explorerUpdater.getChartDates(req.params.net, req.params.address);
+
+        result.balance = balanceData ? balanceData.balance : null;
+        result.reward = rewardData ? rewardData.reward : null;
+        result.chart_date_from = chartDates && chartDates.dateFrom ? chartDates.dateFrom : null;
+        result.chart_date_to = chartDates && chartDates.dateTo ? chartDates.dateTo : null;
+
+        return res.status(200).send(result);
     })
 
     /**

@@ -27,6 +27,25 @@ const LAST_PATH_QUERY_NET = `
     LIMIT 1;
  `;
 
+const BALANCE_QUERY = `
+    SELECT SUM(CASE WHEN transactions.from = :address THEN -transactions.value ELSE transactions.value END) as balance
+    FROM transactions
+    WHERE transactions.currency = :net AND (transactions.from = :address OR transactions.to = :address);
+ `;
+
+const REWARD_QUERY = `
+    SELECT SUM(CASE WHEN transactions.from = :address THEN -transactions.value ELSE transactions.value END) as reward
+    FROM transactions
+    WHERE transactions.currency = :net AND transactions.type IN ('payment', 'approved_payment') AND (transactions.from = :address OR transactions.to = :address);
+`;
+
+const CHART_DATES_QUERY = `
+    SELECT MIN(transactions.date) AS dateFrom, MAX(transactions.date) AS dateTo
+    FROM transactions
+    WHERE transactions.currency = :net AND (transactions.from = :address OR transactions.to = :address);
+`;
+
+
 
 class ExplorerUpdater {
     static async init() {
@@ -274,6 +293,42 @@ class ExplorerUpdater {
         for (let connectorName in connectorsModules) {
             this.connectors[connectorName] = new (connectorsModules[connectorName])();
         }
+    }
+
+    static async getBalance(net, address) {
+        let data = await sequelizeConnection.query(BALANCE_QUERY, {
+            type: sequelizeConnection.QueryTypes.SELECT,
+            replacements: {
+                net: net,
+                address: address,
+            }
+        });
+
+        return data.length ? data.pop() : null;
+    }
+
+    static async getReward(net, address) {
+        let data = await sequelizeConnection.query(REWARD_QUERY, {
+            type: sequelizeConnection.QueryTypes.SELECT,
+            replacements: {
+                net: net,
+                address: address,
+            }
+        });
+
+        return data.length ? data.pop() : null;
+    }
+
+    static async getChartDates(net, address) {
+        let data = await sequelizeConnection.query(CHART_DATES_QUERY, {
+            type: sequelizeConnection.QueryTypes.SELECT,
+            replacements: {
+                net: net,
+                address: address,
+            }
+        });
+
+        return data.length ? data.pop() : null;
     }
 }
 
