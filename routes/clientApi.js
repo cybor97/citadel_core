@@ -323,8 +323,8 @@ router
 
         result.balance = balanceData ? balanceData.balance : null;
         result.reward = rewardData ? rewardData.reward : null;
-        result.chart_date_from = chartDates && chartDates.dateFrom ? chartDates.dateFrom : null;
-        result.chart_date_to = chartDates && chartDates.dateTo ? chartDates.dateTo : null;
+        result.chart_date_from = chartDates && chartDates.datefrom ? chartDates.datefrom : null;
+        result.chart_date_to = chartDates && chartDates.dateto ? chartDates.dateto : null;
 
         return res.status(200).send(result);
     })
