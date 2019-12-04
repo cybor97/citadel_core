@@ -189,7 +189,7 @@ class ORBS extends ETHToken {
         }
 
 
-        return transactions;
+        return transactions || [];
     }
 
     async getRewardTransactions(address, rewardLastUpdate = null) {
