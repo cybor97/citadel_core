@@ -17,6 +17,10 @@ class ETHToken extends BaseConnector {
         return !!address.match(/^0x[a-zA-Z0-9]*$/);
     }
 
+    prepareAddress(address) {
+        return address.toLowerCase();
+    }
+
     async getTransactionsForContractMethod(contractHash, methodTopic, type, address, topic) {
         return await this.getTransactionsForContractMethodAdvanced({
             contractHash: contractHash,

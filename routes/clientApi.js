@@ -195,6 +195,10 @@ router
             return res.status(400).send({ message: 'Invalid address format!' });
         }
 
+        if (connector.prepareAddress) {
+            req.params.address = connector.prepareAddress(req.params.address);
+        }
+
         try {
             let address = (await Address.findOrCreate({
                 where: { net: req.params.net, address: req.params.address },
@@ -1152,16 +1156,16 @@ router
                 return res.status(400).send({ message: `Delegation balance info for specified net(${net}) is not yet supported.` });
             }
 
-            if (connector.validateDelegationAddress) {
-                let addressValidation = await connector.validateDelegationAddress(req.params.address);
-                if (!addressValidation.valid) {
-                    return res.status(400).send({ message: `${addressValidation.message}(${req.params.net})` });
-                }
-            }
-
             if (nets[net] && nets[net].length) {
                 let data = {};
                 for (let address of nets[net]) {
+                    if (connector.validateDelegationAddress) {
+                        let addressValidation = await connector.validateDelegationAddress(address);
+                        if (!addressValidation.valid) {
+                            return res.status(400).send({ message: `${addressValidation.message}(${net})` });
+                        }
+                    }
+
                     data[address] = await connector.getDelegationBalanceInfo(address);
                 }
                 result[net] = data;
