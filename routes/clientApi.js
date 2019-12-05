@@ -262,7 +262,14 @@ router
 
                 return txData;
             });
+
             address.transactionsCount = transactions.count;
+            if (req.params.net === 'orbs') {
+                //FIXME: Use rewardLastUpdate
+                let rewardTransactions = await connector.getRewardTransactions(address.address);
+                address.transactions = [].concat(address.transactions, rewardTransactions);
+                address.transactionsCount += rewardTransactions.length;
+            }
 
             res.status(200).send(address);
         }
@@ -431,7 +438,9 @@ router
                         where: whereParams,
                     }, utils.preparePagination(req.query)));
 
-                    if (!transactions.length && req.query.forceUpdate) {
+                    let connector = new connectors[address.net]();
+
+                    if (!transactions.length && req.query.forceUpdate && connector) {
                         let serviceAddresses = await Address.findAll({
                             order: [['created', 'desc']],
                             where: {
@@ -448,7 +457,12 @@ router
                         }, utils.preparePagination(req.query)));
                     }
 
-                    address = address.dataValues;
+                    if (address.net === 'orbs') {
+                        //FIXME: Use rewardLastUpdate
+                        let rewardTransactions = await connector.getRewardTransactions(address.address);
+                        transactions.rows = [].concat(transactions.rows, rewardTransactions);
+                        transactions.count += rewardTransactions.length;
+                    }
 
                     result[address.address] = transactions;
                 }
