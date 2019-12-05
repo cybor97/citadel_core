@@ -1251,12 +1251,22 @@ router
                             return res.status(400).send({ message: `${addressValidation.message}(${net})` });
                         }
                     }
-
-                    data[address] = await connector.getDelegationBalanceInfo(address);
+                    //Should stay promise to request async
+                    data[address] = connector.getDelegationBalanceInfo(address);
                 }
                 result[net] = data;
             }
         }
+
+        //Await for all promises
+        let resultNets = Object.keys(result);
+        for (let net of resultNets) {
+            let resultAddresses = Object.keys(result[net]);
+            for (let address of resultAddresses) {
+                result[net][address] = await result[net][address];
+            }
+        }
+
         return res.status(200).send(result);
 
     });
