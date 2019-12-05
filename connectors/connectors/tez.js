@@ -29,6 +29,9 @@ class TEZ extends BaseConnector {
     constructor() {
         super();
         this.apiUrl = `https://${config.tezos.apiIp || config.tezos.ip}:${config.tezos.apiPort || 8080}/v3`;
+        //FIXME: Get from config
+        this.apiUrlAdditional = 'https://api.tezos.id/mooncake/mainnet/v1';
+
         this.rpcUrl = `http://${config.tezos.ip}:${config.tezos.port}`;
         this.archiveRpcUrl = `http://${
             config.tezos.archiveRpcIp || config.tezos.ip}:${
@@ -390,26 +393,32 @@ class TEZ extends BaseConnector {
         let offset = 0;
         let newTransactions = null;
 
-        while (newTransactions == null || newTransactions.length == QUERY_COUNT) {
-            newTransactions = (await axios.get(`${this.apiUrl}/operations/${address}`, {
-                params: {
-                    type: 'Origination',
-                    number: QUERY_COUNT,
-                    p: ~~(offset / QUERY_COUNT)
-                }
-            })).data;
+        try {
+            while (newTransactions == null || newTransactions.length == QUERY_COUNT) {
+                newTransactions = (await axios.get(`${this.apiUrlAdditional}/originations`, {
+                    params: {
+                        n: QUERY_COUNT,
+                        p: ~~(offset / QUERY_COUNT),
+                        account: address
+                    }
+                })).data;
 
-            let newAddresses = newTransactions.map(tx => {
+                let newAddresses = [].concat(...newTransactions.map(tx => {
+                    offset++;
+                    return tx.origination.operationResultOriginatedContracts;
+                })
+                    .filter(Boolean));
+                addresses = addresses.concat(newAddresses);
+
+                delegatedBalance += (await Promise.all(newAddresses.map(async newAddress =>
+                    parseInt((await this.getAddressBalanceInfo(newAddress)).balance) / M_TEZ_MULTIPLIER
+                ))).reduce((prev, next) => prev + next, 0);
+
                 offset++;
-                return tx.type.operations.find(op => op.kind === 'origination').tz1.tz
-            });
-            addresses = addresses.concat(newAddresses);
-
-            delegatedBalance += (await Promise.all(newAddresses.map(async newAddress =>
-                parseInt((await this.getAddressBalanceInfo(newAddress)).balance) / M_TEZ_MULTIPLIER
-            ))).reduce((prev, next) => prev + next, 0);
-
-            offset++;
+            }
+        }
+        catch (err) {
+            log.err('tez getDelegationBalanceInfo', err);
         }
 
         return {
