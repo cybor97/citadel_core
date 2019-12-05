@@ -362,10 +362,82 @@ router
     })
 
     /**
+     * @api {get} /net/:net/user/:userId/address-info/batch Get user addresses info
+     * @apiName getUserAddressesInfoBatch
+     * @apiGroup user
+     * 
+     * @apiParam {String} net            net, * for all
+     * 
+     * @apiDescription Get user addresses info.
+     */
+    .get('/:net/user/:userId/address-info/batch', async (req, res) => {
+        if (!req.headers.authorization || !utils.checkToken(config.jwtPublicKey, req.headers.authorization)) {
+            return res.status(403).send({ message: 'Unauthorized!' });
+        }
+
+        let connectors = Connectors.getConnectors();
+        if (req.params.net !== '*') {
+            if (!NET_REGEX.test(req.params.net)) {
+                return res.status(400).send({ message: 'Invalid net format!' });
+            }
+
+            if (!connectors[req.params.net]) {
+                return res.status(400).send({ message: 'Specified net is not supported!' });
+            }
+        }
+
+        if (!req.params.userId.match(/\d/)) {
+            return res.status(400).send({ message: 'userId has invalid format.' });
+        }
+
+        let whereParams = {
+            [sequelize.Op.or]: [
+                { userIds: { [sequelize.Op.like]: `${req.params.userId}` } },
+                { userIds: { [sequelize.Op.like]: `${req.params.userId},%` } },
+                { userIds: { [sequelize.Op.like]: `%,${req.params.userId},%` } },
+                { userIds: { [sequelize.Op.like]: `%,${req.params.userId}` } }
+            ]
+        };
+
+        if (req.params.net !== '*') {
+            whereParams.net = req.params.net;
+        }
+
+        let addresses = (await Address.findAll({
+            where: whereParams
+        }));
+
+        let result = {};
+        let addressesRequested = req.query.addresses;
+
+        for (let address of addresses) {
+            if (!addressesRequested || addressesRequested.includes(address)) {
+                let balanceData = await explorerUpdater.getBalance(address.net, address.address);
+                let rewardData = await explorerUpdater.getReward(address.net, address.address);
+                let chartDates = await explorerUpdater.getChartDates(address.net, address.address);
+
+                if (address.net === 'orbs') {
+                    let connector = new connectors[address.net]();
+                    rewardData = { reward: (await connector.getRewardTransactions(address.address)).reduce((prev, next) => prev + next.value, 0) };
+                }
+
+                result[address.address] = {
+                    balance: balanceData ? balanceData.balance : null,
+                    reward: rewardData ? rewardData.reward : null,
+                    chart_date_from: chartDates && chartDates.datefrom ? chartDates.datefrom : null,
+                    chart_date_to: chartDates && chartDates.dateto ? chartDates.dateto : null
+                };
+            }
+        }
+        return res.status(200).send(result);
+    })
+
+    /**
      * @api {get} /net/:net/user/:userId/transactions Get specific user transactions
      * @apiName getTransactionsByUserId
      * @apiGroup user
      * 
+     * @apiParam {String} net            net, * for all
      * @apiParam {Array}  [addresses]    addresses (addresses[0]=123&addresses[1]=456&...)
      * @apiParam {String} [currency]     currency, same as net by default
      * @apiParam {Number} [date_from]    transactions from(timestamp)
