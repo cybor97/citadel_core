@@ -433,6 +433,64 @@ router
     })
 
     /**
+     * @api {get} /net/:net/user/:userId/chart-data Get chart data
+     * @apiName getUserChartData
+     * @apiGroup user
+     * 
+     * @apiParam {String} net            net, * for all
+     * @apiParam {Number} userId         user id
+     * @apiParam {String} address        address
+     * @apiParam {Number} date_from      from date
+     * @apiParam {Number} date_to        to date
+     * @apiParam {Boolean} add_balance   add balance(if not specified - just rewards will be returned)
+     * 
+     * @apiDescription Get user chart data
+     */
+    .get('/:net/user/:userId/chart-data', async (req, res) => {
+        if (!req.headers.authorization || !utils.checkToken(config.jwtPublicKey, req.headers.authorization)) {
+            return res.status(403).send({ message: 'Unauthorized!' });
+        }
+
+        let now = Date.now();
+        let dateFrom = req.query.date_from || now - (4 * 7 * 24 * 3600 * 1000);
+        let dateTo = req.query.date_to || now;
+
+        let result = await explorerUpdater.getChartData(req.params.userId, req.params.net, req.query.address, dateFrom, dateTo, !req.query.add_balance, false);
+
+        return res.status(200).send(result);
+    })
+
+    /**
+     * @api {get} /net/:net/user/:userId/chart-below Get chart data(weekly)
+     * @apiName getUserChartDataWeekly
+     * @apiGroup user
+     * 
+     * @apiParam {String} net            net, * for all
+     * @apiParam {Number} userId         user id
+     * @apiParam {String} address        address
+     * @apiParam {Number} date_from      from date
+     * @apiParam {Number} date_to        to date
+     * @apiParam {Boolean} add_balance   add balance(if not specified - just rewards will be returned)
+     * 
+     * @apiDescription Get user chart data weekly
+     */
+    .get('/:net/user/:userId/chart-below', async (req, res) => {
+        if (!req.headers.authorization || !utils.checkToken(config.jwtPublicKey, req.headers.authorization)) {
+            return res.status(403).send({ message: 'Unauthorized!' });
+        }
+
+        let now = Date.now();
+        let dateFrom = req.query.date_from || now - (4 * 7 * 24 * 3600 * 1000);
+        let dateTo = req.query.date_to || now;
+
+        let result = await explorerUpdater.getChartData(req.params.userId, req.params.net, req.query.address, dateFrom, dateTo, !req.query.add_balance, 7 * 24 * 3600 * 1000);
+
+        return res.status(200).send(result);
+    })
+
+
+
+    /**
      * @api {get} /net/:net/user/:userId/transactions Get specific user transactions
      * @apiName getTransactionsByUserId
      * @apiGroup user

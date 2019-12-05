@@ -1,6 +1,7 @@
 /**
  * @author cybor97
  */
+const sequelize = require('sequelize');
 const Connectors = require('../connectors');
 const sequelizeConnection = require('../data').getConnection();
 const Address = require('../data/models/Address');
@@ -45,7 +46,24 @@ const CHART_DATES_QUERY = `
     WHERE transactions.currency = :net AND (transactions.from = :address OR transactions.to = :address);
 `;
 
+const CHART_DATA_QUERY = `
+    SELECT SUM(transactions.value) AS volume, MAX(transactions.date) AS datetime
+    FROM transactions
+    WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
+        AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
+    GROUP BY transactions.date / :datePartMultiplier;
+`;
 
+const CHART_DATA_QUERY_REWARD_ONLY = `
+    SELECT SUM(transactions.value) AS volume, MAX(transactions.date) AS datetime
+    FROM transactions
+    WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
+        AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
+        AND transactions.type IN ('payment', 'approved_payment')
+    GROUP BY transactions.date / :datePartMultiplier;
+`;
+
+const DAY_DURATION = 1000 * 3600 * 24;
 
 class ExplorerUpdater {
     static async init() {
@@ -329,6 +347,72 @@ class ExplorerUpdater {
         });
 
         return data.length ? data.pop() : null;
+    }
+
+    static async getChartData(userId, net, address, dateFrom, dateTo, rewardOnly, stepOverride) {
+        let nets = new Set();
+        let addresses = [];
+
+        if (address) {
+            addresses = [address];
+        }
+        else {
+            let whereParams = {
+                [sequelize.Op.or]: [
+                    { userIds: { [sequelize.Op.like]: `${userId}` } },
+                    { userIds: { [sequelize.Op.like]: `${userId},%` } },
+                    { userIds: { [sequelize.Op.like]: `%,${userId},%` } },
+                    { userIds: { [sequelize.Op.like]: `%,${userId}` } }
+                ]
+            };
+
+            if (net !== '*') {
+                whereParams.net = net;
+            }
+
+            let addressesData = (await Address.findAll({
+                where: whereParams
+            }));
+
+            for (let addressData of addressesData) {
+                addresses.push(addressData.address);
+                nets.add(addressData.net);
+            }
+        }
+
+        let datePart = this.getDatePartByDelta(dateFrom, dateTo);
+
+        return await sequelizeConnection.query(rewardOnly ? CHART_DATA_QUERY_REWARD_ONLY : CHART_DATA_QUERY, {
+            type: sequelizeConnection.QueryTypes.SELECT,
+            replacements: {
+                addresses: addresses,
+                nets: Array.from(nets),
+                dateFrom: dateFrom,
+                dateTo: dateTo,
+                datePartMultiplier: stepOverride || datePart
+            }
+        });
+    }
+
+    static getDatePartByDelta(dateFrom, dateTo) {
+        let delta = (dateTo - dateFrom) / DAY_DURATION;
+
+        if (delta <= 15) {
+            // return 'day';
+            return DAY_DURATION;
+        }
+
+        if (delta <= 15 * 7) {
+            // return 'week';
+            return DAY_DURATION * 7;
+        }
+
+        if (delta <= 15 * 4 * 7) {
+            // return 'month';
+            return DAY_DURATION * 7 * 30;
+        }
+
+        return DAY_DURATION * 365;
     }
 }
 
