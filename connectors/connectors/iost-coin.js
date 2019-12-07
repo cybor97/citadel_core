@@ -177,7 +177,7 @@ class IOSTCoin extends BaseConnector {
                         //iost stores timestamp in ns
                         date: parseInt(tx.time) / 1000000,
                         value: typeof (txAction.data[3]) !== 'object' ? txAction.data[3] || 0 : 0,
-                        comment: txAction.data[4] || '',
+                        comment: txAction.data[4] ? typeof (txAction.data[4]) === 'string' ? txAction.data[4] : JSON.stringify(txAction.data[4]) : '',
                         from: typeof (txAction.data[1]) === 'string' ? txAction.data[1] : JSON.stringify(txAction.data[1]) || null,
                         fromAlias: typeof (txAction.data[1]) === 'string' ? txAction.data[1] : JSON.stringify(txAction.data[1]) || null,
                         to: typeof (txAction.data[2]) === 'string' ? txAction.data[2] : JSON.stringify(txAction.data[2]) || null,
