@@ -430,10 +430,7 @@ class TEZ extends BaseConnector {
     }
 
     async getAddressBalanceInfo(address) {
-        return await axios.get(`${this.apiUrl}/node_account/${address}`, {
-            headers: {
-                'Referer': `https://tzscan.io/${address}?default=origination`
-            },
+        return await axios.get(`${this.rpcUrl}/chains/main/blocks/head/context/contracts/${address}`, {
             validateStatus: false
         }).then(resp => resp.status === 500 ? { balance: 0 } : resp.data);
     }
