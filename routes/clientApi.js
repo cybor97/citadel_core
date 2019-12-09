@@ -624,9 +624,9 @@ router
      * @apiDescription Get specific user delegation transactions
      */
     .get('/:net/user/:userId/delegations', async (req, res) => {
-        // if (!req.headers.authorization || !utils.checkToken(config.jwtPublicKey, req.headers.authorization)) {
-        //     return res.status(403).send({ message: 'Unauthorized!' });
-        // }
+        if (!req.headers.authorization || !utils.checkToken(config.jwtPublicKey, req.headers.authorization)) {
+            return res.status(403).send({ message: 'Unauthorized!' });
+        }
 
         let connectors = Connectors.getConnectors();
         if (req.params.net !== '*') {
@@ -709,7 +709,10 @@ router
                         }, utils.preparePagination(req.query)));
                     }
 
-                    result[address.address] = transactions;
+                    if (!result[address.net]) {
+                        result[address.net] = {};
+                    }
+                    result[address.net][address.address] = transactions;
                 }
             }
             catch (err) {
