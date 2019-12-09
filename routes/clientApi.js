@@ -608,6 +608,125 @@ router
         res.status(200).send(result);
     })
 
+    /**
+     * @api {get} /net/:net/user/:userId/delegations Get specific user delegation transactions
+     * @apiName getDelegationTransactionsByUserId
+     * @apiGroup user
+     * 
+     * @apiParam {String} net            net, * for all
+     * @apiParam {Array}  [addresses]    addresses (addresses[0]=123&addresses[1]=456&...)
+     * @apiParam {String} [currency]     currency, same as net by default
+     * @apiParam {Number} [date_from]    transactions from(timestamp)
+     * @apiParam {Number} [date_to]      transactions to(timestamp)
+     * @apiParam {Number} [limit]        limit to specific count
+     * @apiParam {Number} [offset]       start from position
+
+     * @apiDescription Get specific user delegation transactions
+     */
+    .get('/:net/user/:userId/delegations', async (req, res) => {
+        // if (!req.headers.authorization || !utils.checkToken(config.jwtPublicKey, req.headers.authorization)) {
+        //     return res.status(403).send({ message: 'Unauthorized!' });
+        // }
+
+        let connectors = Connectors.getConnectors();
+        if (req.params.net !== '*') {
+            if (!NET_REGEX.test(req.params.net)) {
+                return res.status(400).send({ message: 'Invalid net format!' });
+            }
+
+            if (!connectors[req.params.net]) {
+                return res.status(400).send({ message: 'Specified net is not supported!' });
+            }
+        }
+
+        if (!req.params.userId.match(/\d/)) {
+            return res.status(400).send({ message: 'userId has invalid format.' });
+        }
+
+        let addresses = (await Address.findAll({
+            where: {
+                [sequelize.Op.or]: [
+                    { userIds: { [sequelize.Op.like]: `${req.params.userId}` } },
+                    { userIds: { [sequelize.Op.like]: `${req.params.userId},%` } },
+                    { userIds: { [sequelize.Op.like]: `%,${req.params.userId},%` } },
+                    { userIds: { [sequelize.Op.like]: `%,${req.params.userId}` } }
+                ]
+            },
+        }));
+
+        let result = {};
+        let addressesRequested = req.query.addresses;
+
+        for (let address of addresses) {
+            try {
+                if (!addressesRequested || addressesRequested.includes(address)) {
+                    let whereParams = {
+                        [sequelize.Op.eq]: { from: address.address },
+                        [sequelize.Op.ne]: { to: null },
+                        [sequelize.Op.eq]: { type: 'delegation' }
+                    };
+
+                    if (req.params.net !== '*') {
+                        whereParams.currency = req.params.net;
+                    }
+
+                    if (req.query.currency) {
+                        whereParams.currency = req.query.currency;
+                    }
+
+                    if (req.query.date_from) {
+                        whereParams.date = { [sequelize.Op.gte]: req.query.date_from };
+                    }
+                    if (req.query.date_to) {
+                        whereParams.date = { [sequelize.Op.lte]: req.query.date_to };
+                    }
+
+                    if (req.params.net === 'orbs') {
+                        whereParams.value = { [sequelize.Op.ne]: 0 };
+                    }
+
+                    let transactions = await Transaction.findAndCountAll(Object.assign({
+                        attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
+                        where: whereParams,
+                    }, utils.preparePagination(req.query)));
+
+                    let connector = new connectors[address.net]();
+
+                    if (!transactions.length && req.query.forceUpdate && connector) {
+                        let serviceAddresses = await Address.findAll({
+                            order: [['created', 'desc']],
+                            where: {
+                                isService: true,
+                                net: req.params.net
+                            }
+                        });
+
+                        await explorerUpdater.doWork(req.params.net, connector, address, serviceAddresses);
+
+                        transactions = await Transaction.findAndCountAll(Object.assign({
+                            attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
+                            where: whereParams
+                        }, utils.preparePagination(req.query)));
+                    }
+
+                    if (address.net === 'orbs') {
+                        //FIXME: Use rewardLastUpdate
+                        let rewardTransactions = await connector.getRewardTransactions(address.address);
+                        transactions.rows = [].concat(transactions.rows, rewardTransactions);
+                        transactions.count += rewardTransactions.length;
+                    }
+
+                    result[address.address] = transactions;
+                }
+            }
+            catch (err) {
+                log.err(err);
+                res.status(500).send({ err: err.message, stack: err.stack });
+            }
+        }
+
+        res.status(200).send(result);
+    })
 
     /**
      * @api {post} /net/:net/address/:address/assign-user-id Assign address with userId
