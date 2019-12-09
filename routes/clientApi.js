@@ -663,7 +663,7 @@ router
                     let whereParams = {
                         [sequelize.Op.eq]: { from: address.address },
                         [sequelize.Op.ne]: { to: null },
-                        [sequelize.Op.eq]: { '"type"': 'delegation' }
+                        [sequelize.Op.like]: { type: 'delegation' }
                     };
 
                     if (req.params.net !== '*') {
