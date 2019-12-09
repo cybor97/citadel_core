@@ -685,7 +685,7 @@ router
                         whereParams.value = { [sequelize.Op.ne]: 0 };
                     }
 
-                    let transactions = await Transaction.findAndCountAll(Object.assign({
+                    let transactions = await Transaction.findAll(Object.assign({
                         attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                         where: whereParams,
                     }, utils.preparePagination(req.query)));
@@ -703,17 +703,10 @@ router
 
                         await explorerUpdater.doWork(req.params.net, connector, address, serviceAddresses);
 
-                        transactions = await Transaction.findAndCountAll(Object.assign({
+                        transactions = await Transaction.findAll(Object.assign({
                             attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                             where: whereParams
                         }, utils.preparePagination(req.query)));
-                    }
-
-                    if (address.net === 'orbs') {
-                        //FIXME: Use rewardLastUpdate
-                        let rewardTransactions = await connector.getRewardTransactions(address.address);
-                        transactions.rows = [].concat(transactions.rows, rewardTransactions);
-                        transactions.count += rewardTransactions.length;
                     }
 
                     result[address.address] = transactions;
