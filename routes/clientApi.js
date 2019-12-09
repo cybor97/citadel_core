@@ -661,7 +661,7 @@ router
             try {
                 if (!addressesRequested || addressesRequested.includes(address)) {
                     let whereParams = {
-                        [sequelize.Op.eq]: { from: address.address },
+                        [sequelize.Op.like]: { from: address.address },
                         [sequelize.Op.ne]: { to: null },
                         [sequelize.Op.like]: { type: 'delegation' }
                     };
