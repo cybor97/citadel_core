@@ -662,7 +662,7 @@ router
                 if (!addressesRequested || addressesRequested.includes(address)) {
                     let whereParams = {
                         from: address.address,
-                        [sequelize.Op.ne]: { to: null },
+                        to: { [sequelize.Op.ne]: null },
                         type: 'delegation'
                     };
 
