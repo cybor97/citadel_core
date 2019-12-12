@@ -47,20 +47,20 @@ const CHART_DATES_QUERY = `
 `;
 
 const CHART_DATA_QUERY = `
-    SELECT SUM(transactions.value) AS volume, MAX(transactions.date) AS datetime
+    SELECT SUM(transactions.value) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
-    GROUP BY transactions.date / :datePartMultiplier;
+    GROUP BY transactions.date / :datePartMultiplier, transactions.currency;
 `;
 
 const CHART_DATA_QUERY_REWARD_ONLY = `
-    SELECT SUM(transactions.value) AS volume, MAX(transactions.date) AS datetime
+    SELECT SUM(transactions.value) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
         AND transactions.type IN ('payment', 'approved_payment')
-    GROUP BY transactions.date / :datePartMultiplier;
+    GROUP BY transactions.date / :datePartMultiplier, transactions.currency;
 `;
 
 const DAY_DURATION = 1000 * 3600 * 24;
