@@ -321,11 +321,11 @@ class IOSTCoin extends BaseConnector {
             const data = await this.rpc.transaction.getTxByHash(hash);
             let receipt = data.transaction.tx_receipt;
 
-            if (receipt.status_code === 'SUCCESS') {
+            if (receipt && receipt.status_code === 'SUCCESS') {
                 return { status: 'ok', reason: receipt.message };
             }
             else {
-                return { status: 'failed', reason: receipt.message.match('\n') ? receipt.message.split('\n').map(c => c.trim()).filter(Boolean).pop() : receipt.message }
+                return { status: 'failed', reason: receipt ? receipt.message.match('\n') ? receipt.message.split('\n').map(c => c.trim()).filter(Boolean).pop() : receipt.message : JSON.stringify(transaction) }
             }
         }
         catch (err) {
