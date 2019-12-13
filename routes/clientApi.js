@@ -738,9 +738,16 @@ router
             return res.status(403).send({ message: 'Unauthorized!' });
         }
 
-        let address = (await Address.findOne({
+        let address = (await Address.findOrCreate({
             where: { net: req.params.net, address: req.params.address },
-        }));
+            defaults: {
+                address: req.params.address,
+                net: req.params.net,
+                currency: req.params.net,
+                updated: null,
+                created: Date.now()
+            }
+        }))[0];
 
         if (typeof (req.body.userId) !== 'number') {
             return res.status(400).send({ message: 'userId is not provided or has invalid format.' });
