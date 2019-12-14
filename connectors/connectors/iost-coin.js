@@ -319,7 +319,11 @@ class IOSTCoin extends BaseConnector {
     async checkTransaction(address, hash) {
         try {
             const data = await this.rpc.transaction.getTxByHash(hash);
-            let receipt = data.transaction.tx_receipt;
+            let receipt = data.transaction && data.transaction.tx_receipt;
+
+            if (data.transaction && !receipt) {
+                return { status: 'pending', reason: JSON.stringify(data.transaction) };
+            }
 
             if (receipt && receipt.status_code === 'SUCCESS') {
                 return { status: 'ok', reason: receipt.message };
