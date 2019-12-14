@@ -325,7 +325,7 @@ class IOSTCoin extends BaseConnector {
                 return { status: 'ok', reason: receipt.message };
             }
             else {
-                return { status: 'failed', reason: receipt ? receipt.message.match('\n') ? receipt.message.split('\n').map(c => c.trim()).filter(Boolean).pop() : receipt.message : JSON.stringify(transaction) }
+                return { status: 'failed', reason: receipt ? receipt.message.match('\n') ? receipt.message.split('\n').map(c => c.trim()).filter(Boolean).pop() : receipt.message : JSON.stringify(data && data.transaction ? data.transaction : data) }
             }
         }
         catch (err) {
