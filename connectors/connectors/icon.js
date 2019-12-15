@@ -124,7 +124,7 @@ class ICON extends BaseConnector {
                         comment: tx.message,
                         from: tx.from,
                         fromAlias: tx.from,
-                        to: tx.to,
+                        to: tx.data && tx.data.method == 'setDelegation' ? tx.data.params && tx.data.params.delegations && tx.data.params.delegations[0] && tx.data.params.delegations[0].address : tx.to,
                         fee: parseInt(tx.fee || 0) / ICON_MULTIPLIER,
                         originalOpType: tx.data && tx.data.method,
                         type: tx.data && tx.data.method == 'setDelegation' ? 'delegation' : 'supplement',
