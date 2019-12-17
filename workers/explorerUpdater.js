@@ -51,6 +51,7 @@ const CHART_DATA_QUERY = `
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
+    ORDER BY transactions.date
     GROUP BY transactions.date / :datePartMultiplier, transactions.currency;
 `;
 
@@ -60,6 +61,7 @@ const CHART_DATA_QUERY_REWARD_ONLY = `
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
         AND transactions.type IN ('payment', 'approved_payment')
+    ORDER BY transactions.date
     GROUP BY transactions.date / :datePartMultiplier, transactions.currency;
 `;
 
