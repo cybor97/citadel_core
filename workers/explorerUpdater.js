@@ -374,6 +374,10 @@ class ExplorerUpdater {
                 where: whereParams
             }));
 
+            if (!addressData || !addressData.length) {
+                return [];
+            }
+
             for (let addressData of addressesData) {
                 addresses.push(addressData.address);
                 nets.add(addressData.net);
