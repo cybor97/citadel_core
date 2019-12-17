@@ -51,8 +51,7 @@ const CHART_DATA_QUERY = `
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
-    GROUP BY transactions.date / :datePartMultiplier, transactions.currency
-    ORDER BY transactions.date;
+    GROUP BY transactions.date / :datePartMultiplier, transactions.currency;
 `;
 
 const CHART_DATA_QUERY_REWARD_ONLY = `
@@ -61,8 +60,7 @@ const CHART_DATA_QUERY_REWARD_ONLY = `
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
         AND transactions.type IN ('payment', 'approved_payment')
-    GROUP BY transactions.date / :datePartMultiplier, transactions.currency
-    ORDER BY transactions.date;
+    GROUP BY transactions.date / :datePartMultiplier, transactions.currency;
 `;
 
 const DAY_DURATION = 1000 * 3600 * 24;
@@ -388,16 +386,17 @@ class ExplorerUpdater {
 
         let datePart = this.getDatePartByDelta(dateFrom, dateTo);
 
-        return await sequelizeConnection.query(rewardOnly ? CHART_DATA_QUERY_REWARD_ONLY : CHART_DATA_QUERY, {
+        return (await sequelizeConnection.query(rewardOnly ? CHART_DATA_QUERY_REWARD_ONLY : CHART_DATA_QUERY, {
             type: sequelizeConnection.QueryTypes.SELECT,
             replacements: {
-                addresses: addresses,
+                addresses: addrresses,
                 nets: Array.from(nets),
                 dateFrom: dateFrom,
                 dateTo: dateTo,
                 datePartMultiplier: stepOverride || datePart
             }
-        });
+        }))
+            .sort((a, b) => parseInt(a.datetime) < parseInt(b.datetime) ? -1 : 1);
     }
 
     static getDatePartByDelta(dateFrom, dateTo) {
