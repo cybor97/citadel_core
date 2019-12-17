@@ -389,7 +389,7 @@ class ExplorerUpdater {
         return (await sequelizeConnection.query(rewardOnly ? CHART_DATA_QUERY_REWARD_ONLY : CHART_DATA_QUERY, {
             type: sequelizeConnection.QueryTypes.SELECT,
             replacements: {
-                addresses: addrresses,
+                addresses: addresses,
                 nets: Array.from(nets),
                 dateFrom: dateFrom,
                 dateTo: dateTo,
