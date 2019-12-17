@@ -51,8 +51,8 @@ const CHART_DATA_QUERY = `
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
-    ORDER BY transactions.date
-    GROUP BY transactions.date / :datePartMultiplier, transactions.currency;
+    GROUP BY transactions.date / :datePartMultiplier, transactions.currency
+    ORDER BY transactions.date;
 `;
 
 const CHART_DATA_QUERY_REWARD_ONLY = `
@@ -61,8 +61,8 @@ const CHART_DATA_QUERY_REWARD_ONLY = `
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
         AND transactions.type IN ('payment', 'approved_payment')
-    ORDER BY transactions.date
-    GROUP BY transactions.date / :datePartMultiplier, transactions.currency;
+    GROUP BY transactions.date / :datePartMultiplier, transactions.currency
+    ORDER BY transactions.date;
 `;
 
 const DAY_DURATION = 1000 * 3600 * 24;
