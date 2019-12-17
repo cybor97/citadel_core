@@ -374,7 +374,7 @@ class ExplorerUpdater {
                 where: whereParams
             }));
 
-            if (!addressData || !addressData.length) {
+            if (!addressesData || !addressesData.length) {
                 return [];
             }
 
