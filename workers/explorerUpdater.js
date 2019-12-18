@@ -401,6 +401,16 @@ class ExplorerUpdater {
         }))
             .sort((a, b) => parseInt(a.datetime) < parseInt(b.datetime) ? -1 : 1);
 
+        if (data.length > 0) {
+            for (let time = parseInt(data[0].datetime); time > dateFrom; time -= step) {
+                data.unshift(Object.assign(data[0], { datetime: time.toString() }));
+            }
+
+            for (let time = parseInt(data[data.length - 1].datetime); time < dateTo; time += step) {
+                data.push(Object.assign(data[0], { datetime: time.toString() }));
+            }
+        }
+
         return data;
     }
 
