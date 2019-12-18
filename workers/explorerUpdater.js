@@ -396,12 +396,12 @@ class ExplorerUpdater {
                 nets: Array.from(nets),
                 dateFrom: dateFrom,
                 dateTo: dateTo,
-                datePartMultiplier: stepOverride || datePart
+                datePartMultiplier: step
             }
         }))
             .sort((a, b) => parseInt(a.datetime) < parseInt(b.datetime) ? -1 : 1);
 
-        if (data.length > 0) {
+        if (stepOverride && data.length > 0) {
             for (let time = parseInt(data[0].datetime); time > dateFrom; time -= step) {
                 data.unshift({ volume: data[0].volume, net: data[0].net, datetime: time.toString() });
             }
