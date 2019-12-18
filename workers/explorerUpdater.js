@@ -407,7 +407,7 @@ class ExplorerUpdater {
             }
 
             for (let time = parseInt(data[data.length - 1].datetime); time < dateTo; time += step) {
-                data.push(Object.assign(data[0], { datetime: time.toString() }));
+                data.push(Object.assign(data[data.length - 1], { datetime: time.toString() }));
             }
         }
 
