@@ -402,11 +402,11 @@ class ExplorerUpdater {
             .sort((a, b) => parseInt(a.datetime) < parseInt(b.datetime) ? -1 : 1);
 
         if (stepOverride && data.length > 0) {
-            for (let time = parseInt(data[0].datetime); time > dateFrom; time -= step) {
+            for (let time = parseInt(data[0].datetime) - step; time > dateFrom; time -= step) {
                 data.unshift({ volume: data[0].volume, net: data[0].net, datetime: time.toString() });
             }
 
-            for (let time = parseInt(data[data.length - 1].datetime); time < dateTo; time += step) {
+            for (let time = parseInt(data[data.length - 1].datetime) + step; time < dateTo; time += step) {
                 data.push({ volume: data[data.length - 1].volume, net: data[data.length - 1].net, datetime: time.toString() });
             }
         }
