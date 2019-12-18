@@ -403,11 +403,11 @@ class ExplorerUpdater {
 
         if (data.length > 0) {
             for (let time = parseInt(data[0].datetime); time > dateFrom; time -= step) {
-                data.unshift(Object.assign(data[0], { datetime: time.toString() }));
+                data.unshift({ volume: data[0].volume, net: data[0].net, datetime: time.toString() });
             }
 
             for (let time = parseInt(data[data.length - 1].datetime); time < dateTo; time += step) {
-                data.push(Object.assign(data[data.length - 1], { datetime: time.toString() }));
+                data.push({ volume: data[data.length - 1].volume, net: data[data.length - 1].net, datetime: time.toString() });
             }
         }
 
