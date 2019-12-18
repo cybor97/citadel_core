@@ -456,8 +456,12 @@ router
         let now = Date.now();
         let dateFrom = req.query.date_from || now - (4 * 7 * 24 * 3600 * 1000);
         let dateTo = req.query.date_to || now;
+        let stepOverride = req.query.step;
+        if (stepOverride) {
+            stepOverride *= 60 * 1000;
+        }
 
-        let result = await explorerUpdater.getChartData(req.params.userId, req.params.net, req.query.address, dateFrom, dateTo, !req.query.add_balance, false);
+        let result = await explorerUpdater.getChartData(req.params.userId, req.params.net, req.query.address, dateFrom, dateTo, !req.query.add_balance, stepOverride);
 
         return res.status(200).send(result);
     })
@@ -484,8 +488,12 @@ router
         let now = Date.now();
         let dateFrom = req.query.date_from || now - (4 * 7 * 24 * 3600 * 1000);
         let dateTo = req.query.date_to || now;
+        let stepOverride = req.query.step;
+        if (stepOverride) {
+            stepOverride *= 60 * 1000;
+        }
 
-        let result = await explorerUpdater.getChartData(req.params.userId, req.params.net, req.query.address, dateFrom, dateTo, !req.query.add_balance, 7 * 24 * 3600 * 1000);
+        let result = await explorerUpdater.getChartData(req.params.userId, req.params.net, req.query.address, dateFrom, dateTo, !req.query.add_balance, stepOverride || (7 * 24 * 3600 * 1000));
 
         return res.status(200).send(result);
     })

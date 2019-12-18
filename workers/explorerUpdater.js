@@ -384,9 +384,12 @@ class ExplorerUpdater {
             }
         }
 
-        let datePart = this.getDatePartByDelta(dateFrom, dateTo);
+        let step = stepOverride;
+        if (!step) {
+            step = this.getDatePartByDelta(dateFrom, dateTo);
+        }
 
-        return (await sequelizeConnection.query(rewardOnly ? CHART_DATA_QUERY_REWARD_ONLY : CHART_DATA_QUERY, {
+        let data = (await sequelizeConnection.query(rewardOnly ? CHART_DATA_QUERY_REWARD_ONLY : CHART_DATA_QUERY, {
             type: sequelizeConnection.QueryTypes.SELECT,
             replacements: {
                 addresses: addresses,
@@ -397,6 +400,8 @@ class ExplorerUpdater {
             }
         }))
             .sort((a, b) => parseInt(a.datetime) < parseInt(b.datetime) ? -1 : 1);
+
+        return data;
     }
 
     static getDatePartByDelta(dateFrom, dateTo) {
