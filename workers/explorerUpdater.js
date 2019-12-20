@@ -408,7 +408,7 @@ class ExplorerUpdater {
                     replaced = false;
                     for (let i = 0; i < data.length - 1; i++) {
                         if (parseInt(data[i + 1].datetime) - parseInt(data[i].datetime) > stepOverride * 2) {
-                            data.splice(i, 0, {
+                            data.splice(i + 1, 0, {
                                 net: data[i].net,
                                 volume: data[i].volume + (data[i + 1].volume - data[i].volume) / 2,
                                 datetime: (parseInt(data[i].datetime) + (parseInt(data[i + 1].datetime) - parseInt(data[i].datetime)) / 2).toString(),
