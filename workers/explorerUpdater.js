@@ -402,12 +402,34 @@ class ExplorerUpdater {
             .sort((a, b) => parseInt(a.datetime) < parseInt(b.datetime) ? -1 : 1);
 
         if (stepOverride && data.length > 0) {
-            for (let time = parseInt(data[0].datetime) - step; time > dateFrom; time -= step) {
-                data.unshift({ volume: data[0].volume, net: data[0].net, datetime: time.toString() });
+            if (data.length > 1) {
+                let replaced = false;
+                do {
+                    replaced = false;
+                    for (let i = 0; i < data.length - 1; i++) {
+                        if (parseInt(data[i + 1].datetime) - parseInt(data[i].datetime) > stepOverride * 2) {
+                            data.splice(i, 0, {
+                                net: data[i].net,
+                                volume: data[i].volume + (data[i + 1].volume - data[i].volume) / 2,
+                                datetime: (parseInt(data[i].datetime) + (parseInt(data[i + 1].datetime) - parseInt(data[i].datetime)) / 2).toString(),
+
+                            });
+                            replaced = true;
+                            break;
+                        }
+                    }
+                }
+                while (replaced);
             }
 
-            for (let time = parseInt(data[data.length - 1].datetime) + step; time < dateTo; time += step) {
-                data.push({ volume: data[data.length - 1].volume, net: data[data.length - 1].net, datetime: time.toString() });
+            if (dateFrom != 0) {
+                for (let time = parseInt(data[0].datetime) - step; time > dateFrom; time -= step) {
+                    data.unshift({ volume: data[0].volume, net: data[0].net, datetime: time.toString() });
+                }
+
+                for (let time = parseInt(data[data.length - 1].datetime) + step; time < dateTo; time += step) {
+                    data.push({ volume: data[data.length - 1].volume, net: data[data.length - 1].net, datetime: time.toString() });
+                }
             }
         }
 
