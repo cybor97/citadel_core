@@ -1,6 +1,14 @@
 const jwt = require('jose');
 
 module.exports = {
+    parseBoolean(str) {
+        if (typeof (str) === 'boolean') {
+            return str;
+        }
+
+        return str == 'true' || str == '1';
+    },
+
     preparePagination(query) {
         return {
             limit: query.limit ? parseInt(query.limit) : null,
