@@ -411,7 +411,7 @@ class ExplorerUpdater {
                             data.splice(i + 1, 0, {
                                 net: data[i].net,
                                 volume: data[i].volume + (data[i + 1].volume - data[i].volume) / 2,
-                                datetime: (parseInt(data[i].datetime) + (parseInt(data[i + 1].datetime) - parseInt(data[i].datetime)) / 2).toString(),
+                                datetime: (~~(parseInt(data[i].datetime) + (parseInt(data[i + 1].datetime) - parseInt(data[i].datetime)) / 2)).toString(),
 
                             });
                             replaced = true;
