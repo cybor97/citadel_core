@@ -120,7 +120,7 @@ class ICON extends BaseConnector {
                     .map((tx) => ({
                         hash: tx.tx_hash || tx.txHash || '0x0',
                         date: blockTimestamp,
-                        value: parseInt(tx.value || tx.amount || 0) / ICON_MULTIPLIER,
+                        value: parseInt(tx.data && tx.data.method == 'setStake' ? tx.data.params.value : tx.value || tx.amount || 0) / ICON_MULTIPLIER,
                         comment: tx.message,
                         from: tx.from,
                         fromAlias: tx.from,
