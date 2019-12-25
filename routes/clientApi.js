@@ -461,7 +461,7 @@ router
             stepOverride *= 60 * 1000;
         }
 
-        let result = await explorerUpdater.getChartData(req.params.userId, req.params.net, req.query.address, dateFrom, dateTo, !utils.parseBoolean(req.query.add_balance), stepOverride);
+        let result = await explorerUpdater.getChartData(req.params.userId, req.params.net, req.query.address, dateFrom, dateTo, !utils.parseBoolean(req.query.add_balance), stepOverride, true);
 
         return res.status(200).send(result);
     })
@@ -490,7 +490,7 @@ router
             stepOverride *= 60 * 1000;
         }
 
-        let result = await explorerUpdater.getChartData(req.params.userId, req.params.net, req.query.address, 0, Date.now(), !utils.parseBoolean(req.query.add_balance), stepOverride || (7 * 24 * 3600 * 1000));
+        let result = await explorerUpdater.getChartData(req.params.userId, req.params.net, req.query.address, 0, Date.now(), !utils.parseBoolean(req.query.add_balance), stepOverride || (7 * 24 * 3600 * 1000), false);
 
         return res.status(200).send(result);
     })

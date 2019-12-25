@@ -47,7 +47,7 @@ const CHART_DATES_QUERY = `
 `;
 
 const CHART_DATA_QUERY = `
-    SELECT SUM(transactions.value) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
+    SELECT SUM(IF(transactions.from IN (:addresses), -transactions.value, transactions.value)) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
@@ -55,7 +55,7 @@ const CHART_DATA_QUERY = `
 `;
 
 const CHART_DATA_QUERY_REWARD_ONLY = `
-    SELECT SUM(transactions.value) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
+    SELECT SUM(IF(transactions.from IN (:addresses), -transactions.value, transactions.value)) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
@@ -349,7 +349,7 @@ class ExplorerUpdater {
         return data.length ? data.pop() : null;
     }
 
-    static async getChartData(userId, net, address, dateFrom, dateTo, rewardOnly, stepOverride) {
+    static async getChartData(userId, net, address, dateFrom, dateTo, rewardOnly, stepOverride, interpolate) {
         let nets = new Set();
         let addresses = [];
 
@@ -401,7 +401,7 @@ class ExplorerUpdater {
         }))
             .sort((a, b) => parseInt(a.datetime) < parseInt(b.datetime) ? -1 : 1);
 
-        if (stepOverride && data.length > 0) {
+        if (interpolate && stepOverride && data.length > 0) {
             if (data.length > 1) {
                 let replaced = false;
                 do {
