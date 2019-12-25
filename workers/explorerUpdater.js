@@ -47,7 +47,7 @@ const CHART_DATES_QUERY = `
 `;
 
 const CHART_DATA_QUERY = `
-    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
+    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
@@ -55,7 +55,7 @@ const CHART_DATA_QUERY = `
 `;
 
 const CHART_DATA_QUERY_REWARD_ONLY = `
-    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
+    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
