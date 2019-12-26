@@ -30,7 +30,7 @@ const LAST_PATH_QUERY_NET = `
  `;
 
 const BALANCE_QUERY = `
-    SELECT SUM(CASE WHEN transactions.from = :address THEN -transactions.value ELSE transactions.value END) as balance
+    SELECT SUM(CASE WHEN transactions.from = :address THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) as balance
     FROM transactions
     WHERE transactions.currency = :net AND (transactions.from = :address OR transactions.to = :address) AND NOT transactions."isCancelled";
  `;
@@ -48,7 +48,7 @@ const CHART_DATES_QUERY = `
 `;
 
 const CHART_DATA_QUERY = `
-    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
+    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
@@ -56,7 +56,7 @@ const CHART_DATA_QUERY = `
 `;
 
 const CHART_DATA_QUERY_REWARD_ONLY = `
-    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
+    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END)  - SUM(transactions.fee) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
@@ -353,6 +353,7 @@ class ExplorerUpdater {
     static async getChartData(userId, net, address, dateFrom, dateTo, rewardOnly, stepOverride, interpolate) {
         let nets = new Set();
         let addresses = [];
+        let balances = {};
 
         if (address) {
             addresses = [address];
@@ -397,6 +398,10 @@ class ExplorerUpdater {
             step = this.getDatePartByDelta(dateFrom, dateTo);
         }
 
+        for (let net of nets) {
+            balances[net] = 0;
+        }
+
         let data = (await sequelizeConnection.query(rewardOnly ? CHART_DATA_QUERY_REWARD_ONLY : CHART_DATA_QUERY, {
             type: sequelizeConnection.QueryTypes.SELECT,
             replacements: {
@@ -409,6 +414,11 @@ class ExplorerUpdater {
         }))
             .sort((a, b) => parseInt(a.datetime) < parseInt(b.datetime) ? -1 : 1);
 
+        for (let transaction of data) {
+            balances[transaction.net] += transaction.volume;
+            transaction.balance = balances[transaction.net];
+        }
+
         if (interpolate && stepOverride && data.length > 0) {
             if (data.length > 1) {
                 let replaced = false;
@@ -418,7 +428,8 @@ class ExplorerUpdater {
                         if (parseInt(data[i + 1].datetime) - parseInt(data[i].datetime) > stepOverride * 2) {
                             data.splice(i + 1, 0, {
                                 net: data[i].net,
-                                volume: data[i].volume + (data[i + 1].volume - data[i].volume) / 2,
+                                volume: data[i].volume,
+                                balance: data[i].balance,
                                 datetime: (parseInt(data[i].datetime) + (parseInt(data[i + 1].datetime) - parseInt(data[i].datetime)) / 2).toString(),
                             });
                             replaced = true;
@@ -435,11 +446,11 @@ class ExplorerUpdater {
 
             if (dateFrom != 0) {
                 for (let time = parseInt(data[0].datetime) - step; time > dateFrom; time -= step) {
-                    data.unshift({ volume: data[0].volume, net: data[0].net, datetime: time.toString() });
+                    data.unshift({ volume: data[0].volume, balance: data[0].balance, net: data[0].net, datetime: time.toString() });
                 }
 
                 for (let time = parseInt(data[data.length - 1].datetime) + step; time < dateTo; time += step) {
-                    data.push({ volume: data[data.length - 1].volume, net: data[data.length - 1].net, datetime: time.toString() });
+                    data.push({ volume: data[data.length - 1].volume, balance: data[data.length - 1].balance, net: data[data.length - 1].net, datetime: time.toString() });
                 }
             }
         }
