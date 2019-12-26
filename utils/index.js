@@ -1,6 +1,12 @@
 const jwt = require('jose');
 
 module.exports = {
+    getUniqueTransactions(transactions) {
+        let transactionsMapped = {};
+        transactions.forEach(tx => transactionsMapped[tx.hash] = tx);
+        return Object.values(transactionsMapped);
+    },
+
     parseBoolean(str) {
         if (typeof (str) === 'boolean') {
             return str;

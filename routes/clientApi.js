@@ -230,10 +230,10 @@ router
             let transactions = await Transaction.findAndCountAll(Object.assign({
                 attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                 where: whereParams,
-                group: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
             }, utils.preparePagination(req.query)));
+            transactions.rows = utils.getUniqueTransactions(transactions.rows);
 
-            if (!transactions.length && req.query.forceUpdate) {
+            if (!transactions.count && req.query.forceUpdate) {
                 let serviceAddresses = await Address.findAll({
                     order: [['created', 'desc']],
                     where: {
@@ -248,8 +248,8 @@ router
                 transactions = await Transaction.findAndCountAll(Object.assign({
                     attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                     where: whereParams,
-                    group: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                 }, utils.preparePagination(req.query)));
+                transactions.rows = utils.getUniqueTransactions(transactions.rows);
             }
 
             address = address.dataValues;
@@ -575,8 +575,8 @@ router
                     let transactions = await Transaction.findAndCountAll(Object.assign({
                         attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                         where: whereParams,
-                        group: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                     }, utils.preparePagination(req.query)));
+                    transactions.rows = utils.getUniqueTransactions(transactions.rows);
 
                     let connector = new connectors[address.net]();
 
@@ -594,8 +594,8 @@ router
                         transactions = await Transaction.findAndCountAll(Object.assign({
                             attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                             where: whereParams,
-                            group: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                         }, utils.preparePagination(req.query)));
+                        transactions.rows = utils.getUniqueTransactions(transactions.rows);
                     }
 
                     if (address.net === 'orbs') {
@@ -697,8 +697,8 @@ router
                     let transactions = await Transaction.findAll(Object.assign({
                         attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                         where: whereParams,
-                        group: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                     }, utils.preparePagination(req.query)));
+                    transactions = utils.getUniqueTransactions(transactions);
 
                     let connector = new connectors[address.net]();
 
@@ -716,8 +716,8 @@ router
                         transactions = await Transaction.findAll(Object.assign({
                             attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                             where: whereParams,
-                            group: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                         }, utils.preparePagination(req.query)));
+                        transactions = utils.getUniqueTransactions(transactions);
                     }
 
                     if (!result[address.net]) {
