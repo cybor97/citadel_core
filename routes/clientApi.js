@@ -232,7 +232,10 @@ router
                 where: whereParams,
             }, utils.preparePagination(req.query)));
             transactions.rows = utils.getUniqueTransactions(transactions.rows);
-            transactions.count = await Transaction.aggregate('hash', 'count', { distinct: true });
+            transactions.count = await Transaction.aggregate('hash', 'count', {
+                distinct: true,
+                where: whereParams
+            });
 
             if (!transactions.count && req.query.forceUpdate) {
                 let serviceAddresses = await Address.findAll({
@@ -250,7 +253,10 @@ router
                     attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                     where: whereParams,
                 }, utils.preparePagination(req.query)));
-                transactions.count = await Transaction.aggregate('hash', 'count', { distinct: true });
+                transactions.count = await Transaction.aggregate('hash', 'count', {
+                    distinct: true,
+                    where: whereParams
+                });
                 transactions.rows = utils.getUniqueTransactions(transactions.rows);
             }
 
@@ -578,7 +584,10 @@ router
                         attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                         where: whereParams,
                     }, utils.preparePagination(req.query)));
-                    transactions.count = await Transaction.aggregate('hash', 'count', { distinct: true });
+                    transactions.count = await Transaction.aggregate('hash', 'count', {
+                        distinct: true,
+                        where: whereParams
+                    });
                     transactions.rows = utils.getUniqueTransactions(transactions.rows);
 
                     let connector = new connectors[address.net]();
@@ -598,7 +607,10 @@ router
                             attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                             where: whereParams,
                         }, utils.preparePagination(req.query)));
-                        transactions.count = await Transaction.aggregate('hash', 'count', { distinct: true });
+                        transactions.count = await Transaction.aggregate('hash', 'count', {
+                            distinct: true,
+                            where: whereParams
+                        });
                         transactions.rows = utils.getUniqueTransactions(transactions.rows);
                     }
 
