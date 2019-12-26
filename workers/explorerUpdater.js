@@ -7,6 +7,7 @@ const sequelizeConnection = require('../data').getConnection();
 const Address = require('../data/models/Address');
 const Transaction = require('../data/models/Transaction');
 const log = require('../utils/log');
+const { ValidationError } = require('../utils/errors');
 
 const config = require('../config');
 const LAST_PATHS_QUERY = `
@@ -355,6 +356,13 @@ class ExplorerUpdater {
 
         if (address) {
             addresses = [address];
+
+            if (net && net != '*') {
+                nets.add(net);
+            }
+            else {
+                throw new ValidationError('net should be specified for single address');
+            }
         }
         else {
             let whereParams = {
