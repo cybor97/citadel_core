@@ -415,7 +415,7 @@ router
         let addressesRequested = req.query.addresses;
 
         for (let address of addresses) {
-            if (!addressesRequested || addressesRequested.includes(address)) {
+            if (!addressesRequested || addressesRequested.includes(address.address)) {
                 let balanceData = await explorerUpdater.getBalance(address.net, address.address);
                 let rewardData = await explorerUpdater.getReward(address.net, address.address);
                 let chartDates = await explorerUpdater.getChartDates(address.net, address.address);
@@ -550,7 +550,7 @@ router
 
         for (let address of addresses) {
             try {
-                if (!addressesRequested || addressesRequested.includes(address)) {
+                if (!addressesRequested || addressesRequested.includes(address.address)) {
                     let whereParams = { [sequelize.Op.or]: [{ from: address.address }, { to: address.address }] };
 
                     if (req.params.net !== '*') {
@@ -580,7 +580,7 @@ router
 
                     let connector = new connectors[address.net]();
 
-                    if (!transactions.length && req.query.forceUpdate && connector) {
+                    if (!transactions.count && req.query.forceUpdate && connector) {
                         let serviceAddresses = await Address.findAll({
                             order: [['created', 'desc']],
                             where: {
@@ -668,7 +668,7 @@ router
 
         for (let address of addresses) {
             try {
-                if (!addressesRequested || addressesRequested.includes(address)) {
+                if (!addressesRequested || addressesRequested.includes(address.address)) {
                     let whereParams = {
                         from: address.address,
                         to: { [sequelize.Op.ne]: null },
