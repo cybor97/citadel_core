@@ -230,6 +230,7 @@ router
             let transactions = await Transaction.findAndCountAll(Object.assign({
                 attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                 where: whereParams,
+                group: 'hash'
             }, utils.preparePagination(req.query)));
 
             if (!transactions.length && req.query.forceUpdate) {
@@ -246,7 +247,8 @@ router
 
                 transactions = await Transaction.findAndCountAll(Object.assign({
                     attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
-                    where: whereParams
+                    where: whereParams,
+                    group: 'hash'
                 }, utils.preparePagination(req.query)));
             }
 
@@ -573,6 +575,7 @@ router
                     let transactions = await Transaction.findAndCountAll(Object.assign({
                         attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                         where: whereParams,
+                        group: 'hash'
                     }, utils.preparePagination(req.query)));
 
                     let connector = new connectors[address.net]();
@@ -590,7 +593,8 @@ router
 
                         transactions = await Transaction.findAndCountAll(Object.assign({
                             attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
-                            where: whereParams
+                            where: whereParams,
+                            group: 'hash'
                         }, utils.preparePagination(req.query)));
                     }
 
@@ -693,6 +697,7 @@ router
                     let transactions = await Transaction.findAll(Object.assign({
                         attributes: ['hash', 'date', 'value', 'feeBlockchain', 'gasUsed', 'ramUsed', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
                         where: whereParams,
+                        group: 'hash'
                     }, utils.preparePagination(req.query)));
 
                     let connector = new connectors[address.net]();
@@ -710,7 +715,8 @@ router
 
                         transactions = await Transaction.findAll(Object.assign({
                             attributes: ['hash', 'date', 'value', 'from', 'to', 'fee', 'type', 'comment', 'isCancelled'],
-                            where: whereParams
+                            where: whereParams,
+                            group: 'hash'
                         }, utils.preparePagination(req.query)));
                     }
 
