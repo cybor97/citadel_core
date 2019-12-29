@@ -50,7 +50,7 @@ const CHART_DATES_QUERY = `
 const PRE_CALCULATE_BALANCE_QUERY = `
     SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, transactions.currency AS net
     FROM transactions
-    WHERE transactions.currency IN (:nets) AND transactions.date < dateTo AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
+    WHERE transactions.currency IN (:nets) AND transactions.date < :dateTo AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
     GROUP BY transactions.currency;
 `;
 
