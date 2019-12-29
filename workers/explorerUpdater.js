@@ -47,6 +47,13 @@ const CHART_DATES_QUERY = `
     WHERE transactions.currency = :net AND (transactions.from = :address OR transactions.to = :address);
 `;
 
+const PRE_CALCULATE_BALANCE_QUERY = `
+    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, transactions.currency AS net
+    FROM transactions
+    WHERE transactions.currency IN (:nets) AND transactions.date < dateTo AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
+    GROUP BY transactions.currency;
+`;
+
 const CHART_DATA_QUERY = `
     SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
     FROM transactions
@@ -398,8 +405,15 @@ class ExplorerUpdater {
             step = this.getDatePartByDelta(dateFrom, dateTo);
         }
 
+        let precalculatedBalancesMapped = (await sequelizeConnection.query(PRE_CALCULATE_BALANCE_QUERY, {
+            addresses: addresses,
+            nets: Array.from(nets),
+            dateTo: dateFrom
+        }))
+            .reduce((prev, next) => { prev[next.net] = next.volume; return prev; }, {});
+
         for (let net of nets) {
-            balances[net] = 0;
+            balances[net] = precalculatedBalancesMapped[net] || 0;
         }
 
         let data = (await sequelizeConnection.query(rewardOnly ? CHART_DATA_QUERY_REWARD_ONLY : CHART_DATA_QUERY, {
