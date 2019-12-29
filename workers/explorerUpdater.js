@@ -406,9 +406,12 @@ class ExplorerUpdater {
         }
 
         let precalculatedBalancesMapped = (await sequelizeConnection.query(PRE_CALCULATE_BALANCE_QUERY, {
-            addresses: addresses,
-            nets: Array.from(nets),
-            dateTo: dateFrom
+            type: sequelizeConnection.QueryTypes.SELECT,
+            replacements: {
+                addresses: addresses,
+                nets: Array.from(nets),
+                dateTo: dateFrom
+            }
         }))
             .reduce((prev, next) => { prev[next.net] = next.volume; return prev; }, {});
 
