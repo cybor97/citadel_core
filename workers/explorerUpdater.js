@@ -71,6 +71,25 @@ const CHART_DATA_QUERY_REWARD_ONLY = `
     GROUP BY transactions.date / :datePartMultiplier, transactions.currency;
 `;
 
+const GET_BALANCE_GROUP_NET = `
+    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, transactions.currency AS net
+    FROM transactions
+    WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
+    GROUP BY transactions.currency;
+`;
+
+const GET_REWARDS_GROUP_NET = `
+    SELECT SUM(transactions.value) AS volume, transactions.currency AS net
+    FROM transactions
+    WHERE transactions.date >= :dateFrom 
+        AND transactions.date <= :dateTo 
+        AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses)) 
+        AND transactions.type IN ('payment', 'approved_payment')
+        AND transactions.currency IN (:nets) 
+    GROUP BY transactions.currency;
+`;
+
+
 const DAY_DURATION = 1000 * 3600 * 24;
 
 class ExplorerUpdater {
@@ -494,6 +513,64 @@ class ExplorerUpdater {
         }
 
         return DAY_DURATION * 365;
+    }
+
+
+    static async getRewardTotal(net, userId, dateFrom, dateTo, rewardOnly) {
+        let nets = new Set();
+        let addresses = [];
+
+        let whereParams = {
+            [sequelize.Op.or]: [
+                { userIds: { [sequelize.Op.like]: `${userId}` } },
+                { userIds: { [sequelize.Op.like]: `${userId},%` } },
+                { userIds: { [sequelize.Op.like]: `%,${userId},%` } },
+                { userIds: { [sequelize.Op.like]: `%,${userId}` } }
+            ]
+        };
+
+        if (net !== '*') {
+            whereParams.net = net;
+        }
+
+        let addressesData = (await Address.findAll({
+            where: whereParams
+        }));
+
+        if (!addressesData || !addressesData.length) {
+            return { reward: {}, balance: {} };
+        }
+
+        for (let addressData of addressesData) {
+            addresses.push(addressData.address);
+            nets.add(addressData.net);
+        }
+
+        let result = {};
+        let rewards = (await sequelizeConnection.query(GET_REWARDS_GROUP_NET, {
+            type: sequelizeConnection.QueryTypes.SELECT,
+            replacements: {
+                addresses: addresses,
+                dateFrom: dateFrom,
+                dateTo: dateTo,
+                nets: Array.from(nets)
+            }
+        }))
+            .reduce((prev, next) => { prev[next.net] = next.volume; return prev; }, {});
+
+        if (!rewardOnly) {
+            result.balance = (await sequelizeConnection.query(GET_BALANCE_GROUP_NET, {
+                type: sequelizeConnection.QueryTypes.SELECT,
+                replacements: {
+                    addresses: addresses,
+                    nets: Array.from(nets)
+                }
+            }))
+                .reduce((prev, next) => { prev[next.net] = next.volume; return prev; }, {});
+        }
+        result.reward = rewards;
+        return result;
+
     }
 }
 
