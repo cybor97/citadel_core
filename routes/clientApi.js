@@ -1480,14 +1480,14 @@ router
     /**
      * @api {get} /net/:net/user/:userId/reward-total Get total reward
      * @apiName getTotalReward
-     * @apiGroup total
+     * @apiGroup user
      * 
      * @apiParam {String} net            net, * for all
      * @apiParam {Number} date_from      from date
      * @apiParam {Number} date_to        to date
      * @apiParam {Boolean} add_balance   add balance(if not specified - just rewards will be returned)
      * 
-     * @apiDescription Get user chart data weekly
+     * @apiDescription Get total reward
      */
     .get('/:net/user/:userId/reward-total', async (req, res) => {
         if (!req.headers.authorization || !utils.checkToken(config.jwtPublicKey, req.headers.authorization)) {
