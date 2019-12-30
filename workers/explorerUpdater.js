@@ -81,9 +81,7 @@ const GET_BALANCE_GROUP_NET = `
 const GET_REWARDS_GROUP_NET = `
     SELECT SUM(transactions.value) AS volume, transactions.currency AS net
     FROM transactions
-    WHERE transactions.date >= :dateFrom 
-        AND transactions.date <= :dateTo 
-        AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses)) 
+    WHERE (transactions.from IN (:addresses) OR transactions.to IN (:addresses)) 
         AND transactions.type IN ('payment', 'approved_payment')
         AND transactions.currency IN (:nets) 
     GROUP BY transactions.currency;
@@ -551,8 +549,6 @@ class ExplorerUpdater {
             type: sequelizeConnection.QueryTypes.SELECT,
             replacements: {
                 addresses: addresses,
-                dateFrom: dateFrom,
-                dateTo: dateTo,
                 nets: Array.from(nets)
             }
         }))

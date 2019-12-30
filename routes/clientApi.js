@@ -1483,8 +1483,6 @@ router
      * @apiGroup user
      * 
      * @apiParam {String} net            net, * for all
-     * @apiParam {Number} date_from      from date
-     * @apiParam {Number} date_to        to date
      * @apiParam {Boolean} add_balance   add balance(if not specified - just rewards will be returned)
      * 
      * @apiDescription Get total reward
@@ -1494,7 +1492,7 @@ router
             return res.status(403).send({ message: 'Unauthorized!' });
         }
 
-        let result = await explorerUpdater.getRewardTotal(req.params.net, req.params.userId, req.query.date_from, req.query.date_to, !req.query.add_balance);
+        let result = await explorerUpdater.getRewardTotal(req.params.net, req.params.userId, !req.query.add_balance);
 
         return res.status(200).send(result);
     })
