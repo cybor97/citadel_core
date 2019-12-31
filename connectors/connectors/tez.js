@@ -229,7 +229,7 @@ class TEZ extends BaseConnector {
             storage_limit: '300',
             amount: '1420',
             destination: address,
-            publicKey: publicKey
+            public_key: publicKey
         }, { pk: publicKey });
     }
 
