@@ -227,6 +227,7 @@ class TEZ extends BaseConnector {
             fee: '1420',
             gas_limit: '10600',
             storage_limit: '300',
+            public_key: publicKey
         }, { pk: publicKey });
     }
 
