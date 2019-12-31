@@ -222,13 +222,11 @@ class TEZ extends BaseConnector {
 
     async prepareReveal(address) {
         return await this.prepareOperation(address, {
-            kind: 'transaction',
+            kind: 'reveal',
             source: address,
             fee: '1420',
             gas_limit: '10600',
-            storage_limit: '300',
-            amount: '1420',
-            destination: address
+            storage_limit: '300'
         }, false);
     }
 

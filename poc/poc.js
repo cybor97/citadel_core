@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         onSwitchNet(net);
     }
 
+    signAndRevealButton.onclick = signTx.bind(this, 'reveal');
     signAndTransferButton.onclick = signTx.bind(this, 'transfer');
     signAndDelegateButton.onclick = signTx.bind(this, 'delegation');
     signAndOriginateButton.onclick = signTx.bind(this, 'origination');
@@ -69,7 +70,7 @@ function signTx(opType) {
 
 function signTezTx(opType) {
     let req = new XMLHttpRequest();
-    if (['transfer', 'origination', 'delegation'].includes(opType)) {
+    if (['transfer', 'origination', 'delegation', 'reveal'].includes(opType)) {
         req.open('POST', `/net/tez/address/${addressFromInput.value}/transactions/prepare-${opType}`);
         req.setRequestHeader('Content-Type', 'application/json');
         req.send(JSON.stringify({
