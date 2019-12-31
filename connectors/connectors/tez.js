@@ -228,8 +228,7 @@ class TEZ extends BaseConnector {
             gas_limit: '10600',
             storage_limit: '300',
             amount: '1420',
-            destination: address,
-            public_key: publicKey
+            destination: address
         }, { pk: publicKey });
     }
 
