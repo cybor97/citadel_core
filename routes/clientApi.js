@@ -864,7 +864,7 @@ router
             return res.status(400).send({ message: "Specified address already revealed." });
         }
 
-        let transaction = await connector.prepareReveal(req.params.address);
+        let transaction = await connector.prepareReveal(req.params.address, req.body.publicKey);
 
         res.status(200).send(transaction);
     })

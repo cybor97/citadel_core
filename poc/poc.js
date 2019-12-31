@@ -69,13 +69,16 @@ function signTx(opType) {
 }
 
 function signTezTx(opType) {
+    let privateKey = privateKeyInput.value;
+
     let req = new XMLHttpRequest();
     if (['transfer', 'origination', 'delegation', 'reveal'].includes(opType)) {
         req.open('POST', `/net/tez/address/${addressFromInput.value}/transactions/prepare-${opType}`);
         req.setRequestHeader('Content-Type', 'application/json');
         req.send(JSON.stringify({
             toAddress: addressToInput.value,
-            [opType == 'origination' ? 'balance' : 'amount']: amountInput.value
+            [opType == 'origination' ? 'balance' : 'amount']: amountInput.value,
+            ...(opType == 'reveal' ? { publicKey: eztz.crypto.extractKeys(privateKey).pk } /**public key only */ : {})
         }));
     }
     else if (opType == 'ballot') {
@@ -96,7 +99,6 @@ function signTezTx(opType) {
         }
 
         let tx = JSON.parse(req.responseText);
-        let privateKey = privateKeyInput.value;
         let signedTx = eztz.crypto.sign(tx.opbytes, privateKey, new Uint8Array([3]));
         //Sign prepared transaction with privateKey
         console.log('signedTx:', signedTx);

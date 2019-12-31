@@ -220,14 +220,14 @@ class TEZ extends BaseConnector {
         });
     }
 
-    async prepareReveal(address) {
+    async prepareReveal(address, publicKey) {
         return await this.prepareOperation(address, {
             kind: 'reveal',
             source: address,
-            fee: 1420,
-            gas_limit: 10600,
-            storage_limit: 300
-        }, false);
+            fee: '1420',
+            gas_limit: '10600',
+            storage_limit: '300',
+        }, { pk: publicKey });
     }
 
     async prepareTransfer(fromAddress, toAddress, amount) {
@@ -238,7 +238,7 @@ class TEZ extends BaseConnector {
             storage_limit: '300',
             amount: (Number(amount) * M_TEZ_MULTIPLIER).toString(),
             destination: toAddress
-        }, false);
+        });
     }
 
     async prepareDelegation(fromAddress, toAddress) {
