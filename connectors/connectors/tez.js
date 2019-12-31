@@ -224,9 +224,9 @@ class TEZ extends BaseConnector {
         return await this.prepareOperation(address, {
             kind: 'reveal',
             source: address,
-            fee: '1420',
-            gas_limit: '10600',
-            storage_limit: '300'
+            fee: 1420,
+            gas_limit: 10600,
+            storage_limit: 300
         }, false);
     }
 
