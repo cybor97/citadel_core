@@ -35,7 +35,7 @@ class ICON extends BaseConnector {
             this.zabbixSender = new ZabbixSender({
                 host: config.zabbix.ip,
                 port: config.zabbix.port,
-                items_host: 'CitadelConnectorICON'
+                items_host: `${config.icon && config.icon.zabbixPrefix ? config.icon.zabbixPrefix : ''}CitadelConnectorICON`
             });
         }
     }

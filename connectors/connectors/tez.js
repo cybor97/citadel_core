@@ -47,7 +47,7 @@ class TEZ extends BaseConnector {
             this.zabbixSender = new ZabbixSender({
                 host: config.zabbix.ip,
                 port: config.zabbix.port,
-                items_host: 'CitadelConnectorTezos'
+                items_host: `${config.tezos && config.tezos.zabbixPrefix ? config.tezos.zabbixPrefix : ''}CitadelConnectorTezos`
             });
         }
 

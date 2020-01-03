@@ -46,7 +46,7 @@ class IOSTCoin extends BaseConnector {
             this.zabbixSender = new ZabbixSender({
                 host: config.zabbix.ip,
                 port: config.zabbix.port,
-                items_host: 'CitadelConnectorIOST'
+                items_host: `${config.iostCoin && config.iostCoin.zabbixPrefix ? config.iostCoin.zabbixPrefix : ''}CitadelConnectorIOST`
             });
         }
     }

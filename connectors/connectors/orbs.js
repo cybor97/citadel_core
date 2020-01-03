@@ -32,7 +32,7 @@ class ORBS extends ETHToken {
             this.zabbixSender = new ZabbixSender({
                 host: config.zabbix.ip,
                 port: config.zabbix.port,
-                items_host: 'CitadelConnectorORBS'
+                items_host: `${config.orbs && config.orbs.zabbixPrefix ? config.orbs.zabbixPrefix : ''}CitadelConnectorORBS`
             });
         }
     }

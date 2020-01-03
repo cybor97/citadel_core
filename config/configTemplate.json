@@ -23,18 +23,24 @@
         "ip": "<nodeIp>",
         "port": "<nodePort>",
         "apiIp": "<apiUrl>",
-        "apiPort": "<apiPort>"
+        "apiPort": "<apiPort>",
+        "zabbixPrefix": "Dev"
+    },
+    "orbs": {
+        "zabbixPrefix": "Dev"
     },
     "iostCoin": {
         "apikey": "<apiKey>",
         "ip": "<nodeIp>",
         "port": "<nodePort>",
         "faucetAddress": "<faucetAddress>",
-        "faucetPrivateKey": "<faucetPrivateKey>"
+        "faucetPrivateKey": "<faucetPrivateKey>",
+        "zabbixPrefix": "Dev"
     },
     "icon": {
         "ip": "<nodeIp>",
-        "port": "<nodePort>"
+        "port": "<nodePort>",
+        "zabbixPrefix": "Dev"
     },
     "coinMarketCap": {
         "apikey": "<coinMarketCapApikey>"
