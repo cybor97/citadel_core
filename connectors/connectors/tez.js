@@ -205,6 +205,28 @@ class TEZ extends BaseConnector {
         return operations;
     }
 
+    async checkTransaction(address, hash) {
+        try {
+            let { data } = await axios.get(`${this.apiUrlAdditional}/operations/${hash}`);
+
+            if (data && data.opHash) {
+                return { status: 'ok', reason: null };
+            }
+            else {
+                return { status: 'failed', reason: 'unknown' };
+            }
+        }
+        catch (err) {
+            if (err && err.message && err.message.match('tx not found')) {
+                return { status: 'unexist', reason: 'Transaction hash not found' };
+            }
+            else {
+                throw err;
+            }
+        }
+    }
+
+
     async isRevealed(address) {
         return (await axios.get(`${this.apiUrl}/operations/${address}`, { params: { type: 'Reveal' } })).data.length > 0;
     }
