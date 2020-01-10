@@ -260,11 +260,28 @@ router
                 transactions.rows = utils.getUniqueTransactions(transactions.rows);
             }
 
+            let serviceAddresses = await Address.findAll({
+                order: [['created', 'desc']],
+                where: {
+                    isService: true,
+                    net: req.params.net
+                }
+            });
+            serviceAddresses = serviceAddresses.map(c => c.address);
+
             address = address.dataValues;
             address.transactions = transactions.rows.map(tx => {
                 let txData = tx.dataValues;
 
-                if (tx.type === 'supplement' && txData.from && txData.from.toLowerCase() === req.params.address.toLowerCase()) {
+                if (tx.type === 'supplement' && serviceAddresses.includes(tx.from)) {
+                    if (config.trustedAddresses && config.trustedAddresses.includes(tx.from)) {
+                        tx.type = 'approved_payment';
+                    }
+                    else {
+                        tx.type = 'payment';
+                    }
+                }
+                else if (tx.type === 'supplement' && txData.from && txData.from.toLowerCase() === req.params.address.toLowerCase()) {
                     txData.type = 'conclusion';
                 }
 
