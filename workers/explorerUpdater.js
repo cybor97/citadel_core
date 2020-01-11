@@ -44,13 +44,13 @@ const REWARD_QUERY = `
 const CHART_DATES_QUERY = `
     SELECT MIN(transactions.date) AS dateFrom, MAX(transactions.date) AS dateTo
     FROM transactions
-    WHERE transactions.currency = :net AND (transactions.from = :address OR transactions.to = :address);
+    WHERE transactions.currency = :net AND (transactions.from = :address OR transactions.to = :address) AND NOT transactions."isCancelled";
 `;
 
 const PRE_CALCULATE_BALANCE_QUERY = `
     SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, transactions.currency AS net
     FROM transactions
-    WHERE transactions.currency IN (:nets) AND transactions.date < :dateTo AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
+    WHERE transactions.currency IN (:nets) AND transactions.date < :dateTo AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses)) AND NOT transactions."isCancelled"
     GROUP BY transactions.currency;
 `;
 
@@ -59,6 +59,7 @@ const CHART_DATA_QUERY = `
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
+        AND NOT transactions."isCancelled"
     GROUP BY transactions.date / :datePartMultiplier, transactions.currency;
 `;
 
@@ -68,13 +69,14 @@ const CHART_DATA_QUERY_REWARD_ONLY = `
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
         AND transactions.type IN ('payment', 'approved_payment')
+        AND NOT transactions."isCancelled"
     GROUP BY transactions.date / :datePartMultiplier, transactions.currency;
 `;
 
 const GET_BALANCE_GROUP_NET = `
     SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, transactions.currency AS net
     FROM transactions
-    WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
+    WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses)) AND NOT transactions."isCancelled"
     GROUP BY transactions.currency;
 `;
 
@@ -84,6 +86,7 @@ const GET_REWARDS_GROUP_NET = `
     WHERE (transactions.from IN (:addresses) OR transactions.to IN (:addresses)) 
         AND transactions.type IN ('payment', 'approved_payment')
         AND transactions.currency IN (:nets) 
+        AND NOT transactions."isCancelled"
     GROUP BY transactions.currency;
 `;
 
