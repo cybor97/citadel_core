@@ -81,7 +81,7 @@ class ICON extends BaseConnector {
             result = result.concat(newTransactionsData
                 .map((tx) => ({
                     hash: tx.txHash,
-                    date: new Date(tx.createDate).getTime(),
+                    date: new Date(tx.createDate).getTime() / 1000,
                     value: tx.amount,
                     comment: `Contract: ${tx.targetContractAddr}\n${tx.errorMsg ? `errorMsg: ${errorMsg}` : 'Success!'}`,
                     from: tx.fromAddr,
