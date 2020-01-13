@@ -36,7 +36,7 @@ const BALANCE_QUERY = `
  `;
 
 const REWARD_QUERY = `
-    SELECT SUM(CASE WHEN transactions.from = :address THEN -transactions.value ELSE transactions.value END) as reward
+    SELECT SUM(CASE WHEN transactions.from = transactions.to THEN 0 WHEN transactions.from = :address THEN -transactions.value ELSE transactions.value END) as reward
     FROM transactions
     WHERE transactions.currency = :net AND transactions.type IN ('payment', 'approved_payment') AND (transactions.from = :address OR transactions.to = :address) AND NOT transactions."isCancelled";
 `;
@@ -48,14 +48,14 @@ const CHART_DATES_QUERY = `
 `;
 
 const PRE_CALCULATE_BALANCE_QUERY = `
-    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, transactions.currency AS net
+    SELECT SUM(CASE WHEN transactions.from = transactions.to THEN 0 WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, transactions.currency AS net
     FROM transactions
     WHERE transactions.currency IN (:nets) AND transactions.date < :dateTo AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses)) AND NOT transactions."isCancelled"
     GROUP BY transactions.currency;
 `;
 
 const CHART_DATA_QUERY = `
-    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
+    SELECT SUM(CASE WHEN transactions.from = transactions.to THEN 0 WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
@@ -64,7 +64,7 @@ const CHART_DATA_QUERY = `
 `;
 
 const CHART_DATA_QUERY_REWARD_ONLY = `
-    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END)  - SUM(transactions.fee) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
+    SELECT SUM(CASE WHEN transactions.from = transactions.to THEN 0 WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END)  - SUM(transactions.fee) AS volume, MAX(transactions.date) AS datetime, transactions.currency AS net
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses))
         AND transactions.date >= :dateFrom AND transactions.date <= :dateTo
@@ -74,7 +74,7 @@ const CHART_DATA_QUERY_REWARD_ONLY = `
 `;
 
 const GET_BALANCE_GROUP_NET = `
-    SELECT SUM(CASE WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, transactions.currency AS net
+    SELECT SUM(CASE WHEN transactions.from = transactions.to THEN 0 WHEN transactions.from IN (:addresses) THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) AS volume, transactions.currency AS net
     FROM transactions
     WHERE transactions.currency IN (:nets) AND (transactions.from IN (:addresses) OR transactions.to IN (:addresses)) AND NOT transactions."isCancelled"
     GROUP BY transactions.currency;
