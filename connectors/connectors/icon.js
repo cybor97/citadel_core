@@ -20,6 +20,11 @@ const ICX_PRESERVE = 0x29A2241AF62C0000 / 10;
 //5 seconds, ICON uses nanoseconds
 const ICX_TX_DELAY = 5000000;
 
+const OP_TYPES = {
+    'setDelegation': 'delegation',
+    'setStake': 'stake'
+}
+
 class ICON extends BaseConnector {
     constructor() {
         super();
@@ -127,7 +132,7 @@ class ICON extends BaseConnector {
                         to: tx.data && tx.data.method == 'setDelegation' ? tx.data.params && tx.data.params.delegations && tx.data.params.delegations[0] && tx.data.params.delegations[0].address : tx.to,
                         fee: parseInt(tx.fee || 0) / ICON_MULTIPLIER,
                         originalOpType: tx.data && tx.data.method,
-                        type: tx.data && tx.data.method == 'setDelegation' ? 'delegation' : 'supplement',
+                        type: tx.data && tx.data.method && OP_TYPES[tx.data.method] ? OP_TYPES[tx.data.method] : 'supplement',
                         path: JSON.stringify({ blockNumber: response.data.result.height })
                     }));
                 for (let tx of transactions) {
