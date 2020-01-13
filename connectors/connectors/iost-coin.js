@@ -121,7 +121,7 @@ class IOSTCoin extends BaseConnector {
                     ramUsed: tx.ramUsed,
 
                     originalOpType: `${tx.contract}/${tx.action_name}`,
-                    type: this.rewardSources.includes(tx.from) ? 'payment' : opTypes[`${tx.contract}/${tx.action_name}`],
+                    type: this.rewardSources.includes(tx.from) ? 'payment' : opTypes[`${tx.contract}/${tx.action_name}`] || 'supplement',
                     path: JSON.stringify({ queryCount: QUERY_COUNT, offset: offset }),
                     isCancelled: (tx.status_code != 'SUCCESS')
                 }))
@@ -188,7 +188,7 @@ class IOSTCoin extends BaseConnector {
                         ramUsed: tx.tx_receipt.ram_usage && parseInt(tx.tx_receipt.ram_usage['token.iost']),
 
                         originalOpType: `${txAction.contract}/${txAction.action_name}`,
-                        type: this.rewardSources.includes(tx.from) ? 'payment' : opTypes[`${tx.contract}/${tx.action_name}`],
+                        type: this.rewardSources.includes(tx.from) ? 'payment' : opTypes[`${txAction.contract}/${txAction.action_name}`],
                         path: JSON.stringify({ blockNumber: parseInt(block.data.block.number) }),
                         currency: 'iost-coin',
                         isCancelled: (tx.tx_receipt.status_code != 'SUCCESS')
