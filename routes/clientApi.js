@@ -551,6 +551,7 @@ router
             if (!connectors[req.params.net]) {
                 return res.status(400).send({ message: 'Specified net is not supported!' });
             }
+
         }
 
         if (!req.params.userId.match(/\d/)) {
@@ -564,7 +565,8 @@ router
                     { userIds: { [sequelize.Op.like]: `${req.params.userId},%` } },
                     { userIds: { [sequelize.Op.like]: `%,${req.params.userId},%` } },
                     { userIds: { [sequelize.Op.like]: `%,${req.params.userId}` } }
-                ]
+                ],
+                ...(req.params.net !== '*' ? { net: req.params.net } : {})
             },
         }));
 
