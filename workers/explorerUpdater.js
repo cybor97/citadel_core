@@ -30,7 +30,7 @@ const LAST_PATH_QUERY_NET = `
  `;
 
 const BALANCE_QUERY = `
-    SELECT SUM(CASE WHEN transactions.from = :address THEN -transactions.value ELSE transactions.value END) - SUM(transactions.fee) as balance
+    SELECT SUM(CASE WHEN transactions.from = :address THEN -transactions.value WHEN transactions.to = :address THEN transactions.value ELSE 0 END) - SUM(transactions.fee) as balance
     FROM transactions
     WHERE transactions.currency = :net AND (transactions.from = :address OR transactions.to = :address) AND NOT transactions."isCancelled";
  `;
