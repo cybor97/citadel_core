@@ -178,6 +178,10 @@ class TEZ extends BaseConnector {
                 hash: tx.hash,
                 date: tx.timestamp,
                 value: ((tx.amount || tx.balance) / M_TEZ_MULTIPLIER) || 0,
+                deltaFrom: tx.metadata.operation_result.balance_updates.reduce((prev, next) =>
+                    next.contract === tx.source ? prev + parseInt(next.change) / M_TEZ_MULTIPLIER : prev, 0),
+                deltaTo: tx.metadata.operation_result.balance_updates.reduce((prev, next) =>
+                    next.contract === to ? prev + parseInt(next.change) / M_TEZ_MULTIPLIER : prev, 0),
                 from: tx.source,
                 fromAlias: null,
                 to: to,

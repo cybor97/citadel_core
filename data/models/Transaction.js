@@ -27,6 +27,8 @@ const Transaction = connection.define('transactions', {
     hash: sequelize.STRING,
     date: sequelize.BIGINT,
     value: sequelize.DOUBLE,
+    deltaFrom: sequelize.DOUBLE,
+    deltaTo: sequelize.DOUBLE,
 
     feeBlockchain: {
         type: sequelize.DOUBLE,
