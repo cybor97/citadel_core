@@ -117,6 +117,34 @@ class ExplorerUpdater {
             });
 
             if (connectors[net].getNextBlock) {
+                if (connectors[net].getServiceAddresses) {
+                    log.info(`Updating ${net} service addresses`);
+                    let newServiceAddresses = await connectors[net].getServiceAddresses();
+                    for (let newServiceAddress of newServiceAddresses) {
+                        let [created] = await Address.findOrCreate({
+                            where: { address: newServiceAddress, net: net },
+                            defaults: {
+                                net: net,
+                                currency: net,
+                                address: newServiceAddress,
+                                isService: true,
+                                created: Date.now(),
+                                updated: Date.now()
+                            }
+                        });
+                        if (!created) {
+                            Address.update({
+                                updated: Date.now()
+                            }, {
+                                where: { address: newServiceAddress, net: net },
+                            });
+                        }
+                    }
+                    if (serviceAddresses.length === 0 && newServiceAddresses.length !== 0) {
+                        serviceAddresses = newServiceAddresses.map(c => ({ address: c }));
+                    }
+                }
+
                 while (true) {
                     try {
                         let time = Date.now();
@@ -204,7 +232,7 @@ class ExplorerUpdater {
                     log.info(`Updating ${net} service addresses`);
                     let newServiceAddresses = await connector.getServiceAddresses();
                     for (let newServiceAddress of newServiceAddresses) {
-                        let created = await Address.findOrCreate({
+                        let [created] = await Address.findOrCreate({
                             where: { address: newServiceAddress, net: address.net },
                             defaults: {
                                 net: address.net,
