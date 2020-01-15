@@ -355,11 +355,29 @@ router
             }
         }
 
-        let balanceData = await explorerUpdater.getBalance(req.params.net, req.params.address);
+        let balanceData = null;
+
+        if (connector.getDelegationBalanceInfo) {
+            try {
+                balanceData = await connector.getDelegationBalanceInfo(req.params.address);
+                balanceData = balanceData.mainBalance;
+            }
+            catch (err) {
+                log.err('Getting main balance from getDelegationBalanceInfo failed, fallback to recalculation', err);
+            }
+        }
+
+        if (!balanceData) {
+            balanceData = await explorerUpdater.getBalance(req.params.net, req.params.address);
+            if (balanceData) {
+                balanceData = balanceData.balance || null;
+            }
+        }
+
         let rewardData = await explorerUpdater.getReward(req.params.net, req.params.address);
         let chartDates = await explorerUpdater.getChartDates(req.params.net, req.params.address);
 
-        result.balance = balanceData ? balanceData.balance : null;
+        result.balance = balanceData;
         result.reward = rewardData ? rewardData.reward : null;
         result.chart_date_from = chartDates && chartDates.datefrom ? chartDates.datefrom : null;
         result.chart_date_to = chartDates && chartDates.dateto ? chartDates.dateto : null;
