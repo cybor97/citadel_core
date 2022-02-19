@@ -13,7 +13,7 @@
     "eztz.js": "git+https://github.com/TezTech/eztz.git#22a6b25bf000fc4e25e6a5278f352fc40adefdb6",
     "icon-sdk-js": "0.0.16",
     "iost": "^0.1.19",
-    "jose": "^1.14.0",
+    "jose": "^1.28.1",
     "mocha": "^6.2.0",
     "mysql2": "^1.6.5",
     "node-zabbix-sender": "^1.1.0",
